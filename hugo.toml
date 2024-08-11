@@ -1,0 +1,5 @@
+baseURL = 'https://cncsmonster.github.io'
+languageCode = 'en-us'
+defaultContentLanguage= 'zh'
+title = "Cncsmonster's Blog"
+theme="PaperMod"
