@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh" dir="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>使用fgm管理Go版本 | CCM&#39;s Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm
+下载 fgm
+首先配置Rust工具链，然后可以通过cargo 下载它 cargo install fgm
+为了快速获取预编译版本,你也可以使用cargo-binstall: cargo binstall fgm
+快速体验
+然后:
+
+初始化fnm使用需要的环境变量eval $(fgm init)
+(Optional) 加载fnm shell补全配置, eval $(fgm completions --shell &lt;shell&gt;), 这里的可以是zsh、bash等等
+查询当前系统-架构下可获取的预编译的go版本,fgm list-remote
+下载一个版本:fgm install 1.23.1,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号)
+列举已经被下载到本地的版本:fgm ls
+启用指定版本fgm use 1.23.1, 如果启用的版本在本地不存在,则会尝试下载
+查看当前已经下载到本地的go的列表fgm list, 可以看到其中一项为1.23.1 (current)，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本
+输入go version, 能够查看到输入的go版本为1.23.1
+
+Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用fgm update命令,或者是使用-u参数
+高级用法
+
+使用fgm config可以查看fgm使用的各种配置文件路径,配置项内容
+你可以通过修改配置文件来设置fgm下载go工具链用的地址等等
+值得一提,fgm遵守XDG目录规范
+">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.fc220c15db4aef0318bbf30adc45d33d4d7c88deff3238b23eb255afdc472ca6.css" integrity="sha256-/CIMFdtK7wMYu/MK3EXTPU18iN7/MjiyPrJVr9xHLKY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="zh" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="CCM&#39;s Blog (Alt + H)">CCM&#39;s Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      使用fgm管理Go版本
+      <span class="entry-hint" title="Draft">
+        <svg xmlns="http://www.w3.org/2000/svg" height="35" viewBox="0 -960 960 960" fill="currentColor">
+          <path
+            d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
+        </svg>
+      </span>
+    </h1>
+    <div class="post-meta"><span title='2024-09-21 23:35:50 +0800 CST'>九月 21, 2024</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm</p>
+<h2 id="下载-fgm">下载 fgm<a hidden class="anchor" aria-hidden="true" href="#下载-fgm">#</a></h2>
+<p>首先配置Rust工具链，然后可以通过cargo 下载它 <code>cargo install fgm</code></p>
+<p>为了快速获取预编译版本,你也可以使用<code>cargo-binstall</code>: <code>cargo binstall fgm</code></p>
+<h2 id="快速体验">快速体验<a hidden class="anchor" aria-hidden="true" href="#快速体验">#</a></h2>
+<p>然后:</p>
+<ol>
+<li>初始化fnm使用需要的环境变量<code>eval $(fgm init)</code></li>
+<li>(Optional) 加载fnm shell补全配置, <code>eval $(fgm completions --shell &lt;shell&gt;)</code>, 这里的<!-- raw HTML omitted -->可以是zsh、bash等等</li>
+<li>查询当前系统-架构下可获取的预编译的go版本,<code>fgm list-remote</code></li>
+<li>下载一个版本:<code>fgm install 1.23.1</code>,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号)</li>
+<li>列举已经被下载到本地的版本:<code>fgm ls</code></li>
+<li>启用指定版本<code>fgm use 1.23.1</code>, 如果启用的版本在本地不存在,则会尝试下载</li>
+<li>查看当前已经下载到本地的go的列表<code>fgm list</code>, 可以看到其中一项为<code>1.23.1 (current)</code>，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本</li>
+<li>输入<code>go version</code>, 能够查看到输入的go版本为<code>1.23.1</code></li>
+</ol>
+<p>Note: 第一次使用<code>fgm list-remote</code>的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用<code>fgm update</code>命令,或者是使用<code>-u</code>参数</p>
+<h2 id="高级用法">高级用法<a hidden class="anchor" aria-hidden="true" href="#高级用法">#</a></h2>
+<ol>
+<li>使用<code>fgm config</code>可以查看fgm使用的各种配置文件路径,配置项内容</li>
+<li>你可以通过修改配置文件来设置fgm下载go工具链用的地址等等</li>
+<li>值得一提,fgm遵守XDG目录规范</li>
+</ol>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="http://localhost:1313/">CCM&#39;s Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

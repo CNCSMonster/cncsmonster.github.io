@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>CCM&#39;s Blog</title>
+    <link>http://localhost:1313/</link>
+    <description>Recent content on CCM&#39;s Blog</description>
+    <generator>Hugo -- 0.134.3</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 21 Sep 2024 23:35:50 +0800</lastBuildDate>
+    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用fgm管理Go版本</title>
+      <link>http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</link>
+      <pubDate>Sat, 21 Sep 2024 23:35:50 +0800</pubDate>
+      <guid>http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</guid>
+      <description>&lt;p&gt;想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm&lt;/p&gt;
+&lt;h2 id=&#34;下载-fgm&#34;&gt;下载 fgm&lt;/h2&gt;
+&lt;p&gt;首先配置Rust工具链，然后可以通过cargo 下载它 &lt;code&gt;cargo install fgm&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;为了快速获取预编译版本,你也可以使用&lt;code&gt;cargo-binstall&lt;/code&gt;: &lt;code&gt;cargo binstall fgm&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;快速体验&#34;&gt;快速体验&lt;/h2&gt;
+&lt;p&gt;然后:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;初始化fnm使用需要的环境变量&lt;code&gt;eval $(fgm init)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;(Optional) 加载fnm shell补全配置, &lt;code&gt;eval $(fgm completions --shell &amp;lt;shell&amp;gt;)&lt;/code&gt;, 这里的&lt;!-- raw HTML omitted --&gt;可以是zsh、bash等等&lt;/li&gt;
+&lt;li&gt;查询当前系统-架构下可获取的预编译的go版本,&lt;code&gt;fgm list-remote&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;下载一个版本:&lt;code&gt;fgm install 1.23.1&lt;/code&gt;,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号)&lt;/li&gt;
+&lt;li&gt;列举已经被下载到本地的版本:&lt;code&gt;fgm ls&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;启用指定版本&lt;code&gt;fgm use 1.23.1&lt;/code&gt;, 如果启用的版本在本地不存在,则会尝试下载&lt;/li&gt;
+&lt;li&gt;查看当前已经下载到本地的go的列表&lt;code&gt;fgm list&lt;/code&gt;, 可以看到其中一项为&lt;code&gt;1.23.1 (current)&lt;/code&gt;，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本&lt;/li&gt;
+&lt;li&gt;输入&lt;code&gt;go version&lt;/code&gt;, 能够查看到输入的go版本为&lt;code&gt;1.23.1&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Note: 第一次使用&lt;code&gt;fgm list-remote&lt;/code&gt;的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用&lt;code&gt;fgm update&lt;/code&gt;命令,或者是使用&lt;code&gt;-u&lt;/code&gt;参数&lt;/p&gt;
+&lt;h2 id=&#34;高级用法&#34;&gt;高级用法&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;使用&lt;code&gt;fgm config&lt;/code&gt;可以查看fgm使用的各种配置文件路径,配置项内容&lt;/li&gt;
+&lt;li&gt;你可以通过修改配置文件来设置fgm下载go工具链用的地址等等&lt;/li&gt;
+&lt;li&gt;值得一提,fgm遵守XDG目录规范&lt;/li&gt;
+&lt;/ol&gt;</description>
+    </item>
+  </channel>
+</rss>
