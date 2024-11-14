@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>CCM's Blog</title><link>https://cncsmonster.github.io/</link><description>Recent content on CCM's Blog</description><generator>Hugo -- 0.138.0</generator><language>en-us</language><lastBuildDate>Sat, 21 Sep 2024 23:35:50 +0800</lastBuildDate><atom:link href="https://cncsmonster.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>使用fgm管理Go版本</title><link>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</link><pubDate>Sat, 21 Sep 2024 23:35:50 +0800</pubDate><guid>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</guid><description>&lt;p>想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm&lt;/p>
+&lt;h2 id="下载-fgm">下载 fgm&lt;/h2>
+&lt;p>首先配置Rust工具链，然后可以通过cargo 下载它 &lt;code>cargo install fgm&lt;/code>&lt;/p>
+&lt;p>为了快速获取预编译版本,你也可以使用&lt;code>cargo-binstall&lt;/code>: &lt;code>cargo binstall fgm&lt;/code>&lt;/p>
+&lt;h2 id="快速体验">快速体验&lt;/h2>
+&lt;p>然后:&lt;/p>
+&lt;ol>
+&lt;li>初始化fnm使用需要的环境变量&lt;code>eval $(fgm init)&lt;/code>&lt;/li>
+&lt;li>(Optional) 加载fnm shell补全配置, &lt;code>eval $(fgm completions --shell &amp;lt;shell&amp;gt;)&lt;/code>, 这里的&lt;!-- raw HTML omitted -->可以是zsh、bash等等&lt;/li>
+&lt;li>查询当前系统-架构下可获取的预编译的go版本,&lt;code>fgm list-remote&lt;/code>&lt;/li>
+&lt;li>下载一个版本:&lt;code>fgm install 1.23.1&lt;/code>,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号)&lt;/li>
+&lt;li>列举已经被下载到本地的版本:&lt;code>fgm ls&lt;/code>&lt;/li>
+&lt;li>启用指定版本&lt;code>fgm use 1.23.1&lt;/code>, 如果启用的版本在本地不存在,则会尝试下载&lt;/li>
+&lt;li>查看当前已经下载到本地的go的列表&lt;code>fgm list&lt;/code>, 可以看到其中一项为&lt;code>1.23.1 (current)&lt;/code>，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本&lt;/li>
+&lt;li>输入&lt;code>go version&lt;/code>, 能够查看到输入的go版本为&lt;code>1.23.1&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>Note: 第一次使用&lt;code>fgm list-remote&lt;/code>的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用&lt;code>fgm update&lt;/code>命令,或者是使用&lt;code>-u&lt;/code>参数&lt;/p>
+&lt;h2 id="高级用法">高级用法&lt;/h2>
+&lt;ol>
+&lt;li>使用&lt;code>fgm config&lt;/code>可以查看fgm使用的各种配置文件路径,配置项内容&lt;/li>
+&lt;li>你可以通过修改配置文件来设置fgm下载go工具链用的地址等等&lt;/li>
+&lt;li>值得一提,fgm遵守XDG目录规范&lt;/li>
+&lt;/ol></description></item></channel></rss>
