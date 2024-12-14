@@ -4,10 +4,43 @@
     <title>CCM&#39;s Blog</title>
     <link>http://localhost:1313/</link>
     <description>Recent content on CCM&#39;s Blog</description>
-    <generator>Hugo -- 0.134.3</generator>
+    <generator>Hugo -- 0.138.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 21 Sep 2024 23:35:50 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 13 Dec 2024 21:15:54 +0800</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用mise替换fgm</title>
+      <link>http://localhost:1313/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/</link>
+      <pubDate>Fri, 13 Dec 2024 21:15:54 +0800</pubDate>
+      <guid>http://localhost:1313/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/</guid>
+      <description>&lt;p&gt;mise能够完全覆盖fgm的功能和使用场景，而且不仅仅能够用来管理Golang工具链，还能够用来管理其他语言的工具链，比如nodejs、neovim、java等等。
+甚至我们还能够用mise来替换direnv，实现管理进入退出目录时的环境变量加载和卸载。&lt;/p&gt;
+&lt;p&gt;下面将从三方面带你感受笔者使用mise的体验:&lt;/p&gt;
+&lt;h2 id=&#34;一-下载-mise&#34;&gt;一. 下载 mise&lt;/h2&gt;
+&lt;p&gt;方式1: 通过包安装管理器安装mise&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 需要先安装cargo-binstall和rust工具链&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cargo binstall mise
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;方式2: 从仓库预编译版本下载资源列表中下载, 解压缩后把mise可执行文件放到可执行文件目录即可
+&lt;a href=&#34;https://github.com/jdx/mise/releases&#34;&gt;release链接&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;二-使用mise管理go版本&#34;&gt;二. 使用mise管理go版本&lt;/h2&gt;
+&lt;h3 id=&#34;0-初始化mise&#34;&gt;0. 初始化mise&lt;/h3&gt;
+&lt;p&gt;在自己的shell配置文件中加入如下命令，其中&lt;code&gt;$SH&lt;/code&gt;替换成自己的shell的名称，比如&lt;code&gt;bash&lt;/code&gt;、&lt;code&gt;zsh&lt;/code&gt;等等&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 初始化mise&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mise activate $SH
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;1-管理局部目录中的go版本&#34;&gt;1. 管理局部目录中的go版本&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 切换go工具链到指定版本&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mise use go@1.23.1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;第一次在某个目录使用mise时，mise会报错，提示需要先信任当前目录采用的mise配置，此时可以通过&lt;code&gt;mise trust&lt;/code&gt;命令来信任当前目录的mise配置。
+之后，再次使用&lt;code&gt;mise use go@1.23.1&lt;/code&gt;命令，mise会自动下载并安装go1.23.1版本，并且将当前目录的go工具链切换到go1.23.1版本。同时，mise会自动在当前目录创建一个mise.toml文件，用来记录当前目录的mise配置信息。&lt;/p&gt;
+&lt;p&gt;如果当前目录或者父目录中已经存在被信任的mise配置文件mise.toml，那么mise会使用该配置文件工作，使用&lt;code&gt;mise use go@1.23.1&lt;/code&gt;之类的命令时，mise会把新配置更新到该配置文件中。&lt;/p&gt;
+&lt;p&gt;mise使用全局配置文件，一般在&lt;code&gt;$XDG_CONFIG_HOME/mise/config.toml&lt;/code&gt;中，可以通过&lt;code&gt;mise config&lt;/code&gt;命令查看和修改全局配置文件。
+使用&lt;code&gt;mise&lt;/code&gt;时，可以通过&lt;code&gt;-g&lt;/code&gt;选项来指定是否使用全局配置文件，此外，如果在本目录以及父目录中找不到mise配置文件，mise也会自动使用全局配置文件。&lt;/p&gt;
+&lt;h2 id=&#34;三-使用mise管理进出目录时的环境变量加载和卸载&#34;&gt;三. 使用mise管理进出目录时的环境变量加载和卸载&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 使用mise设置环境变量RUSTUP_BACKTRACE=1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mise env set RUSTUP_BACKTRACE&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该命令执行成功后，每次进入该目录时，mise会自动加载RUSTUP_BACKTRACE=1环境变量，退出该目录时，mise会自动卸载RUSTUP_BACKTRACE=1环境变量，使用该环境变量原本的值(如果原本该环境变量已经存在)或者删除该环境变量。&lt;/p&gt;
+&lt;p&gt;需要注意的是，使用该命令时，mise会先进行配置文件检查，如果是初次使用的区域，同样需要先执行&lt;code&gt;mise trust&lt;/code&gt;命令。&lt;/p&gt;</description>
+    </item>
     <item>
       <title>使用fgm管理Go版本</title>
       <link>http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</link>
