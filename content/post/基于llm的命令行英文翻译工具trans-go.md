@@ -23,13 +23,15 @@ git clone https://github/cncsmonster/trans-go
 - OPENAI_API_BASE_URL: 服务地址
 - MODEL: 使用的模型名称
 
-笔者测试了国内的话综合性价比和效果等因素，使用deepseek家的服务已经比较实用了，可以使用如下配置:
+笔者测试了国内的若干中文模型的服务，综合性价比和效果等因素发现使用deepseek家的服务已经比较实用了，可以使用如下配置:
 
 ```toml
 OPENAI_API_KEY="你的deepseek家的api key"
 OPENAI_API_BASE_URL="https://api.deepseek.com/v1/"
 MODEL="deepseek-chat"
 ```
+
+也可以使用本机部署的ollama提供的openai兼容接口，开源模型的话`qwen2.5:14b`已经能够基本满足需要
 
 ## 使用方式
 
