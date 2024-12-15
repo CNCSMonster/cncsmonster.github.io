@@ -3,8 +3,6 @@ title = '基于llm的命令行英文翻译工具trans-go'
 date = 2024-12-14T23:27:01+08:00
 +++
 
-# 基于llm的命令行英文翻译工具trans-go
-
 仓库地址: https://github.com/cncsmonster/trans-go
 
 ## 安装方式
