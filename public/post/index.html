@@ -111,6 +111,28 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">基于llm的命令行英文翻译工具trans-go
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>仓库地址: https://github.com/cncsmonster/trans-go
+安装方式 前提条件: 安装了go编译器
+git clone https://github/cncsmonster/trans-go ./install.sh 配置方式 该工具利用openai api风格的llm服务工作，需要配置三个环境变量:
+OPENAI_API_KEY: 服务密钥 OPENAI_API_BASE_URL: 服务地址 MODEL: 使用的模型名称 笔者测试了国内的若干中文模型的服务，综合性价比和效果等因素发现使用deepseek家的服务已经比较实用了，可以使用如下配置:
+OPENAI_API_KEY=&#34;你的deepseek家的api key&#34; OPENAI_API_BASE_URL=&#34;https://api.deepseek.com/v1/&#34; MODEL=&#34;deepseek-chat&#34; 也可以使用本机部署的ollama提供的openai兼容接口，开源模型的话qwen2.5:14b已经能够基本满足需要
+使用方式 基础用法: 读取第一个命令行参数以外的参数, 作为要翻译的英文文本，逐个翻译
+# 如下命令会依次翻译hello world 和 good morning trans &#34;hello world&#34; &#34;good morning&#34; 翻译多行文件: 可以直接输入trans，然后粘贴文本，按ctrl&#43;d然后按下enter键输入EOF来结束输入
+直接使用trans会读取标准输入直到遇到EOF，然后翻译标准输入中的内容
+翻译文件: cat $FILE | trans，$FILE替换成要翻译的文件路径
+翻译help文档: 直接使用trans会翻译标准输入中的内容，可以结合管道用于翻译cli工具的help文档为英文，可以使用如下命令
+go help | trans </p>
+  </div>
+  <footer class="entry-footer"><span title='2024-12-14 23:27:01 +0800 CST'>十二月 14, 2024</span></footer>
+  <a class="entry-link" aria-label="post link to 基于llm的命令行英文翻译工具trans-go" href="http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">使用mise替换fgm
     </h2>
   </header>

@@ -6,8 +6,43 @@
     <description>Recent content in Posts on CCM&#39;s Blog</description>
     <generator>Hugo -- 0.138.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Dec 2024 21:15:54 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 14 Dec 2024 23:27:01 +0800</lastBuildDate>
     <atom:link href="http://localhost:1313/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>基于llm的命令行英文翻译工具trans-go</title>
+      <link>http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</link>
+      <pubDate>Sat, 14 Dec 2024 23:27:01 +0800</pubDate>
+      <guid>http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</guid>
+      <description>&lt;p&gt;仓库地址: &lt;a href=&#34;https://github.com/cncsmonster/trans-go&#34;&gt;https://github.com/cncsmonster/trans-go&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;安装方式&#34;&gt;安装方式&lt;/h2&gt;
+&lt;p&gt;前提条件: 安装了go编译器&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://github/cncsmonster/trans-go
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;./install.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;配置方式&#34;&gt;配置方式&lt;/h2&gt;
+&lt;p&gt;该工具利用openai api风格的llm服务工作，需要配置三个环境变量:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;OPENAI_API_KEY: 服务密钥&lt;/li&gt;
+&lt;li&gt;OPENAI_API_BASE_URL: 服务地址&lt;/li&gt;
+&lt;li&gt;MODEL: 使用的模型名称&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;笔者测试了国内的若干中文模型的服务，综合性价比和效果等因素发现使用deepseek家的服务已经比较实用了，可以使用如下配置:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;OPENAI_API_KEY&lt;/span&gt;=&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;你的deepseek家的api key&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;OPENAI_API_BASE_URL&lt;/span&gt;=&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://api.deepseek.com/v1/&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;MODEL&lt;/span&gt;=&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;deepseek-chat&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;也可以使用本机部署的ollama提供的openai兼容接口，开源模型的话&lt;code&gt;qwen2.5:14b&lt;/code&gt;已经能够基本满足需要&lt;/p&gt;
+&lt;h2 id=&#34;使用方式&#34;&gt;使用方式&lt;/h2&gt;
+&lt;p&gt;基础用法: 读取第一个命令行参数以外的参数, 作为要翻译的英文文本，逐个翻译&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 如下命令会依次翻译hello world 和 good morning&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;trans &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;hello world&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;good morning&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;翻译多行文件: 可以直接输入&lt;code&gt;trans&lt;/code&gt;，然后粘贴文本，按&lt;code&gt;ctrl+d&lt;/code&gt;然后按下enter键输入&lt;code&gt;EOF&lt;/code&gt;来结束输入&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;直接使用&lt;code&gt;trans&lt;/code&gt;会读取标准输入直到遇到EOF，然后翻译标准输入中的内容&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;翻译文件: &lt;code&gt;cat $FILE | trans&lt;/code&gt;，$FILE替换成要翻译的文件路径&lt;/p&gt;
+&lt;p&gt;翻译help文档: 直接使用&lt;code&gt;trans&lt;/code&gt;会翻译标准输入中的内容，可以结合管道用于翻译cli工具的help文档为英文，可以使用如下命令&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;go help | trans
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
     <item>
       <title>使用mise替换fgm</title>
       <link>http://localhost:1313/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/</link>

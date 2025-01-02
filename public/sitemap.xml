@@ -3,10 +3,13 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2024-12-13T21:15:54+08:00</lastmod>
+    <lastmod>2024-12-14T23:27:01+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/</loc>
-    <lastmod>2024-12-13T21:15:54+08:00</lastmod>
+    <lastmod>2024-12-14T23:27:01+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</loc>
+    <lastmod>2024-12-14T23:27:01+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/</loc>
     <lastmod>2024-12-13T21:15:54+08:00</lastmod>
