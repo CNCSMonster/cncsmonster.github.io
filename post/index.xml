@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Posts on CCM's Blog</title><link>https://cncsmonster.github.io/post/</link><description>Recent content in Posts on CCM's Blog</description><generator>Hugo -- 0.140.2</generator><language>en-us</language><lastBuildDate>Fri, 03 Jan 2025 00:22:09 +0800</lastBuildDate><atom:link href="https://cncsmonster.github.io/post/index.xml" rel="self" type="application/rss+xml"/><item><title>使用uv管理python包</title><link>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/</link><pubDate>Fri, 03 Jan 2025 00:22:09 +0800</pubDate><guid>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/</guid><description>&lt;h1 id="使用uv">使用uv&lt;/h1>
+&lt;h2 id="ref">Ref&lt;/h2>
+&lt;ul>
+&lt;li>&lt;a href="https://github.com/astral-sh/uv">https://github.com/astral-sh/uv&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2 id="使用uv运行python项目">使用uv运行python项目&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># .. 首先进入项目根目录&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 初始化uv工程配置&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv init
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 加入所需依赖&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># uv add &amp;lt;python包名&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 一般项目如果提供requirements.txt的话,可以使用如下命令&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv add -r requirements.txt
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 运行&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>uv run &amp;lt;xx.py&amp;gt;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="使用uv提供的python虚拟环境">使用uv提供的python虚拟环境&lt;/h2>
+&lt;p>设置好依赖并且运行成功后，会在本地生成.venv目录
+根据开发环境选择激活.venv/bin目录下的对应activate文件即可。&lt;/p>
+&lt;p>比如在linux命令行中(使用zsh/bash时):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>source ./.venv/bin/activate
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>在vscode中:https://developer.baidu.com/article/detail.html?id=3235457
+你将能够找到uv生成的虚拟环境的选项&lt;/p></description></item><item><title>基于llm的命令行英文翻译工具trans-go</title><link>https://cncsmonster.github.io/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</link><pubDate>Sat, 14 Dec 2024 23:27:01 +0800</pubDate><guid>https://cncsmonster.github.io/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</guid><description>&lt;p>仓库地址: &lt;a href="https://github.com/cncsmonster/trans-go">https://github.com/cncsmonster/trans-go&lt;/a>&lt;/p>
+&lt;h2 id="安装方式">安装方式&lt;/h2>
+&lt;p>前提条件: 安装了go编译器&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>git clone https://github/cncsmonster/trans-go
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>./install.sh
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="配置方式">配置方式&lt;/h2>
+&lt;p>该工具利用openai api风格的llm服务工作，需要配置三个环境变量:&lt;/p>
+&lt;ul>
+&lt;li>OPENAI_API_KEY: 服务密钥&lt;/li>
+&lt;li>OPENAI_API_BASE_URL: 服务地址&lt;/li>
+&lt;li>MODEL: 使用的模型名称&lt;/li>
+&lt;/ul>
+&lt;p>笔者测试了国内的若干中文模型的服务，综合性价比和效果等因素发现使用deepseek家的服务已经比较实用了，可以使用如下配置:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-toml" data-lang="toml">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">OPENAI_API_KEY&lt;/span>=&lt;span style="color:#e6db74">&amp;#34;你的deepseek家的api key&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">OPENAI_API_BASE_URL&lt;/span>=&lt;span style="color:#e6db74">&amp;#34;https://api.deepseek.com/v1/&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">MODEL&lt;/span>=&lt;span style="color:#e6db74">&amp;#34;deepseek-chat&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>也可以使用本机部署的ollama提供的openai兼容接口，开源模型的话&lt;code>qwen2.5:14b&lt;/code>已经能够基本满足需要&lt;/p>
+&lt;h2 id="使用方式">使用方式&lt;/h2>
+&lt;p>基础用法: 读取第一个命令行参数以外的参数, 作为要翻译的英文文本，逐个翻译&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 如下命令会依次翻译hello world 和 good morning&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>trans &lt;span style="color:#e6db74">&amp;#34;hello world&amp;#34;&lt;/span> &lt;span style="color:#e6db74">&amp;#34;good morning&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>翻译多行文件: 可以直接输入&lt;code>trans&lt;/code>，然后粘贴文本，按&lt;code>ctrl+d&lt;/code>然后按下enter键输入&lt;code>EOF&lt;/code>来结束输入&lt;/p>
+&lt;blockquote>
+&lt;p>直接使用&lt;code>trans&lt;/code>会读取标准输入直到遇到EOF，然后翻译标准输入中的内容&lt;/p>
+&lt;/blockquote>
+&lt;p>翻译文件: &lt;code>cat $FILE | trans&lt;/code>，$FILE替换成要翻译的文件路径&lt;/p>
+&lt;p>翻译help文档: 直接使用&lt;code>trans&lt;/code>会翻译标准输入中的内容，可以结合管道用于翻译cli工具的help文档为英文，可以使用如下命令&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-shell" data-lang="shell">&lt;span style="display:flex;">&lt;span>go help | trans
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>使用mise替换fgm</title><link>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/</link><pubDate>Fri, 13 Dec 2024 21:15:54 +0800</pubDate><guid>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/</guid><description>&lt;p>mise能够完全覆盖fgm的功能和使用场景，而且不仅仅能够用来管理Golang工具链，还能够用来管理其他语言的工具链，比如nodejs、neovim、java等等。
+甚至我们还能够用mise来替换direnv，实现管理进入退出目录时的环境变量加载和卸载。&lt;/p>
+&lt;p>下面将从三方面带你感受笔者使用mise的体验:&lt;/p>
+&lt;h2 id="一-下载-mise">一. 下载 mise&lt;/h2>
+&lt;p>方式1: 通过包安装管理器安装mise&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 需要先安装cargo-binstall和rust工具链&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>cargo binstall mise
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>方式2: 从仓库预编译版本下载资源列表中下载, 解压缩后把mise可执行文件放到可执行文件目录即可
+&lt;a href="https://github.com/jdx/mise/releases">release链接&lt;/a>&lt;/p>
+&lt;h2 id="二-使用mise管理go版本">二. 使用mise管理go版本&lt;/h2>
+&lt;h3 id="0-初始化mise">0. 初始化mise&lt;/h3>
+&lt;p>在自己的shell配置文件中加入如下命令，其中&lt;code>$SH&lt;/code>替换成自己的shell的名称，比如&lt;code>bash&lt;/code>、&lt;code>zsh&lt;/code>等等&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 初始化mise&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mise activate $SH
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="1-管理局部目录中的go版本">1. 管理局部目录中的go版本&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 切换go工具链到指定版本&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mise use go@1.23.1
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>第一次在某个目录使用mise时，mise会报错，提示需要先信任当前目录采用的mise配置，此时可以通过&lt;code>mise trust&lt;/code>命令来信任当前目录的mise配置。
+之后，再次使用&lt;code>mise use go@1.23.1&lt;/code>命令，mise会自动下载并安装go1.23.1版本，并且将当前目录的go工具链切换到go1.23.1版本。同时，mise会自动在当前目录创建一个mise.toml文件，用来记录当前目录的mise配置信息。&lt;/p>
+&lt;p>如果当前目录或者父目录中已经存在被信任的mise配置文件mise.toml，那么mise会使用该配置文件工作，使用&lt;code>mise use go@1.23.1&lt;/code>之类的命令时，mise会把新配置更新到该配置文件中。&lt;/p>
+&lt;p>mise使用全局配置文件，一般在&lt;code>$XDG_CONFIG_HOME/mise/config.toml&lt;/code>中，可以通过&lt;code>mise config&lt;/code>命令查看和修改全局配置文件。
+使用&lt;code>mise&lt;/code>时，可以通过&lt;code>-g&lt;/code>选项来指定是否使用全局配置文件，此外，如果在本目录以及父目录中找不到mise配置文件，mise也会自动使用全局配置文件。&lt;/p>
+&lt;h2 id="三-使用mise管理进出目录时的环境变量加载和卸载">三. 使用mise管理进出目录时的环境变量加载和卸载&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-sh" data-lang="sh">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#75715e"># 使用mise设置环境变量RUSTUP_BACKTRACE=1&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>mise env set RUSTUP_BACKTRACE&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>该命令执行成功后，每次进入该目录时，mise会自动加载RUSTUP_BACKTRACE=1环境变量，退出该目录时，mise会自动卸载RUSTUP_BACKTRACE=1环境变量，使用该环境变量原本的值(如果原本该环境变量已经存在)或者删除该环境变量。&lt;/p>
+&lt;p>需要注意的是，使用该命令时，mise会先进行配置文件检查，如果是初次使用的区域，同样需要先执行&lt;code>mise trust&lt;/code>命令。&lt;/p></description></item><item><title>使用fgm管理Go版本</title><link>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</link><pubDate>Sat, 21 Sep 2024 23:35:50 +0800</pubDate><guid>https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</guid><description>&lt;p>想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm&lt;/p>
+&lt;h2 id="下载-fgm">下载 fgm&lt;/h2>
+&lt;p>首先配置Rust工具链，然后可以通过cargo 下载它 &lt;code>cargo install fgm&lt;/code>&lt;/p>
+&lt;p>为了快速获取预编译版本,你也可以使用&lt;code>cargo-binstall&lt;/code>: &lt;code>cargo binstall fgm&lt;/code>&lt;/p>
+&lt;h2 id="快速体验">快速体验&lt;/h2>
+&lt;p>然后:&lt;/p>
+&lt;ol>
+&lt;li>初始化fnm使用需要的环境变量&lt;code>eval $(fgm init)&lt;/code>&lt;/li>
+&lt;li>(Optional) 加载fnm shell补全配置, &lt;code>eval $(fgm completions --shell &amp;lt;shell&amp;gt;)&lt;/code>, 这里的&lt;!-- raw HTML omitted -->可以是zsh、bash等等&lt;/li>
+&lt;li>查询当前系统-架构下可获取的预编译的go版本,&lt;code>fgm list-remote&lt;/code>&lt;/li>
+&lt;li>下载一个版本:&lt;code>fgm install 1.23.1&lt;/code>,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号)&lt;/li>
+&lt;li>列举已经被下载到本地的版本:&lt;code>fgm ls&lt;/code>&lt;/li>
+&lt;li>启用指定版本&lt;code>fgm use 1.23.1&lt;/code>, 如果启用的版本在本地不存在,则会尝试下载&lt;/li>
+&lt;li>查看当前已经下载到本地的go的列表&lt;code>fgm list&lt;/code>, 可以看到其中一项为&lt;code>1.23.1 (current)&lt;/code>，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本&lt;/li>
+&lt;li>输入&lt;code>go version&lt;/code>, 能够查看到输入的go版本为&lt;code>1.23.1&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>Note: 第一次使用&lt;code>fgm list-remote&lt;/code>的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用&lt;code>fgm update&lt;/code>命令,或者是使用&lt;code>-u&lt;/code>参数&lt;/p>
+&lt;h2 id="高级用法">高级用法&lt;/h2>
+&lt;ol>
+&lt;li>使用&lt;code>fgm config&lt;/code>可以查看fgm使用的各种配置文件路径,配置项内容&lt;/li>
+&lt;li>你可以通过修改配置文件来设置fgm下载go工具链用的地址等等&lt;/li>
+&lt;li>值得一提,fgm遵守XDG目录规范&lt;/li>
+&lt;/ol></description></item></channel></rss>
