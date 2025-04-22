@@ -3,10 +3,13 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2024-12-14T23:27:01+08:00</lastmod>
+    <lastmod>2025-01-03T00:22:09+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/</loc>
-    <lastmod>2024-12-14T23:27:01+08:00</lastmod>
+    <lastmod>2025-01-03T00:22:09+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/</loc>
+    <lastmod>2025-01-03T00:22:09+08:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</loc>
     <lastmod>2024-12-14T23:27:01+08:00</lastmod>
@@ -16,6 +19,8 @@
   </url><url>
     <loc>http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/</loc>
     <lastmod>2024-09-21T23:35:50+08:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/wsl%E4%B8%AD%E9%80%9A%E8%BF%87ssh%E8%BF%9E%E6%8E%A5%E5%B1%80%E5%9F%9F%E7%BD%91%E4%B8%AD%E5%85%B6%E4%BB%96%E4%B8%BB%E6%9C%BA%E5%A4%B1%E8%B4%A5/</loc>
   </url><url>
     <loc>http://localhost:1313/categories/</loc>
   </url><url>

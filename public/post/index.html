@@ -111,6 +111,21 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">使用uv管理python包
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>使用uv Ref https://github.com/astral-sh/uv 使用uv运行python项目 # .. 首先进入项目根目录 # 初始化uv工程配置 uv init # 加入所需依赖 # uv add &lt;python包名&gt; # 一般项目如果提供requirements.txt的话,可以使用如下命令 uv add -r requirements.txt # 运行 uv run &lt;xx.py&gt; 使用uv提供的python虚拟环境 设置好依赖并且运行成功后，会在本地生成.venv目录 根据开发环境选择激活.venv/bin目录下的对应activate文件即可。
+比如在linux命令行中(使用zsh/bash时):
+source ./.venv/bin/activate 在vscode中:https://developer.baidu.com/article/detail.html?id=3235457 你将能够找到uv生成的虚拟环境的选项
+</p>
+  </div>
+  <footer class="entry-footer"><span title='2025-01-03 00:22:09 +0800 CST'>一月 3, 2025</span></footer>
+  <a class="entry-link" aria-label="post link to 使用uv管理python包" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">基于llm的命令行英文翻译工具trans-go
     </h2>
   </header>
@@ -169,10 +184,24 @@ mise使用全局配置文件，一般在$XDG_CONFIG_HOME/mise/config.toml中，�
   <footer class="entry-footer"><span title='2024-09-21 23:35:50 +0800 CST'>九月 21, 2024</span></footer>
   <a class="entry-link" aria-label="post link to 使用fgm管理Go版本" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/"></a>
 </article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2 class="entry-hint-parent">
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>wsl 中通过 ssh 连接局域网中其他主机失败解决方案 参考资料 https://cn.linux-console.net/?p=9494#google_vignette https://www.cnblogs.com/guobaiwang/articles/12610439.html 问题描述 在 wsl2 中使用 ssh 连接局域网中的主机时,提示连接失败
+尝试解决 try 1 这次尝试,发现是不在同一个局域网中,即使连接的是同一个 WIFI, 然后发现是 wsl2 中的局域网地址和 windows 中直接的局域网地址不一样 查资料发现是 wsl2 中使用的是 windows 内部的一个独立的地址 于是为了能够在 wsl2 中连接同一个局域网中的其他主机，需要让 wsl2 环境中的局域网地址和外部一样 最终通过配置镜像网络模式解决
+https://www.cnblogs.com/netWild/p/18503950 (解决方案来源，需要注意的是它的方案中 localhostForwarding=true 这条属性实际上在 镜像网络模式启动 的时候 是无效的 ) https://learn.microsoft.com/zh-cn/windows/wsl/networking (官方文档,可以验证上面的博客) </p>
+  </div>
+  <footer class="entry-footer"></footer>
+  <a class="entry-link" aria-label="post link to " href="http://localhost:1313/post/wsl%E4%B8%AD%E9%80%9A%E8%BF%87ssh%E8%BF%9E%E6%8E%A5%E5%B1%80%E5%9F%9F%E7%BD%91%E4%B8%AD%E5%85%B6%E4%BB%96%E4%B8%BB%E6%9C%BA%E5%A4%B1%E8%B4%A5/"></a>
+</article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2024 <a href="http://localhost:1313/">CCM&#39;s Blog</a></span> · 
+        <span>&copy; 2025 <a href="http://localhost:1313/">CCM&#39;s Blog</a></span> · 
 
     <span>
         Powered by

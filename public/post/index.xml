@@ -6,8 +6,37 @@
     <description>Recent content in Posts on CCM&#39;s Blog</description>
     <generator>Hugo -- 0.138.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 14 Dec 2024 23:27:01 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 03 Jan 2025 00:22:09 +0800</lastBuildDate>
     <atom:link href="http://localhost:1313/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用uv管理python包</title>
+      <link>http://localhost:1313/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/</link>
+      <pubDate>Fri, 03 Jan 2025 00:22:09 +0800</pubDate>
+      <guid>http://localhost:1313/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/</guid>
+      <description>&lt;h1 id=&#34;使用uv&#34;&gt;使用uv&lt;/h1&gt;
+&lt;h2 id=&#34;ref&#34;&gt;Ref&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/astral-sh/uv&#34;&gt;https://github.com/astral-sh/uv&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;使用uv运行python项目&#34;&gt;使用uv运行python项目&lt;/h2&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# .. 首先进入项目根目录&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 初始化uv工程配置&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;uv init
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 加入所需依赖&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# uv add &amp;lt;python包名&amp;gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 一般项目如果提供requirements.txt的话,可以使用如下命令&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;uv add -r requirements.txt
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 运行&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;uv run &amp;lt;xx.py&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;使用uv提供的python虚拟环境&#34;&gt;使用uv提供的python虚拟环境&lt;/h2&gt;
+&lt;p&gt;设置好依赖并且运行成功后，会在本地生成.venv目录
+根据开发环境选择激活.venv/bin目录下的对应activate文件即可。&lt;/p&gt;
+&lt;p&gt;比如在linux命令行中(使用zsh/bash时):&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;source ./.venv/bin/activate
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;在vscode中:https://developer.baidu.com/article/detail.html?id=3235457
+你将能够找到uv生成的虚拟环境的选项&lt;/p&gt;</description>
+    </item>
     <item>
       <title>基于llm的命令行英文翻译工具trans-go</title>
       <link>http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/</link>
@@ -104,6 +133,31 @@
 &lt;li&gt;你可以通过修改配置文件来设置fgm下载go工具链用的地址等等&lt;/li&gt;
 &lt;li&gt;值得一提,fgm遵守XDG目录规范&lt;/li&gt;
 &lt;/ol&gt;</description>
+    </item>
+    <item>
+      <title></title>
+      <link>http://localhost:1313/post/wsl%E4%B8%AD%E9%80%9A%E8%BF%87ssh%E8%BF%9E%E6%8E%A5%E5%B1%80%E5%9F%9F%E7%BD%91%E4%B8%AD%E5%85%B6%E4%BB%96%E4%B8%BB%E6%9C%BA%E5%A4%B1%E8%B4%A5/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/post/wsl%E4%B8%AD%E9%80%9A%E8%BF%87ssh%E8%BF%9E%E6%8E%A5%E5%B1%80%E5%9F%9F%E7%BD%91%E4%B8%AD%E5%85%B6%E4%BB%96%E4%B8%BB%E6%9C%BA%E5%A4%B1%E8%B4%A5/</guid>
+      <description>&lt;h1 id=&#34;wsl-中通过-ssh-连接局域网中其他主机失败解决方案&#34;&gt;wsl 中通过 ssh 连接局域网中其他主机失败解决方案&lt;/h1&gt;
+&lt;h2 id=&#34;参考资料&#34;&gt;参考资料&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://cn.linux-console.net/?p=9494#google_vignette&#34;&gt;https://cn.linux-console.net/?p=9494#google_vignette&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.cnblogs.com/guobaiwang/articles/12610439.html&#34;&gt;https://www.cnblogs.com/guobaiwang/articles/12610439.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;问题描述&#34;&gt;问题描述&lt;/h2&gt;
+&lt;p&gt;在 wsl2 中使用 ssh 连接局域网中的主机时,提示连接失败&lt;/p&gt;
+&lt;h2 id=&#34;尝试解决&#34;&gt;尝试解决&lt;/h2&gt;
+&lt;h3 id=&#34;try-1&#34;&gt;try 1&lt;/h3&gt;
+&lt;p&gt;这次尝试,发现是不在同一个局域网中,即使连接的是同一个 WIFI,
+然后发现是 wsl2 中的局域网地址和 windows 中直接的局域网地址不一样
+查资料发现是 wsl2 中使用的是 windows 内部的一个独立的地址
+于是为了能够在 wsl2 中连接同一个局域网中的其他主机，需要让 wsl2 环境中的局域网地址和外部一样
+最终通过配置镜像网络模式解决&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.cnblogs.com/netWild/p/18503950&#34;&gt;https://www.cnblogs.com/netWild/p/18503950&lt;/a&gt; (解决方案来源，需要注意的是它的方案中 localhostForwarding=true 这条属性实际上在 镜像网络模式启动 的时候 是无效的 )&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://learn.microsoft.com/zh-cn/windows/wsl/networking&#34;&gt;https://learn.microsoft.com/zh-cn/windows/wsl/networking&lt;/a&gt; (官方文档,可以验证上面的博客)&lt;/li&gt;
+&lt;/ul&gt;</description>
     </item>
   </channel>
 </rss>
