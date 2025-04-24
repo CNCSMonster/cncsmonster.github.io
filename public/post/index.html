@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="zh" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>Posts | CCM&#39;s Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="Posts - CCM&#39;s Blog">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:1313/post/">
+<link rel="canonical" href="https://cncsmonster.github.io/post/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.d6fcd20a4fb86efa4dfac8ec95da60244cc8871042183da1ef28e3a762ad79c8.css" integrity="sha256-1vzSCk&#43;4bvpN&#43;sjsldpgJEzIhxBCGD2h7yjjp2Ktecg=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:1313/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<link rel="icon" href="https://cncsmonster.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://cncsmonster.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://cncsmonster.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://cncsmonster.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://cncsmonster.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/post/index.xml">
-<link rel="alternate" hreflang="zh" href="http://localhost:1313/post/">
+<link rel="alternate" type="application/rss+xml" href="https://cncsmonster.github.io/post/index.xml">
+<link rel="alternate" hreflang="zh" href="https://cncsmonster.github.io/post/">
 <noscript>
     <style>
         #theme-toggle,
@@ -56,7 +56,30 @@
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://cncsmonster.github.io/post/">
+  <meta property="og:site_name" content="CCM&#39;s Blog">
+  <meta property="og:title" content="Posts">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Posts">
+<meta name="twitter:description" content="">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://cncsmonster.github.io/post/"
+    }
+  ]
+}
+</script>
 </head>
 
 <body class="list" id="top">
@@ -74,7 +97,7 @@
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="CCM&#39;s Blog (Alt + H)">CCM&#39;s Blog</a>
+            <a href="https://cncsmonster.github.io/" accesskey="h" title="CCM&#39;s Blog (Alt + H)">CCM&#39;s Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -111,6 +134,20 @@
 
 <article class="post-entry"> 
   <header class="entry-header">
+    <h2 class="entry-hint-parent">Wsl 中 ssh 连接局域网主机失败
+    </h2>
+  </header>
+  <div class="entry-content">
+    <p>wsl 中通过 ssh 连接局域网中其他主机失败解决方案 参考资料 https://cn.linux-console.net/?p=9494#google_vignette https://www.cnblogs.com/guobaiwang/articles/12610439.html 问题描述 在 wsl2 中使用 ssh 连接局域网中的主机时,提示连接失败
+尝试解决 try 1 这次尝试,发现是不在同一个局域网中,即使连接的是同一个 WIFI, 然后发现是 wsl2 中的局域网地址和 windows 中直接的局域网地址不一样 查资料发现是 wsl2 中使用的是 windows 内部的一个独立的地址 于是为了能够在 wsl2 中连接同一个局域网中的其他主机，需要让 wsl2 环境中的局域网地址和外部一样 最终通过配置镜像网络模式解决
+https://www.cnblogs.com/netWild/p/18503950 (解决方案来源，需要注意的是它的方案中 localhostForwarding=true 这条属性实际上在 镜像网络模式启动 的时候 是无效的 ) https://learn.microsoft.com/zh-cn/windows/wsl/networking (官方文档,可以验证上面的博客) </p>
+  </div>
+  <footer class="entry-footer"><span title='2025-04-22 11:06:46 +0800 CST'>四月 22, 2025</span></footer>
+  <a class="entry-link" aria-label="post link to Wsl 中 ssh 连接局域网主机失败" href="https://cncsmonster.github.io/post/wsl%E4%B8%ADssh%E8%BF%9E%E6%8E%A5%E5%B1%80%E5%9F%9F%E7%BD%91%E4%B8%BB%E6%9C%BA%E5%A4%B1%E8%B4%A5/"></a>
+</article>
+
+<article class="post-entry"> 
+  <header class="entry-header">
     <h2 class="entry-hint-parent">使用uv管理python包
     </h2>
   </header>
@@ -121,7 +158,7 @@ source ./.venv/bin/activate 在vscode中:https://developer.baidu.com/article/det
 </p>
   </div>
   <footer class="entry-footer"><span title='2025-01-03 00:22:09 +0800 CST'>一月 3, 2025</span></footer>
-  <a class="entry-link" aria-label="post link to 使用uv管理python包" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/"></a>
+  <a class="entry-link" aria-label="post link to 使用uv管理python包" href="https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8uv%E7%AE%A1%E7%90%86python%E5%8C%85/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -143,7 +180,7 @@ OPENAI_API_KEY=&#34;你的deepseek家的api key&#34; OPENAI_API_BASE_URL=&#34;ht
 go help | trans </p>
   </div>
   <footer class="entry-footer"><span title='2024-12-14 23:27:01 +0800 CST'>十二月 14, 2024</span></footer>
-  <a class="entry-link" aria-label="post link to 基于llm的命令行英文翻译工具trans-go" href="http://localhost:1313/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/"></a>
+  <a class="entry-link" aria-label="post link to 基于llm的命令行英文翻译工具trans-go" href="https://cncsmonster.github.io/post/%E5%9F%BA%E4%BA%8Ellm%E7%9A%84%E5%91%BD%E4%BB%A4%E8%A1%8C%E8%8B%B1%E6%96%87%E7%BF%BB%E8%AF%91%E5%B7%A5%E5%85%B7trans-go/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -165,7 +202,7 @@ mise使用全局配置文件，一般在$XDG_CONFIG_HOME/mise/config.toml中，�
 </p>
   </div>
   <footer class="entry-footer"><span title='2024-12-13 21:15:54 +0800 CST'>十二月 13, 2024</span></footer>
-  <a class="entry-link" aria-label="post link to 使用mise替换fgm" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/"></a>
+  <a class="entry-link" aria-label="post link to 使用mise替换fgm" href="https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8mise%E6%9B%BF%E6%8D%A2fgm/"></a>
 </article>
 
 <article class="post-entry"> 
@@ -182,26 +219,12 @@ mise使用全局配置文件，一般在$XDG_CONFIG_HOME/mise/config.toml中，�
 高级用法 使用fgm config可以查看fgm使用的各种配置文件路径,配置项内容 你可以通过修改配置文件来设置fgm下载go工具链用的地址等等 值得一提,fgm遵守XDG目录规范 </p>
   </div>
   <footer class="entry-footer"><span title='2024-09-21 23:35:50 +0800 CST'>九月 21, 2024</span></footer>
-  <a class="entry-link" aria-label="post link to 使用fgm管理Go版本" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/"></a>
-</article>
-
-<article class="post-entry"> 
-  <header class="entry-header">
-    <h2 class="entry-hint-parent">
-    </h2>
-  </header>
-  <div class="entry-content">
-    <p>wsl 中通过 ssh 连接局域网中其他主机失败解决方案 参考资料 https://cn.linux-console.net/?p=9494#google_vignette https://www.cnblogs.com/guobaiwang/articles/12610439.html 问题描述 在 wsl2 中使用 ssh 连接局域网中的主机时,提示连接失败
-尝试解决 try 1 这次尝试,发现是不在同一个局域网中,即使连接的是同一个 WIFI, 然后发现是 wsl2 中的局域网地址和 windows 中直接的局域网地址不一样 查资料发现是 wsl2 中使用的是 windows 内部的一个独立的地址 于是为了能够在 wsl2 中连接同一个局域网中的其他主机，需要让 wsl2 环境中的局域网地址和外部一样 最终通过配置镜像网络模式解决
-https://www.cnblogs.com/netWild/p/18503950 (解决方案来源，需要注意的是它的方案中 localhostForwarding=true 这条属性实际上在 镜像网络模式启动 的时候 是无效的 ) https://learn.microsoft.com/zh-cn/windows/wsl/networking (官方文档,可以验证上面的博客) </p>
-  </div>
-  <footer class="entry-footer"></footer>
-  <a class="entry-link" aria-label="post link to " href="http://localhost:1313/post/wsl%E4%B8%AD%E9%80%9A%E8%BF%87ssh%E8%BF%9E%E6%8E%A5%E5%B1%80%E5%9F%9F%E7%BD%91%E4%B8%AD%E5%85%B6%E4%BB%96%E4%B8%BB%E6%9C%BA%E5%A4%B1%E8%B4%A5/"></a>
+  <a class="entry-link" aria-label="post link to 使用fgm管理Go版本" href="https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/"></a>
 </article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:1313/">CCM&#39;s Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://cncsmonster.github.io/">CCM&#39;s Blog</a></span> · 
 
     <span>
         Powered by

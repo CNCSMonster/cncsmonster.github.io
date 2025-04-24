@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>使用fgm管理Go版本 | CCM&#39;s Blog</title>
 <meta name="keywords" content="">
 <meta name="description" content="想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm
@@ -31,16 +31,16 @@ Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的g
 值得一提,fgm遵守XDG目录规范
 ">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
+<link rel="canonical" href="https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.d6fcd20a4fb86efa4dfac8ec95da60244cc8871042183da1ef28e3a762ad79c8.css" integrity="sha256-1vzSCk&#43;4bvpN&#43;sjsldpgJEzIhxBCGD2h7yjjp2Ktecg=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:1313/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<link rel="icon" href="https://cncsmonster.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://cncsmonster.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://cncsmonster.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://cncsmonster.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://cncsmonster.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="zh" href="http://localhost:1313/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
+<link rel="alternate" hreflang="zh" href="https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
 <noscript>
     <style>
         #theme-toggle,
@@ -77,7 +77,96 @@ Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的g
         }
 
     </style>
-</noscript>
+</noscript><meta property="og:url" content="https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/">
+  <meta property="og:site_name" content="CCM&#39;s Blog">
+  <meta property="og:title" content="使用fgm管理Go版本">
+  <meta property="og:description" content="想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm
+下载 fgm 首先配置Rust工具链，然后可以通过cargo 下载它 cargo install fgm
+为了快速获取预编译版本,你也可以使用cargo-binstall: cargo binstall fgm
+快速体验 然后:
+初始化fnm使用需要的环境变量eval $(fgm init) (Optional) 加载fnm shell补全配置, eval $(fgm completions --shell &lt;shell&gt;), 这里的可以是zsh、bash等等 查询当前系统-架构下可获取的预编译的go版本,fgm list-remote 下载一个版本:fgm install 1.23.1,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号) 列举已经被下载到本地的版本:fgm ls 启用指定版本fgm use 1.23.1, 如果启用的版本在本地不存在,则会尝试下载 查看当前已经下载到本地的go的列表fgm list, 可以看到其中一项为1.23.1 (current)，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本 输入go version, 能够查看到输入的go版本为1.23.1 Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用fgm update命令,或者是使用-u参数
+高级用法 使用fgm config可以查看fgm使用的各种配置文件路径,配置项内容 你可以通过修改配置文件来设置fgm下载go工具链用的地址等等 值得一提,fgm遵守XDG目录规范 ">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="post">
+    <meta property="article:published_time" content="2024-09-21T23:35:50+08:00">
+    <meta property="article:modified_time" content="2024-09-21T23:35:50+08:00">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用fgm管理Go版本">
+<meta name="twitter:description" content="想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm
+下载 fgm
+首先配置Rust工具链，然后可以通过cargo 下载它 cargo install fgm
+为了快速获取预编译版本,你也可以使用cargo-binstall: cargo binstall fgm
+快速体验
+然后:
+
+初始化fnm使用需要的环境变量eval $(fgm init)
+(Optional) 加载fnm shell补全配置, eval $(fgm completions --shell &lt;shell&gt;), 这里的可以是zsh、bash等等
+查询当前系统-架构下可获取的预编译的go版本,fgm list-remote
+下载一个版本:fgm install 1.23.1,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号)
+列举已经被下载到本地的版本:fgm ls
+启用指定版本fgm use 1.23.1, 如果启用的版本在本地不存在,则会尝试下载
+查看当前已经下载到本地的go的列表fgm list, 可以看到其中一项为1.23.1 (current)，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本
+输入go version, 能够查看到输入的go版本为1.23.1
+
+Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用fgm update命令,或者是使用-u参数
+高级用法
+
+使用fgm config可以查看fgm使用的各种配置文件路径,配置项内容
+你可以通过修改配置文件来设置fgm下载go工具链用的地址等等
+值得一提,fgm遵守XDG目录规范
+">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://cncsmonster.github.io/post/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "使用fgm管理Go版本",
+      "item": "https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "使用fgm管理Go版本",
+  "name": "使用fgm管理Go版本",
+  "description": "想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm\n下载 fgm 首先配置Rust工具链，然后可以通过cargo 下载它 cargo install fgm\n为了快速获取预编译版本,你也可以使用cargo-binstall: cargo binstall fgm\n快速体验 然后:\n初始化fnm使用需要的环境变量eval $(fgm init) (Optional) 加载fnm shell补全配置, eval $(fgm completions --shell \u0026lt;shell\u0026gt;), 这里的可以是zsh、bash等等 查询当前系统-架构下可获取的预编译的go版本,fgm list-remote 下载一个版本:fgm install 1.23.1,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号) 列举已经被下载到本地的版本:fgm ls 启用指定版本fgm use 1.23.1, 如果启用的版本在本地不存在,则会尝试下载 查看当前已经下载到本地的go的列表fgm list, 可以看到其中一项为1.23.1 (current)，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本 输入go version, 能够查看到输入的go版本为1.23.1 Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用fgm update命令,或者是使用-u参数\n高级用法 使用fgm config可以查看fgm使用的各种配置文件路径,配置项内容 你可以通过修改配置文件来设置fgm下载go工具链用的地址等等 值得一提,fgm遵守XDG目录规范 ",
+  "keywords": [
+    
+  ],
+  "articleBody": "想自由的搜索当前go发布的版本以及下载各种版本到本地以及自由切换，你可以尝试使用fgm\n下载 fgm 首先配置Rust工具链，然后可以通过cargo 下载它 cargo install fgm\n为了快速获取预编译版本,你也可以使用cargo-binstall: cargo binstall fgm\n快速体验 然后:\n初始化fnm使用需要的环境变量eval $(fgm init) (Optional) 加载fnm shell补全配置, eval $(fgm completions --shell ), 这里的可以是zsh、bash等等 查询当前系统-架构下可获取的预编译的go版本,fgm list-remote 下载一个版本:fgm install 1.23.1,(这里的1.23.1可以替换为你想下载的第三步中查询到的版本号) 列举已经被下载到本地的版本:fgm ls 启用指定版本fgm use 1.23.1, 如果启用的版本在本地不存在,则会尝试下载 查看当前已经下载到本地的go的列表fgm list, 可以看到其中一项为1.23.1 (current)，表示版本1.23.1不仅已经被下载到本地，并且被设置为当前启用版本 输入go version, 能够查看到输入的go版本为1.23.1 Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的golang官网的可下载版本列表, 可能会比较慢, 但是执行成功一次后会把搜索到的信息记录到本地,然后之后默认会使用本地记录的版本列表. 如果需要刷新列表,可以调用fgm update命令,或者是使用-u参数\n高级用法 使用fgm config可以查看fgm使用的各种配置文件路径,配置项内容 你可以通过修改配置文件来设置fgm下载go工具链用的地址等等 值得一提,fgm遵守XDG目录规范 ",
+  "wordCount" : "57",
+  "inLanguage": "zh",
+  "datePublished": "2024-09-21T23:35:50+08:00",
+  "dateModified": "2024-09-21T23:35:50+08:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://cncsmonster.github.io/post/%E4%BD%BF%E7%94%A8fgm%E7%AE%A1%E7%90%86go%E7%89%88%E6%9C%AC/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "CCM's Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://cncsmonster.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -95,7 +184,7 @@ Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的g
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="CCM&#39;s Blog (Alt + H)">CCM&#39;s Blog</a>
+            <a href="https://cncsmonster.github.io/" accesskey="h" title="CCM&#39;s Blog (Alt + H)">CCM&#39;s Blog</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -170,7 +259,7 @@ Note: 第一次使用fgm list-remote的时候fgm 会联网搜索当前最新的g
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:1313/">CCM&#39;s Blog</a></span> · 
+        <span>&copy; 2025 <a href="https://cncsmonster.github.io/">CCM&#39;s Blog</a></span> · 
 
     <span>
         Powered by
