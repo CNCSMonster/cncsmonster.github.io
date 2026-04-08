@@ -12,7 +12,7 @@ UV 是一个用 Rust 编写的极速 Python 包管理器和项目管理器。
 
 ## 安装 UV
 
-```shell
+```bash
 # 使用 pip
 pip install uv
 
@@ -25,7 +25,7 @@ cargo install uv
 
 ## 使用 UV 运行 Python 项目
 
-```shell
+```bash
 # 首先进入项目根目录
 # 初始化 UV 工程配置
 uv init
@@ -42,7 +42,7 @@ uv run <command>
 
 ## 常用命令
 
-```shell
+```bash
 # 创建虚拟环境
 uv venv
 

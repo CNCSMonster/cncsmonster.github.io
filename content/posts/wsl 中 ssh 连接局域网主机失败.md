@@ -4,8 +4,6 @@ date = 2025-04-22T11:06:46+08:00
 tags = ['WSL', 'SSH', 'Linux', '网络']
 +++
 
-# WSL 中通过 SSH 连接局域网中其他主机失败解决方案
-
 ## 参考资源
 
 - [Linux 控制台 - WSL2 网络配置](https://cn.linux-console.net/?p=9494#google_vignette)

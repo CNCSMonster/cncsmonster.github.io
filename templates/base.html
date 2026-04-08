@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ config.default_language }}">
+<html lang="{{ lang | default(value=config.default_language) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,17 +34,43 @@
                     <ul id="search-results" class="search-results"></ul>
                 </div>
 
+                <a href="{{ config.base_url }}/">首页</a>
                 <a href="{{ config.base_url }}/posts/">Blog</a>
-                <a href="{{ config.base_url }}/archive/">Archive</a>
-                <a href="{{ config.base_url }}/github-notes/">GitHub Notes</a>
-                <a href="{{ config.base_url }}/open-source/">Open Source</a>
-                
+                <a href="{{ config.base_url }}/ebooks/"><span class="nav-icon">📚</span> Ebooks</a>
+                <a href="{{ config.base_url }}/open-source/">Projects</a>
+                <a href="{{ config.base_url }}/about/">About</a>
+
                 <!-- RSS/Atom Subscription -->
                 <a href="{{ config.base_url }}/subscribe/" class="nav-subscribe" title="Subscribe to blog updates">
                     📡
                 </a>
-                
+
                 <a href="https://github.com/{{ config.extra.github_username }}" target="_blank" rel="noopener">GitHub</a>
+
+                <!-- Language Switcher (only show if current page has translations) -->
+                {% set current_lang = lang | default(value=config.default_language) %}
+                {% set has_translation = false %}
+                {% if page and page.translations %}
+                    {% for translation in page.translations %}
+                        {% if translation.lang != current_lang %}
+                            {% set_global has_translation = true %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                {% if has_translation %}
+                <div class="lang-switcher">
+                    {% for translation in page.translations %}
+                        {% if translation.lang != current_lang %}
+                            {% if current_lang == config.default_language %}
+                                <a href="{{ translation.permalink }}" class="lang-link" title="Switch to {{ translation.lang | upper }}">{{ translation.lang | upper }}</a>
+                            {% else %}
+                                <a href="{{ translation.permalink }}" class="lang-link" title="切换到中文">中文</a>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
         </nav>
     </header>
@@ -55,22 +81,152 @@
 
     <footer class="site-footer">
         <p>&copy; {{ now() | date(format="%Y") }} {{ config.extra.author }}. Powered by <a href="https://www.getzola.org/" target="_blank" rel="noopener">Zola</a>.</p>
-        
-        {% if config.extra.visitor_counter_enabled %}
-        <div class="visitor-counter">
-            <span>Visits: </span>
-            <span id="visitor-count">Loading...</span>
+
+        <div class="footer-links">
+            <a href="{{ config.base_url }}/">↑ 返回首页</a>
+            <span class="separator">|</span>
+            <a href="{{ config.base_url }}/archive/">Archive</a>
+            <span class="separator">|</span>
+            <a href="{{ config.base_url }}/ebooks/">Ebooks</a>
+            <span class="separator">|</span>
+            <a href="{{ get_url(path='atom.xml') }}" target="_blank" rel="noopener">Atom</a>
+            <span class="separator">|</span>
+            <a href="{{ get_url(path='rss.xml') }}" target="_blank" rel="noopener">RSS</a>
         </div>
-        {% endif %}
     </footer>
 
     {% if config.extra.visitor_counter_enabled %}
-    <script src="{{ get_url(path='js/visitor-counter.js') }}"></script>
+    <!-- GoatCounter - Blog Analytics -->
+    <script data-goatcounter="https://cncsmonster.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
     {% endif %}
-    
+
     <!-- Mermaid 流程图支持 -->
     <script src="{{ get_url(path='js/mermaid.js') }}" defer></script>
+
+    <!-- 搜索功能 - 使用 Fuse.js (支持中文模糊搜索) -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
     
+    <!-- 搜索索引脚本 -->
+    <script src="{{ get_url(path="search_index.zh.js") }}"></script>
+    
+    <script>
+    (function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">搜索加载中...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">未找到相关结果</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

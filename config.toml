@@ -1,10 +1,15 @@
 # Zola Configuration for CCM's Personal Homepage
 base_url = "https://cncsmonster.github.io"
 title = "CCM's Blog"
-default_language = "zh"
 compile_sass = true
 minify_html = true
 build_search_index = true
+
+# Multi-language support
+default_language = "zh"
+
+[languages.en]
+title = "CCM's Blog"
 
 # Generate RSS feeds
 generate_feeds = true
@@ -32,7 +37,7 @@ include_title = true
 include_description = true
 include_path = true
 include_content = true
-# 中文搜索需要分词，使用 lunr-languages
+# 使用 JavaScript 格式（Zola 默认）
 index_format = "fuse_javascript"
 
 # Additional HTML attributes
@@ -51,5 +56,7 @@ giscus_repo_id = "R_kgDOJcCqHg"
 giscus_category = "General"
 giscus_category_id = "DIC_kwDOJcCqHs4C6Jj6"
 
-# Visitor counter
+# Blog Analytics (GoatCounter)
+# 访问 https://cncsmonster.goatcounter.com/ 查看博客访问数据
+# 免费、隐私友好、适合静态博客
 visitor_counter_enabled = true
