@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe | {{ config.title }}{% endblock %}
+
+{% block content %}
+<section class="subscribe-page">
+    <div class="subscribe-container">
+        <h1>Subscribe</h1>
+        <p class="subscribe-description">
+            订阅博客更新，获取最新文章推送。
+        </p>
+        
+        <div class="feed-note">
+            <p>💡 <strong>提示：</strong>Atom 和 RSS 内容完全相同，两种格式都支持所有主流 RSS 阅读器（Feedly、Inoreader、NetNewsWire 等）。任选一个格式即可。</p>
+        </div>
+        
+        <div class="feed-options">
+            <!-- Atom Feed -->
+            <div class="feed-card">
+                <div class="feed-header">
+                    <span class="feed-icon">📡</span>
+                    <h2>Atom Feed</h2>
+                </div>
+                <div class="feed-url-container">
+                    <code class="feed-url">{{ config.base_url }}/atom.xml</code>
+                    <button class="copy-btn" onclick="copyToClipboard('{{ config.base_url }}/atom.xml')" title="复制链接">
+                        📋 复制
+                    </button>
+                </div>
+                <a href="{{ get_url(path='atom.xml') }}" class="feed-link" target="_blank" rel="noopener">
+                    在浏览器中打开 →
+                </a>
+            </div>
+            
+            <!-- RSS Feed -->
+            <div class="feed-card">
+                <div class="feed-header">
+                    <span class="feed-icon">📰</span>
+                    <h2>RSS Feed</h2>
+                </div>
+                <div class="feed-url-container">
+                    <code class="feed-url">{{ config.base_url }}/rss.xml</code>
+                    <button class="copy-btn" onclick="copyToClipboard('{{ config.base_url }}/rss.xml')" title="复制链接">
+                        📋 复制
+                    </button>
+                </div>
+                <a href="{{ get_url(path='rss.xml') }}" class="feed-link" target="_blank" rel="noopener">
+                    在浏览器中打开 →
+                </a>
+            </div>
+        </div>
+        
+        <div class="subscribe-steps">
+            <h3>📖 如何订阅？</h3>
+            <div class="steps-grid">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <p>选择 <strong>Atom</strong> 或 <strong>RSS</strong> 格式，点击 📋 复制按钮</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <p>在 RSS 阅读器中选择 <strong>添加订阅</strong></p>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <p>粘贴链接，完成订阅！</p>
+                </div>
+            </div>
+            <p class="steps-note">
+                ✅ <strong>两种格式都支持所有主流 RSS 阅读器</strong>（Feedly、Inoreader、NetNewsWire 等），内容完全相同，任选其一即可。
+            </p>
+        </div>
+        
+        <div class="readers-recommend">
+            <h3>📱 推荐 RSS 阅读器</h3>
+            <div class="readers-grid">
+                <a href="https://feedly.com/" target="_blank" rel="noopener" class="reader-link">
+                    <strong>Feedly</strong>
+                    <span> - 流行的在线阅读器</span>
+                </a>
+                <a href="https://www.inoreader.com/" target="_blank" rel="noopener" class="reader-link">
+                    <strong>Inoreader</strong>
+                    <span> - 功能强大，支持自动化</span>
+                </a>
+                <a href="https://netnewswire.com/" target="_blank" rel="noopener" class="reader-link">
+                    <strong>NetNewsWire</strong>
+                    <span> - 免费开源（macOS/iOS）</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        const toast = document.createElement('div');
+        toast.className = 'copy-toast';
+        toast.textContent = '✅ 已复制到剪贴板！';
+        document.body.appendChild(toast);
+        
+        setTimeout(function() {
+            toast.classList.add('show');
+        }, 10);
+        
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 2000);
+    }).catch(function(err) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            const toast = document.createElement('div');
+            toast.className = 'copy-toast';
+            toast.textContent = '✅ 已复制到剪贴板！';
+            document.body.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.add('show');
+            }, 10);
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 2000);
+        } catch (err) {
+            alert('复制失败，请手动复制链接：' + text);
+        }
+        document.body.removeChild(textArea);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Archived Posts | {{ config.title }}{% endblock %}
+
+{% block content %}
+<section class="section-page">
+    <h1>🗄️ Archived Posts</h1>
+    <p class="section-description">
+        这些是过时的笔记，仅供参考。内容可能已不再准确或适用。
+    </p>
+
+    <div class="posts-list">
+        {% for page in section.pages %}
+        <article class="post-card">
+            <h2>
+                <a href="{{ page.permalink }}">{{ page.title }}</a>
+                <span class="archive-badge">Archived</span>
+            </h2>
+            <div class="post-card-meta">
+                <time datetime="{{ page.date }}">{{ page.date | date(format="%Y-%m-%d") }}</time>
+                {% if page.summary %}
+                <p class="post-summary">{{ page.summary }}</p>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <a href="{{ config.base_url }}/posts/" class="view-all">← Back to current posts</a>
+</section>
+{% endblock %}

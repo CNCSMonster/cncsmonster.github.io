@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Tag: {{ term }} | {{ config.title }}{% endblock %}
+
+{% block content %}
+<section class="section-page">
+    <h1>Tag: #{{ term }}</h1>
+    <p>Showing {{ pages | length }} post(s)</p>
+
+    <div class="posts-list">
+        {% for page in pages %}
+        <article class="post-card">
+            <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
+            <div class="post-card-meta">
+                <time datetime="{{ page.date }}">{{ page.date | date(format="%Y-%m-%d") }}</time>
+                {% if page.summary %}
+                <p class="post-summary">{{ page.summary }}</p>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    <a href="{{ config.base_url }}/posts/" class="view-all">← Back to all posts</a>
+</section>
+{% endblock %}

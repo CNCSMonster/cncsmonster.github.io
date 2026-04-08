@@ -1,0 +1,55 @@
+# Zola Configuration for CCM's Personal Homepage
+base_url = "https://cncsmonster.github.io"
+title = "CCM's Blog"
+default_language = "zh"
+compile_sass = true
+minify_html = true
+build_search_index = true
+
+# Generate RSS feeds
+generate_feeds = true
+feed_filenames = ["atom.xml", "rss.xml"]
+
+# Taxonomies
+taxonomies = [
+    {name = "tags", feed = true},
+    {name = "categories", feed = true},
+]
+
+# Markdown rendering options
+[markdown]
+highlight_code = true
+highlight_theme = "css"
+render_emoji = false
+external_links_target_blank = true
+external_links_no_follow = true
+external_links_no_referrer = true
+smart_punctuation = true
+
+# Search configuration
+[search]
+include_title = true
+include_description = true
+include_path = true
+include_content = true
+# 中文搜索需要分词，使用 lunr-languages
+index_format = "fuse_javascript"
+
+# Additional HTML attributes
+[extra]
+author = "CCM"
+description = "CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities"
+github_username = "cncsmonster"
+
+# Comment system (Giscus)
+# 所有配置信息都是公开的，可以安全地明文配置
+# 注意：需要安装 Giscus App 后才能使用评论功能
+# 安装地址：https://github.com/apps/giscus
+giscus_enabled = true
+giscus_repo = "CNCSMonster/cncsmonster.github.io"
+giscus_repo_id = "R_kgDOJcCqHg"
+giscus_category = "General"
+giscus_category_id = "DIC_kwDOJcCqHs4C6Jj6"
+
+# Visitor counter
+visitor_counter_enabled = true

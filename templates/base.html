@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="{{ config.default_language }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.title }}{% endblock %}</title>
+    <meta name="description" content="{{ config.extra.description }}">
+    <meta name="author" content="{{ config.extra.author }}">
+    
+    <!-- RSS/Atom Feeds -->
+    {% if config.generate_feeds %}
+        {% for feed in config.feed_filenames %}
+            {% if feed == "atom.xml" %}
+            <link rel="alternate" type="application/atom+xml" title="{{ config.title }}" href="{{ get_url(path=feed) }}">
+            {% elif feed == "rss.xml" %}
+            <link rel="alternate" type="application/rss+xml" title="{{ config.title }}" href="{{ get_url(path=feed) }}">
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ get_url(path='main.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <nav class="site-nav">
+            <a href="{{ config.base_url }}" class="site-title">{{ config.title }}</a>
+            <div class="nav-links">
+                <!-- 搜索框 -->
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="搜索文章... (支持中文)">
+                    <ul id="search-results" class="search-results"></ul>
+                </div>
+
+                <a href="{{ config.base_url }}/posts/">Blog</a>
+                <a href="{{ config.base_url }}/archive/">Archive</a>
+                <a href="{{ config.base_url }}/github-notes/">GitHub Notes</a>
+                <a href="{{ config.base_url }}/open-source/">Open Source</a>
+                
+                <!-- RSS/Atom Subscription -->
+                <a href="{{ config.base_url }}/subscribe/" class="nav-subscribe" title="Subscribe to blog updates">
+                    📡
+                </a>
+                
+                <a href="https://github.com/{{ config.extra.github_username }}" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; {{ now() | date(format="%Y") }} {{ config.extra.author }}. Powered by <a href="https://www.getzola.org/" target="_blank" rel="noopener">Zola</a>.</p>
+        
+        {% if config.extra.visitor_counter_enabled %}
+        <div class="visitor-counter">
+            <span>Visits: </span>
+            <span id="visitor-count">Loading...</span>
+        </div>
+        {% endif %}
+    </footer>
+
+    {% if config.extra.visitor_counter_enabled %}
+    <script src="{{ get_url(path='js/visitor-counter.js') }}"></script>
+    {% endif %}
+    
+    <!-- Mermaid 流程图支持 -->
+    <script src="{{ get_url(path='js/mermaid.js') }}" defer></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

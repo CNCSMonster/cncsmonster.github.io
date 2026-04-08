@@ -1,4 +1,5 @@
-# Ref: https://github.com/peaceiris/actions-hugo
+# Ref: https://github.com/getzola/zola
+# Deploy to GitHub Pages
 
 name: GitHub Pages
 
@@ -11,19 +12,19 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          submodules: true
           fetch-depth: 0
 
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: 'latest'
-          # extended: true
+      - name: Install Zola
+        run: |
+          curl -L -o zola.tar.gz https://github.com/getzola/zola/releases/latest/download/zola-linux-x86_64-gnu.tar.gz
+          tar xzf zola.tar.gz
+          sudo mv zola /usr/local/bin/
+          zola --version
 
       - name: Build
-        run: hugo --minify
+        run: zola build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
@@ -31,3 +32,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
           force_orphan: true
+
+# Giscus 评论系统配置说明
+# 1. 安装 Giscus App: https://github.com/apps/giscus
+# 2. 选择仓库：cncsmonster.github.io
+# 3. 启用 Discussions 功能
+# 配置信息在 config.toml 中，无需 CI 安装

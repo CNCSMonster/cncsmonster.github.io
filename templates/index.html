@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h1>Welcome to CCM's Personal Homepage</h1>
+    <p class="hero-subtitle">Developer · Open Source Enthusiast · Lifelong Learner</p>
+</section>
+
+<section class="modules-grid">
+    <!-- Module 1: GitHub Notes -->
+    <div class="module-card github-notes-module">
+        <div class="module-icon">📚</div>
+        <h2><a href="{{ config.base_url }}/github-notes/">GitHub Notes</a></h2>
+        <p>My reading notes and summaries from technical books and documentation.</p>
+        <ul class="module-links">
+            {% set notes_section = get_section(path="github-notes/_index.md") %}
+            {% for page in notes_section.pages | slice(end=5) %}
+            <li><a href="{{ page.permalink }}">{{ page.title }}</a></li>
+            {% endfor %}
+        </ul>
+        <a href="{{ config.base_url }}/github-notes/" class="view-all">View All Notes →</a>
+    </div>
+
+    <!-- Module 2: Blog Posts -->
+    <div class="module-card blog-module">
+        <div class="module-icon">✍️</div>
+        <h2><a href="{{ config.base_url }}/posts/">Blog Posts</a></h2>
+        <p>Technical articles, tutorials, and my learning journey.</p>
+        <ul class="module-links">
+            {% set posts_section = get_section(path="posts/_index.md") %}
+            {% for page in posts_section.pages | slice(end=5) %}
+            <li><a href="{{ page.permalink }}">{{ page.title }}</a></li>
+            {% endfor %}
+        </ul>
+        <a href="{{ config.base_url }}/posts/" class="view-all">View All Posts →</a>
+    </div>
+
+    <!-- Module 3: Open Source Activities -->
+    <div class="module-card opensource-module">
+        <div class="module-icon">🚀</div>
+        <h2><a href="{{ config.base_url }}/open-source/">Open Source</a></h2>
+        <p>My open source projects and contributions.</p>
+        <ul class="module-links">
+            {% set oss_section = get_section(path="open-source/_index.md") %}
+            {% for page in oss_section.pages | slice(end=5) %}
+            <li><a href="{{ page.permalink }}">{{ page.title }}</a></li>
+            {% endfor %}
+        </ul>
+        <a href="{{ config.base_url }}/open-source/" class="view-all">View All Projects →</a>
+    </div>
+</section>
+{% endblock %}
