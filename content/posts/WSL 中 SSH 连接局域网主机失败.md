@@ -4,10 +4,10 @@ date = 2025-04-22T11:06:46+08:00
 tags = ['WSL', 'SSH', 'Linux', '网络']
 +++
 
-## 参考资源
+## 参考资料
 
-- [Linux 控制台 - WSL2 网络配置](https://cn.linux-console.net/?p=9494#google_vignette)
-- [博客园 - WSL2 网络问题](https://www.cnblogs.com/guobaiwang/articles/12610439.html)
+- https://cn.linux-console.net/?p=9494#google_vignette
+- https://www.cnblogs.com/guobaiwang/articles/12610439.html
 
 ## 问题描述
 
