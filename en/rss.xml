@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/rss.xml/" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Wed, 08 Apr 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>About</title>
+          <pubDate>Wed, 08 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/about/</link>
+          <guid>https://cncsmonster.github.io/en/about/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/about/">&lt;p&gt;Life is more than keyboards and distant stars—it’s also about poetry and the road less traveled.&lt;&#x2F;p&gt;
+&lt;p&gt;I believe good tools save time and unleash human creativity for more meaningful work.
+Continuously exploring how AI can boost productivity—enabling us to explore both the cosmos and the poetry of life.&lt;&#x2F;p&gt;
+&lt;div class=&quot;tech-grid&quot;&gt;
+&lt;div&gt;
+&lt;h2 id=&quot;experience&quot;&gt;Experience&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Compilers&lt;&#x2F;li&gt;
+&lt;li&gt;Communication Middleware&lt;&#x2F;li&gt;
+&lt;li&gt;Intelligent Driving Toolchain&lt;&#x2F;li&gt;
+&lt;li&gt;Robotics Toolchain&lt;&#x2F;li&gt;
+&lt;li&gt;AI Agents (Desktop&#x2F;Mobile&#x2F;Code)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;
+&lt;div&gt;
+&lt;h2 id=&quot;interests&quot;&gt;Interests&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;R&amp;amp;D Efficiency Toolchain&lt;&#x2F;li&gt;
+&lt;li&gt;LLM Applications&lt;&#x2F;li&gt;
+&lt;li&gt;Embodied AI&lt;&#x2F;li&gt;
+&lt;li&gt;System Performance Optimization&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;
+&lt;div&gt;
+&lt;h2 id=&quot;exploring&quot;&gt;Exploring&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Code Agent&lt;&#x2F;li&gt;
+&lt;li&gt;LLM Knowledge Base&lt;&#x2F;li&gt;
+&lt;li&gt;Robot Operating System&lt;&#x2F;li&gt;
+&lt;li&gt;Communication Middleware&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;
+&lt;&#x2F;div&gt;
+&lt;div class=&quot;contact&quot;&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cncsmonster&quot;&gt;GitHub&lt;&#x2F;a&gt; · &lt;a href=&quot;mailto:cncsmonster@163.com&quot;&gt;cncsmonster@163.com&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;div&gt;
+</description>
+      </item>
+    </channel>
+</rss>
