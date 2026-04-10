@@ -18,13 +18,8 @@ weight = 3
 这个工具**自动扫描目录结构，生成 SUMMARY.md**。
 
 - **自动扫描** - 递归扫描指定目录
-- **智能过滤** - 支持 `.mdbookignore` 文件
+- **智能过滤** - 支持 `.gmsignore` 文件
 - **一键生成** - `gms -d src -o src/SUMMARY.md`
-
-与手动维护相比：
-- 节省时间，不用反复修改
-- 减少错误，自动处理层级
-- 重构友好，目录变了重新生成即可
 
 ## 快速体验
 
@@ -37,7 +32,3 @@ gms -d src -o src/SUMMARY.md
 
 - **GitHub**: [cncsmonster/gen-mdbook-summary](https://github.com/cncsmonster/gen-mdbook-summary)
 - **crates.io**: [gen-mdbook-summary](https://crates.io/crates/gen-mdbook-summary)
-
----
-
-欢迎 Star、Issue 和 PR！ ⭐
