@@ -1,0 +1,37 @@
+#!/bin/bash
+# 一行启动 Zola 本地预览，自动杀旧进程 + 验证端口
+# 用法: cd cncsmonster.github.io && ./serve [端口号，默认1111]
+
+pkill -f "zola serve" 2>/dev/null
+sleep 1
+
+cd "$(dirname "$0")"
+PORT="${1:-1111}"
+
+zola serve --port "$PORT" &
+ZOLA_PID=$!
+
+# 等 Zola 启动完成
+for i in $(seq 1 10); do
+  sleep 1
+  ACTUAL_PORT=$(ss -tlnp 2>/dev/null | grep "pid=$ZOLA_PID" | awk '{print $4}' | grep -oP ':\K\d+' | head -1)
+  [ -n "$ACTUAL_PORT" ] && break
+done
+
+if [ -z "$ACTUAL_PORT" ]; then
+  echo "❌ Zola 未能启动 (PID $ZOLA_PID 已退出?)"
+  exit 1
+fi
+
+# 验证
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$ACTUAL_PORT/" 2>/dev/null)
+
+echo ""
+if [ "$HTTP" = "200" ]; then
+  echo "✅ 本地预览: http://localhost:$ACTUAL_PORT"
+else
+  echo "⚠️  端口 $ACTUAL_PORT 返回 HTTP $HTTP"
+  echo "   zola 可能还在启动中，稍等重试"
+fi
+
+echo "   停止: kill $ZOLA_PID"
