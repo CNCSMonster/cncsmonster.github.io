@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Subscribe | {{ config.title }}{% endblock %}
+{% block title %}{{ trans(key='subscribe_title', lang=lang) }} | {{ config.title }}{% endblock %}
 
 {% block content %}
 <section class="subscribe-page">
     <div class="subscribe-container">
         <div class="subscribe-header">
-            <h1>📡 Subscribe</h1>
-            <p class="subtitle">订阅博客更新，获取最新文章推送</p>
+            <h1>{{ trans(key='subscribe_title', lang=lang) }}</h1>
+            <p class="subtitle">{{ trans(key='subscribe_subtitle', lang=lang) }}</p>
         </div>
 
         <div class="info-box">
             <span class="info-icon">💡</span>
-            <p>Atom 和 RSS 内容完全相同，两种格式都支持所有主流 RSS 阅读器。任选一个格式即可。</p>
+            <p>{{ trans(key='subscribe_info', lang=lang) }}</p>
         </div>
 
         <div class="feed-cards">
@@ -25,18 +25,18 @@
                     </div>
                     <button class="copy-btn" onclick="copyUrl('{{ config.base_url }}/atom.xml', 'Atom')">
                         <span class="btn-icon">📋</span>
-                        <span class="btn-text">复制</span>
+                        <span class="btn-text">{{ trans(key='copy', lang=lang) }}</span>
                     </button>
                 </div>
 
                 <div class="url-display" onclick="copyUrl('{{ config.base_url }}/atom.xml', 'Atom')">
                     <code>{{ config.base_url }}/atom.xml</code>
-                    <span class="click-hint">点击复制</span>
+                    <span class="click-hint">{{ trans(key='click_hint', lang=lang) }}</span>
                 </div>
 
                 <div class="card-actions">
                     <a href="{{ get_url(path='atom.xml') }}" class="preview-link" target="_blank" rel="noopener">
-                        👁️ 预览内容
+                        {{ trans(key='preview', lang=lang) }}
                     </a>
                 </div>
             </div>
@@ -50,61 +50,61 @@
                     </div>
                     <button class="copy-btn" onclick="copyUrl('{{ config.base_url }}/rss.xml', 'RSS')">
                         <span class="btn-icon">📋</span>
-                        <span class="btn-text">复制</span>
+                        <span class="btn-text">{{ trans(key='copy', lang=lang) }}</span>
                     </button>
                 </div>
 
                 <div class="url-display" onclick="copyUrl('{{ config.base_url }}/rss.xml', 'RSS')">
                     <code>{{ config.base_url }}/rss.xml</code>
-                    <span class="click-hint">点击复制</span>
+                    <span class="click-hint">{{ trans(key='click_hint', lang=lang) }}</span>
                 </div>
 
                 <div class="card-actions">
                     <a href="{{ get_url(path='rss.xml') }}" class="preview-link" target="_blank" rel="noopener">
-                        👁️ 预览内容
+                        {{ trans(key='preview', lang=lang) }}
                     </a>
                 </div>
             </div>
         </div>
 
         <div class="how-to-section">
-            <h2>📖 如何订阅？</h2>
+            <h2>{{ trans(key='how_to_title', lang=lang) }}</h2>
             <div class="steps">
                 <div class="step-item">
                     <div class="step-icon">1</div>
-                    <p>点击上方卡片中的 <strong>📋 复制</strong> 按钮或点击链接区域</p>
+                    <p>{{ trans(key='step_1', lang=lang) | replace(from='{button}', to='<strong>' ~ trans(key='step_1_action', lang=lang) ~ '</strong>') | safe }}</p>
                 </div>
                 <div class="step-item">
                     <div class="step-icon">2</div>
-                    <p>在你的 RSS 阅读器中选择 <strong>添加订阅</strong> 或 <strong>Add Feed</strong></p>
+                    <p>{{ trans(key='step_2', lang=lang) | replace(from='{action}', to='<strong>' ~ trans(key='step_2_action', lang=lang) ~ '</strong>') | replace(from='{action_en}', to='<strong>' ~ trans(key='step_2_action_en', lang=lang) ~ '</strong>') | safe }}</p>
                 </div>
                 <div class="step-item">
                     <div class="step-icon">3</div>
-                    <p>粘贴链接，完成订阅！新文章会自动推送</p>
+                    <p>{{ trans(key='step_3', lang=lang) }}</p>
                 </div>
             </div>
 
             <div class="compatibility-note">
                 <span class="check-icon">✅</span>
-                <strong>两种格式都支持所有主流 RSS 阅读器</strong>
-                <span class="readers-list">Feedly、Inoreader、NetNewsWire、Reeder 等</span>
+                <strong>{{ trans(key='compatibility_note', lang=lang) }}</strong>
+                <span class="readers-list">{{ trans(key='readers_list', lang=lang) }}</span>
             </div>
         </div>
 
         <div class="readers-section">
-            <h2>📱 推荐 RSS 阅读器</h2>
+            <h2>{{ trans(key='recommend_title', lang=lang) }}</h2>
             <div class="readers-list-grid">
                 <a href="https://feedly.com/" target="_blank" rel="noopener" class="reader-item">
                     <span class="reader-name">Feedly</span>
-                    <span class="reader-desc">流行的在线阅读器</span>
+                    <span class="reader-desc">{{ trans(key='reader_feedly', lang=lang) }}</span>
                 </a>
                 <a href="https://www.inoreader.com/" target="_blank" rel="noopener" class="reader-item">
                     <span class="reader-name">Inoreader</span>
-                    <span class="reader-desc">功能强大，支持自动化</span>
+                    <span class="reader-desc">{{ trans(key='reader_inoreader', lang=lang) }}</span>
                 </a>
                 <a href="https://netnewswire.com/" target="_blank" rel="noopener" class="reader-item">
                     <span class="reader-name">NetNewsWire</span>
-                    <span class="reader-desc">免费开源（macOS/iOS）</span>
+                    <span class="reader-desc">{{ trans(key='reader_netnewswire', lang=lang) }}</span>
                 </a>
             </div>
         </div>
@@ -114,7 +114,7 @@
 <!-- Toast Notification -->
 <div id="copy-toast" class="toast">
     <span class="toast-icon">✅</span>
-    <span class="toast-message">已复制到剪贴板！</span>
+    <span class="toast-message">{{ trans(key='copied_toast', lang=lang) }}</span>
 </div>
 
 <script>
@@ -133,7 +133,7 @@ function copyUrl(url, formatName) {
             document.execCommand('copy');
             showToast(formatName);
         } catch (err) {
-            alert('复制失败，请手动复制：' + url);
+            alert('{{ trans(key='copy_failed_alert', lang=lang) }}' + url);
         }
         document.body.removeChild(textArea);
     });
@@ -141,7 +141,7 @@ function copyUrl(url, formatName) {
 
 function showToast(formatName) {
     const toast = document.getElementById('copy-toast');
-    toast.querySelector('.toast-message').textContent = `✅ ${formatName} 链接已复制！`;
+    toast.querySelector('.toast-message').textContent = `✅ ${formatName} {{ trans(key='copied_suffix', lang=lang) }}`;
     toast.classList.add('show');
 
     setTimeout(function() {

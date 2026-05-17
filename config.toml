@@ -1,19 +1,14 @@
 # Zola Configuration for CCM's Personal Homepage
 base_url = "https://cncsmonster.github.io"
-title = "CCM's Blog"
+title = "CCM 的博客"
 compile_sass = true
 minify_html = true
 build_search_index = true
+generate_feeds = true
+feed_filenames = ["atom.xml", "rss.xml"]
 
 # Multi-language support
 default_language = "zh"
-
-[languages.en]
-title = "CCM's Blog"
-
-# Generate RSS feeds
-generate_feeds = true
-feed_filenames = ["atom.xml", "rss.xml"]
 
 # Taxonomies
 taxonomies = [
@@ -47,9 +42,6 @@ description = "CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Sour
 github_username = "cncsmonster"
 
 # Comment system (Giscus)
-# 所有配置信息都是公开的，可以安全地明文配置
-# 注意：需要安装 Giscus App 后才能使用评论功能
-# 安装地址：https://github.com/apps/giscus
 giscus_enabled = true
 giscus_repo = "CNCSMonster/cncsmonster.github.io"
 giscus_repo_id = "R_kgDOJcCqHg"
@@ -57,6 +49,175 @@ giscus_category = "General"
 giscus_category_id = "DIC_kwDOJcCqHs4C6Jj6"
 
 # Blog Analytics (GoatCounter)
-# 访问 https://cncsmonster.goatcounter.com/ 查看博客访问数据
-# 免费、隐私友好、适合静态博客
 visitor_counter_enabled = true
+
+# ═══════════════════════════════════════════
+# Language-specific configuration
+# ═══════════════════════════════════════════
+
+# Default language (zh) uses global config above.
+# English gets its own search index and RSS feeds.
+
+[languages.en]
+title = "CCM's Blog"
+build_search_index = true
+generate_feeds = true
+feed_filenames = ["atom.xml", "rss.xml"]
+
+# ═══════════════════════════════════════════
+# UI Translation strings for trans() macro
+# ═══════════════════════════════════════════
+
+[translations]
+# ── Navigation ──
+nav_home = "首页"
+nav_blog = "博客"
+nav_ebooks = "电子书"
+nav_projects = "开源项目"
+nav_about = "关于"
+nav_subscribe = "订阅"
+nav_subscribe_title = "订阅博客更新"
+nav_github = "GitHub"
+# ── Search ──
+search_placeholder = "搜索文章..."
+search_loading = "搜索加载中..."
+search_no_results = "未找到相关结果"
+# ── Hero ──
+hero_title = "欢迎来到 CCM 的个人主页"
+hero_subtitle = "开发者 · 开源爱好者 · 终身学习者"
+# ── Homepage modules ──
+module_blog_title = "博客文章"
+module_blog_desc = "技术文章、教程，以及我的学习记录"
+module_ebooks_title = "电子书"
+module_ebooks_desc = "我的 mdBook 技术电子书——系统性学习笔记"
+module_projects_title = "开源项目"
+module_projects_desc = "我的开源项目与贡献"
+view_all_posts = "查看全部文章 →"
+view_all_ebooks = "查看全部电子书 →"
+view_all_projects = "查看全部项目 →"
+ebooks_empty_notice = "mdBook 电子书正在整理中……"
+# ── Footer ──
+footer_copyright = "© {year} CCM。由 Zola 强力驱动。"
+footer_back_home = "↑ 返回首页"
+footer_archive = "归档"
+footer_ebooks = "电子书"
+footer_atom = "Atom"
+footer_rss = "RSS"
+# ── Article page ──
+comments_title = "评论"
+comments_disabled = "评论功能已关闭。如需开启请在配置中启用 Giscus。"
+copyright_notice = "版权声明"
+copyright_text = "本文采用 {license_link} 协议进行许可。转载请注明出处！"
+copyright_license_url = "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh"
+copyright_license_name = "CC BY-NC-SA 4.0"
+# ── Archive page ──
+archive_title = "🗄️ 归档文章"
+archive_description = "这些是过时的笔记，仅供参考。内容可能已不再准确或适用。"
+archive_badge = "已归档"
+archive_back = "← 返回当前文章"
+# ── Taxonomy / Tag pages ──
+tag_prefix = "标签"
+showing_posts_before = "共 "
+showing_posts_after = " 篇文章"
+back_to_all_posts = "← 返回全部文章"
+back_to_all_taxonomy = "← 返回全部 {taxonomy}"
+# ── Subscribe page ──
+subscribe_title = "📡 订阅"
+subscribe_subtitle = "订阅博客更新，获取最新文章推送"
+subscribe_info = "Atom 和 RSS 内容完全相同，两种格式都支持所有主流 RSS 阅读器。任选一个格式即可。"
+how_to_title = "📖 如何订阅？"
+step_1 = "点击上方卡片中的 {button} 按钮或点击链接区域"
+step_2 = "在你的 RSS 阅读器中选择 {action} 或 {action_en}"
+step_3 = "粘贴链接，完成订阅！新文章会自动推送"
+step_1_action = "📋 复制"
+step_2_action = "添加订阅"
+step_2_action_en = "Add Feed"
+compatibility_note = "两种格式都支持所有主流 RSS 阅读器"
+readers_list = "Feedly、Inoreader、NetNewsWire、Reeder 等"
+recommend_title = "📱 推荐 RSS 阅读器"
+reader_feedly = "流行的在线阅读器"
+reader_inoreader = "功能强大，支持自动化"
+reader_netnewswire = "免费开源（macOS/iOS）"
+preview = "👁️ 预览内容"
+copy = "复制"
+click_hint = "点击复制"
+copied_toast = "已复制到剪贴板！"
+copied_suffix = "链接已复制！"
+copy_failed_alert = "复制失败，请手动复制："
+
+[languages.en.translations]
+# ── Navigation ──
+nav_home = "Home"
+nav_blog = "Blog"
+nav_ebooks = "Ebooks"
+nav_projects = "Projects"
+nav_about = "About"
+nav_subscribe = "Subscribe"
+nav_subscribe_title = "Subscribe to blog updates"
+nav_github = "GitHub"
+# ── Search ──
+search_placeholder = "Search articles..."
+search_loading = "Loading search..."
+search_no_results = "No results found"
+# ── Hero ──
+hero_title = "Welcome to CCM's Personal Homepage"
+hero_subtitle = "Developer · Open Source Enthusiast · Lifelong Learner"
+# ── Homepage modules ──
+module_blog_title = "Blog Posts"
+module_blog_desc = "Technical articles, tutorials, and my learning journey."
+module_ebooks_title = "Ebooks"
+module_ebooks_desc = "My mdBook technical e-books — systematic learning notes."
+module_projects_title = "Projects"
+module_projects_desc = "My open source projects and contributions."
+view_all_posts = "View All Posts →"
+view_all_ebooks = "View All Ebooks →"
+view_all_projects = "View All Projects →"
+ebooks_empty_notice = "mdBook e-books coming soon..."
+# ── Footer ──
+footer_copyright = "© {year} CCM. Powered by Zola."
+footer_back_home = "↑ Back to Home"
+footer_archive = "Archive"
+footer_ebooks = "Ebooks"
+footer_atom = "Atom"
+footer_rss = "RSS"
+# ── Article page ──
+comments_title = "Comments"
+comments_disabled = "Comments are disabled. Enable Giscus in config to add comments."
+copyright_notice = "Copyright"
+copyright_text = "This work is licensed under {license_link}. Please provide attribution and share alike."
+copyright_license_url = "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en"
+copyright_license_name = "CC BY-NC-SA 4.0"
+# ── Archive page ──
+archive_title = "🗄️ Archived Posts"
+archive_description = "These are outdated notes for reference only. Content may no longer be accurate."
+archive_badge = "Archived"
+archive_back = "← Back to current posts"
+# ── Taxonomy / Tag pages ──
+tag_prefix = "Tag"
+showing_posts_before = ""
+showing_posts_after = " post(s)"
+back_to_all_posts = "← Back to all posts"
+back_to_all_taxonomy = "← Back to all {taxonomy}"
+# ── Subscribe page ──
+subscribe_title = "📡 Subscribe"
+subscribe_subtitle = "Subscribe to blog updates and get notified of new articles."
+subscribe_info = "Atom and RSS contain the same content and work with all major RSS readers. Pick whichever format you prefer."
+how_to_title = "📖 How to Subscribe?"
+step_1 = "Click the {button} button or tap the URL area on the card above"
+step_2 = "In your RSS reader, choose {action} or {action_en}"
+step_3 = "Paste the link and you're done! New articles will be delivered automatically."
+step_1_action = "📋 Copy"
+step_2_action = "添加订阅"
+step_2_action_en = "Add Feed"
+compatibility_note = "Both formats are supported by all major RSS readers"
+readers_list = "Feedly, Inoreader, NetNewsWire, Reeder, and more"
+recommend_title = "📱 Recommended RSS Readers"
+reader_feedly = "Popular online RSS reader"
+reader_inoreader = "Powerful with automation support"
+reader_netnewswire = "Free and open source (macOS/iOS)"
+preview = "👁️ Preview"
+copy = "Copy"
+click_hint = "Click to copy"
+copied_toast = "Copied to clipboard!"
+copied_suffix = "link copied!"
+copy_failed_alert = "Failed to copy. Please copy manually: "

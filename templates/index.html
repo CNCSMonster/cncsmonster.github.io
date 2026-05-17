@@ -2,54 +2,61 @@
 
 {% block content %}
 <section class="hero">
-    <h1>Welcome to CCM's Personal Homepage</h1>
-    <p class="hero-subtitle">Developer · Open Source Enthusiast · Lifelong Learner</p>
+    <h1>{{ trans(key='hero_title', lang=lang) }}</h1>
+    <p class="hero-subtitle">{{ trans(key='hero_subtitle', lang=lang) }}</p>
 </section>
 
 <section class="modules-grid">
     <!-- Module 1: Blog Posts -->
     <div class="module-card blog-module">
         <div class="module-icon">✍️</div>
-        <h2><a href="{{ config.base_url }}/posts/">Blog Posts</a></h2>
-        <p>Technical articles, tutorials, and my learning journey.</p>
+        <h2><a href="{{ config.base_url }}/posts/">{{ trans(key='module_blog_title', lang=lang) }}</a></h2>
+        <p>{{ trans(key='module_blog_desc', lang=lang) }}</p>
         <ul class="module-links">
-            {% set posts_section = get_section(path="posts/_index.md") %}
+            {% set posts_section = get_section(path="posts/_index.md", lang=lang) %}
             {% for page in posts_section.pages | slice(end=5) %}
             <li><a href="{{ page.permalink }}">{{ page.title }}</a></li>
             {% endfor %}
         </ul>
-        <a href="{{ config.base_url }}/posts/" class="view-all">View All Posts →</a>
+        <a href="{{ config.base_url }}/posts/" class="view-all">{{ trans(key='view_all_posts', lang=lang) }}</a>
     </div>
 
     <!-- Module 2: Ebooks -->
     <div class="module-card ebooks-module">
         <div class="module-icon">📚</div>
-        <h2><a href="{{ config.base_url }}/ebooks/">Ebooks</a></h2>
-        <p>My mdBook technical e-books - systematic learning notes.</p>
+        <h2><a href="{{ config.base_url }}/ebooks/">{{ trans(key='module_ebooks_title', lang=lang) }}</a></h2>
+        <p>{{ trans(key='module_ebooks_desc', lang=lang) }}</p>
         <ul class="module-links">
+            {% set ebooks_section = get_section(path="ebooks/_index.md", lang=lang) %}
+            {# Fallback: show default-language ebooks if current language has none #}
+            {% if ebooks_section.pages | length == 0 %}
             {% set ebooks_section = get_section(path="ebooks/_index.md") %}
+            {% endif %}
             {% for page in ebooks_section.pages | slice(end=5) %}
             <li><a href="{{ page.permalink }}">{{ page.title }}</a></li>
             {% endfor %}
             {% if ebooks_section.pages | length == 0 %}
-            <li class="empty-notice">My mdBook e-books coming soon...</li>
+            <li class="empty-notice">{{ trans(key='ebooks_empty_notice', lang=lang) }}</li>
             {% endif %}
         </ul>
-        <a href="{{ config.base_url }}/ebooks/" class="view-all">View All Ebooks →</a>
+        <a href="{{ config.base_url }}/ebooks/" class="view-all">{{ trans(key='view_all_ebooks', lang=lang) }}</a>
     </div>
 
     <!-- Module 3: Projects -->
     <div class="module-card projects-module">
         <div class="module-icon">🚀</div>
-        <h2><a href="{{ config.base_url }}/open-source/">Projects</a></h2>
-        <p>My open source projects and contributions.</p>
+        <h2><a href="{{ config.base_url }}/open-source/">{{ trans(key='module_projects_title', lang=lang) }}</a></h2>
+        <p>{{ trans(key='module_projects_desc', lang=lang) }}</p>
         <ul class="module-links">
+            {% set oss_section = get_section(path="open-source/_index.md", lang=lang) %}
+            {% if oss_section.pages | length == 0 %}
             {% set oss_section = get_section(path="open-source/_index.md") %}
+            {% endif %}
             {% for page in oss_section.pages | slice(end=5) %}
             <li><a href="{{ page.permalink }}">{{ page.title }}</a></li>
             {% endfor %}
         </ul>
-        <a href="{{ config.base_url }}/open-source/" class="view-all">View All Projects →</a>
+        <a href="{{ config.base_url }}/open-source/" class="view-all">{{ trans(key='view_all_projects', lang=lang) }}</a>
     </div>
 </section>
 {% endblock %}

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Tag: {{ term }} | {{ config.title }}{% endblock %}
+{% block title %}{{ trans(key='tag_prefix', lang=lang) }}: {{ term }} | {{ config.title }}{% endblock %}
 
 {% block content %}
 <section class="section-page">
-    <h1>Tag: #{{ term }}</h1>
-    <p>Showing {{ pages | length }} post(s)</p>
+    <h1>{{ trans(key='tag_prefix', lang=lang) }}: #{{ term }}</h1>
+    <p>{{ trans(key='showing_posts_before', lang=lang) }}{{ pages | length }}{{ trans(key='showing_posts_after', lang=lang) }}</p>
 
     <div class="posts-list">
         {% for page in pages %}
@@ -21,6 +21,6 @@
         {% endfor %}
     </div>
 
-    <a href="{{ config.base_url }}/posts/" class="view-all">← Back to all posts</a>
+    <a href="{{ config.base_url }}/posts/" class="view-all">{{ trans(key='back_to_all_posts', lang=lang) }}</a>
 </section>
 {% endblock %}

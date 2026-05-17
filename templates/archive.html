@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Archived Posts | {{ config.title }}{% endblock %}
+{% block title %}{{ trans(key='archive_title', lang=lang) }} | {{ config.title }}{% endblock %}
 
 {% block content %}
 <section class="section-page">
-    <h1>🗄️ Archived Posts</h1>
+    <h1>{{ trans(key='archive_title', lang=lang) }}</h1>
     <p class="section-description">
-        这些是过时的笔记，仅供参考。内容可能已不再准确或适用。
+        {{ trans(key='archive_description', lang=lang) }}
     </p>
 
     <div class="posts-list">
@@ -14,7 +14,7 @@
         <article class="post-card">
             <h2>
                 <a href="{{ page.permalink }}">{{ page.title }}</a>
-                <span class="archive-badge">Archived</span>
+                <span class="archive-badge">{{ trans(key='archive_badge', lang=lang) }}</span>
             </h2>
             <div class="post-card-meta">
                 <time datetime="{{ page.date }}">{{ page.date | date(format="%Y-%m-%d") }}</time>
@@ -26,6 +26,6 @@
         {% endfor %}
     </div>
 
-    <a href="{{ config.base_url }}/posts/" class="view-all">← Back to current posts</a>
+    <a href="{{ config.base_url }}/posts/" class="view-all">{{ trans(key='archive_back', lang=lang) }}</a>
 </section>
 {% endblock %}

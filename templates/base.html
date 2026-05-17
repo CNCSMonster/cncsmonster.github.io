@@ -18,6 +18,14 @@
         {% endfor %}
     {% endif %}
 
+    <!-- hreflang for multilingual SEO -->
+    {% if lang == config.default_language %}
+    <link rel="alternate" hreflang="en" href="{{ config.base_url }}/en/">
+    {% else %}
+    <link rel="alternate" hreflang="zh" href="{{ config.base_url }}/">
+    {% endif %}
+    <link rel="alternate" hreflang="x-default" href="{{ config.base_url }}/">
+
     <!-- Styles -->
     <link rel="stylesheet" href="{{ get_url(path='main.css') }}">
 
@@ -30,47 +38,75 @@
             <div class="nav-links">
                 <!-- 搜索框 -->
                 <div class="search-container">
-                    <input type="text" id="search-input" class="search-input" placeholder="搜索文章... (支持中文)">
+                    <input type="text" id="search-input" class="search-input" placeholder="{{ trans(key='search_placeholder', lang=lang) }}">
                     <ul id="search-results" class="search-results"></ul>
                 </div>
 
-                <a href="{{ config.base_url }}/">首页</a>
-                <a href="{{ config.base_url }}/posts/">Blog</a>
-                <a href="{{ config.base_url }}/ebooks/"><span class="nav-icon">📚</span> Ebooks</a>
-                <a href="{{ config.base_url }}/open-source/">Projects</a>
-                <a href="{{ config.base_url }}/about/">About</a>
+                <a href="{{ config.base_url }}/">{{ trans(key='nav_home', lang=lang) }}</a>
+                <a href="{{ config.base_url }}/posts/">{{ trans(key='nav_blog', lang=lang) }}</a>
+                <a href="{{ config.base_url }}/ebooks/"><span class="nav-icon">📚</span> {{ trans(key='nav_ebooks', lang=lang) }}</a>
+                <a href="{{ config.base_url }}/open-source/">{{ trans(key='nav_projects', lang=lang) }}</a>
+                <a href="{{ config.base_url }}/about/">{{ trans(key='nav_about', lang=lang) }}</a>
 
                 <!-- RSS/Atom Subscription -->
-                <a href="{{ config.base_url }}/subscribe/" class="nav-subscribe" title="Subscribe to blog updates">
+                <a href="{{ config.base_url }}/subscribe/" class="nav-subscribe" title="{{ trans(key='nav_subscribe_title', lang=lang) }}">
                     📡
                 </a>
 
-                <a href="https://github.com/{{ config.extra.github_username }}" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/{{ config.extra.github_username }}" target="_blank" rel="noopener">{{ trans(key='nav_github', lang=lang) }}</a>
 
-                <!-- Language Switcher (only show if current page has translations) -->
-                {% set current_lang = lang | default(value=config.default_language) %}
-                {% set has_translation = false %}
-                {% if page and page.translations %}
-                    {% for translation in page.translations %}
-                        {% if translation.lang != current_lang %}
-                            {% set_global has_translation = true %}
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-                
-                {% if has_translation %}
+                <!-- Language Switcher (jumps to translation of current page, or language root) -->
                 <div class="lang-switcher">
-                    {% for translation in page.translations %}
-                        {% if translation.lang != current_lang %}
-                            {% if current_lang == config.default_language %}
-                                <a href="{{ translation.permalink }}" class="lang-link" title="Switch to {{ translation.lang | upper }}">{{ translation.lang | upper }}</a>
-                            {% else %}
-                                <a href="{{ translation.permalink }}" class="lang-link" title="切换到中文">中文</a>
+                    {% if lang == config.default_language %}
+                        {# On Chinese page → try to link to English version #}
+                        {% set en_found = false %}
+                        {% if page and page.translations %}
+                            {% for t in page.translations %}
+                                {% if t.lang == "en" %}
+                                    {% set_global en_found = true %}
+                                    <a href="{{ t.permalink }}" class="lang-link" title="Read in English">EN</a>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if not en_found %}
+                            {% if section and section.translations %}
+                                {% for t in section.translations %}
+                                    {% if t.lang == "en" %}
+                                        {% set_global en_found = true %}
+                                        <a href="{{ t.permalink }}" class="lang-link" title="Read in English">EN</a>
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
                         {% endif %}
-                    {% endfor %}
+                        {% if not en_found %}
+                            <a href="/en/" class="lang-link" title="Switch to English">EN</a>
+                        {% endif %}
+                    {% else %}
+                        {# On English page → try to link to Chinese version #}
+                        {% set zh_found = false %}
+                        {% if page and page.translations %}
+                            {% for t in page.translations %}
+                                {% if t.lang == config.default_language %}
+                                    {% set_global zh_found = true %}
+                                    <a href="{{ t.permalink }}" class="lang-link" title="切换到中文">中文</a>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if not zh_found %}
+                            {% if section and section.translations %}
+                                {% for t in section.translations %}
+                                    {% if t.lang == config.default_language %}
+                                        {% set_global zh_found = true %}
+                                        <a href="{{ t.permalink }}" class="lang-link" title="切换到中文">中文</a>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endif %}
+                        {% if not zh_found %}
+                            <a href="/" class="lang-link" title="切换到中文">中文</a>
+                        {% endif %}
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </nav>
     </header>
@@ -80,18 +116,18 @@
     </main>
 
     <footer class="site-footer">
-        <p>&copy; {{ now() | date(format="%Y") }} {{ config.extra.author }}. Powered by <a href="https://www.getzola.org/" target="_blank" rel="noopener">Zola</a>.</p>
+        <p>{{ trans(key='footer_copyright', lang=lang) | replace(from='{year}', to=now() | date(format='%Y')) }}</p>
 
         <div class="footer-links">
-            <a href="{{ config.base_url }}/">↑ 返回首页</a>
+            <a href="{{ config.base_url }}/">{{ trans(key='footer_back_home', lang=lang) }}</a>
             <span class="separator">|</span>
-            <a href="{{ config.base_url }}/archive/">Archive</a>
+            <a href="{{ config.base_url }}/archive/">{{ trans(key='footer_archive', lang=lang) }}</a>
             <span class="separator">|</span>
-            <a href="{{ config.base_url }}/ebooks/">Ebooks</a>
+            <a href="{{ config.base_url }}/ebooks/">{{ trans(key='footer_ebooks', lang=lang) }}</a>
             <span class="separator">|</span>
-            <a href="{{ get_url(path='atom.xml') }}" target="_blank" rel="noopener">Atom</a>
+            <a href="{{ get_url(path='atom.xml') }}" target="_blank" rel="noopener">{{ trans(key='footer_atom', lang=lang) }}</a>
             <span class="separator">|</span>
-            <a href="{{ get_url(path='rss.xml') }}" target="_blank" rel="noopener">RSS</a>
+            <a href="{{ get_url(path='rss.xml') }}" target="_blank" rel="noopener">{{ trans(key='footer_rss', lang=lang) }}</a>
         </div>
     </footer>
 
@@ -106,8 +142,8 @@
     <!-- 搜索功能 - 使用 Fuse.js (支持中文模糊搜索) -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
     
-    <!-- 搜索索引脚本 -->
-    <script src="{{ get_url(path="search_index.zh.js") }}"></script>
+    <!-- 搜索索引脚本 (语言感知) -->
+    <script src="{{ get_url(path="search_index." ~ lang ~ ".js") }}"></script>
     
     <script>
     (function() {
@@ -171,7 +207,7 @@
                 debounceTimer = setTimeout(() => {
                     // 确保 Fuse 已初始化
                     if (!fuse && !initFuse()) {
-                        searchResults.innerHTML = '<li class="no-results">搜索加载中...</li>';
+                        searchResults.innerHTML = '<li class="no-results">{{ trans(key='search_loading', lang=lang) }}</li>';
                         searchResults.style.display = 'block';
                         return;
                     }
@@ -180,7 +216,7 @@
                     const MAX_RESULTS = 10;
                     
                     if (results.length === 0) {
-                        searchResults.innerHTML = '<li class="no-results">未找到相关结果</li>';
+                        searchResults.innerHTML = '<li class="no-results">{{ trans(key='search_no_results', lang=lang) }}</li>';
                     } else {
                         searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
                             const doc = result.item;

@@ -5,7 +5,7 @@
 {% block content %}
 <section class="section-page">
     <h1>{{ term.name }}</h1>
-    <p>{{ term.pages | length }} post(s)</p>
+    <p>{{ trans(key='showing_posts_before', lang=lang) }}{{ term.pages | length }}{{ trans(key='showing_posts_after', lang=lang) }}</p>
 
     <div class="posts-list">
         {% for page in term.pages %}
@@ -18,6 +18,6 @@
         {% endfor %}
     </div>
 
-    <a href="{{ config.base_url }}/{{ taxonomy.name }}/" class="view-all">← Back to all {{ taxonomy.name }}</a>
+    <a href="{{ config.base_url }}/{{ taxonomy.name }}/" class="view-all">{{ trans(key='back_to_all_taxonomy', lang=lang) | replace(from='{taxonomy}', to=taxonomy.name) }}</a>
 </section>
 {% endblock %}
