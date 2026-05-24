@@ -5,9 +5,6 @@ slug = "xiaomi-mimo-token-plan-data-training-policy"
 tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan"]
 +++
 
-## 问题
-
-# 小米 MiMo Token Plan 会用我的数据训练模型吗？——协议条款调研
 
 > 创建日期：2026-05-25
 > 状态：已完成
