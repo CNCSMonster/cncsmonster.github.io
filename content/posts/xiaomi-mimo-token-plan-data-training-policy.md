@@ -7,6 +7,13 @@ tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan
 
 ## 问题
 
+# 小米 MiMo Token Plan 会用我的数据训练模型吗？——协议条款调研
+
+> 创建日期：2026-05-25
+> 状态：已完成
+
+## 问题
+
 我订阅小米 MiMo Token Plan 或者调用 MiMo API，我的数据会不会被拿去训练模型？
 
 ## 答案
@@ -78,13 +85,13 @@ tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan
 
 1. **正常使用没问题** — 协议层面已经确认不训练，比 DeepSeek/Kimi 的 API 条款都干净
 2. **敏感数据仍建议走本地部署** — MiMo-V2.5 已 MIT 开源（[HuggingFace](https://huggingface.co/XiaomiMiMo/MiMo-V2.5)），支持 SGLang/vLLM，数据完全不出机器
-3. **定期回查协议** — 用户协议 8.4 说小米有权修改协议，关注更新（官方联系：support-mimo@xiaomi.com）
+3. **定期回查协议** — 用户协议 8.4 说小米有权修改协议，关注更新（官方联系：<support-mimo@xiaomi.com>）
 4. **企业合规场景** — 直接联系官方确认，不依赖公开协议的分析
 
-## 附录：Token Plan 产品信息
+## 附录：Token Plan 定价参考
 
 <details>
-<summary>套餐与定价（展开查看）</summary>
+<summary>展开查看</summary>
 
 | 套餐 | 月费（中国） | 月费（海外） | Credits |
 |------|-------------|-------------|---------|
@@ -93,17 +100,15 @@ tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan
 | Pro | ¥329 | $50 | 7亿 |
 | Max | ¥659 | $100 | 16亿 |
 
-- 首次购买 88 折 / 夜间优惠（0:00-8:00）0.8x 消耗 / 连续包月折扣
-- 1M 超长上下文，不再额外收费
-- MiMo-V2.5: 1 token = 1 credit / MiMo-V2.5-Pro: 1 token = 2 credits
-- 无 5 小时滚动限额（区别于 Anthropic/OpenAI/阿里）
-- API Key 格式：Token Plan 用 `tp-xxxxx`，按量付费用 `sk-xxxxx`
+首次 88 折，夜间（0:00-8:00）0.8x 消耗。
+
+作为参考：Claude 同级模型 API 价格约为小米的 5 倍，且小米无 5 小时滚动限额。
 
 </details>
 
 ## 参考来源
 
-- 小米 MiMo API 平台用户协议：https://platform.xiaomimimo.com/docs/terms/user-agreement
-- 小米 MiMo API 平台隐私政策：https://platform.xiaomimimo.com/docs/terms/privacy-policy
-- 阿里云百炼服务协议：https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html
-- V2EX 讨论：阿里云 Coding Plan 隐私警告 — https://www.v2ex.com/t/1190601
+- [小米 MiMo API 平台用户协议](https://platform.xiaomimimo.com/docs/terms/user-agreement)
+- [小米 MiMo API 平台隐私政策](https://platform.xiaomimimo.com/docs/terms/privacy-policy)
+- [阿里云百炼服务协议](https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html)
+- [V2EX：阿里云 Coding Plan 隐私警告](https://www.v2ex.com/t/1190601)
