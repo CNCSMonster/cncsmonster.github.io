@@ -5,169 +5,105 @@ slug = "xiaomi-mimo-token-plan-data-training-policy"
 tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan"]
 +++
 
-## 一、产品概述
+## 问题
 
-小米于 **2025年12月17日** 正式发布 MiMo 大模型及 API 开放平台，2026年4月3日推出订阅制套餐 **Token Plan**。
+我订阅小米 MiMo Token Plan 或者调用 MiMo API，我的数据会不会被拿去训练模型？
 
-**核心定位**：面向开发者和 Agent 用户（"养虾党"）的 AI 大模型 API 平台，支持 1M 超长上下文、无时间限制使用。
+## 答案
 
-**官方链接**：
-- API 平台：https://platform.xiaomimimo.com/
-- AI Studio 体验：https://aistudio.xiaomimimo.com/
-- 开源模型：https://huggingface.co/XiaomiMiMo/
+**不会。** 隐私政策明确承诺，且 Token Plan 条款没有像阿里云 Coding Plan 那样偷偷加"特别约定"来覆盖这个承诺。
 
----
+| 我用的是 | 会被训练吗？ | 条款依据 |
+|---------|:-----------:|------|
+| MiMo API（按量付费） | ✅ 不会 | 隐私政策 3.1 明确承诺 |
+| MiMo Token Plan（订阅） | ✅ 不会 | 用户协议 3.13 无特别约定，适用隐私政策 |
+| 阿里云 Coding Plan（对比） | ⚠️ 会 | 服务协议 5.2.2 专门授权 |
 
-## 二、Token Plan 套餐定价
+但有个提醒：**这是基于公开协议的分析，不是法律意见。** 如果涉及敏感数据，最稳妥的方案是本地方案（MiMo-V2.5 已 MIT 开源）。
 
-| 套餐 | 月费（中国） | 月费（海外） | Credits | 约等于任务量 |
-|------|-------------|-------------|---------|-------------|
-| Lite | ¥39 | $6 | 6000万 (60M) | ~120 个中等复杂任务 |
-| Standard | ¥99 | $16 | 2亿 (200M) | ~400 个中等复杂任务 |
-| Pro | ¥329 | $50 | 7亿 (700M) | ~1400 个中等复杂任务 |
-| Max | ¥659 | $100 | 16亿 (1600M) | ~3200 个中等复杂任务 |
+## 依据
 
-**优惠**：
-- 首次购买享 88折（仅限一次）
-- 夜间优惠（0:00-8:00 北京时间）：0.8x 消耗系数
-- 连续包月/包年折扣
+### 依据 1：隐私政策逐字承诺"不训练"
 
----
-
-## 三、Credit 换算规则
-
-**MiMo-V2.5 更新后的换算**（1M 上下文不再额外收费）：
-
-| 模型 | 上下文 | 换算比例 |
-|------|--------|---------|
-| MiMo-V2.5 | 1M | 1 token = 1 credit |
-| MiMo-V2.5-Pro | 1M | 1 token = 2 credits |
-
-**支持模型**：MiMo-V2.5-Pro、MiMo-V2.5、MiMo-V2.5-TTS 系列、MiMo-V2-Pro、MiMo-V2-Omni
-
----
-
-## 四、核心特点
-
-### 优势
-
-1. **无 5 小时滚动限额** — 区别于 Anthropic、OpenAI、阿里等厂商的限制，支持集中消耗
-2. **支持第三方框架** — 兼容 OpenCode、OpenClaw、Claude Code、Cline、Cherry Studio 等
-3. **1M 超长上下文** — 支持 Agent 多轮对话、长链推理场景，不再额外收费
-4. **模型性价比高** — API 价格约为 Claude 同级模型的 1/5
-5. **Cache 写入限时免费** — 降低 Agent 开发成本
-6. **完全开源** — MiMo-V2.5 系列 MIT 协议开源，可本地部署
-
-### 注意事项
-
-1. 不支持套餐降级，仅支持跨等级补差价升级
-2. 套餐到期 Credits 不结转，需重新订阅
-3. 自动续费功能已上线
-4. API Key 格式区分：Token Plan 用 `tp-xxxxx`，按量付费用 `sk-xxxxx`
-
----
-
-## 五、数据训练政策分析（重点）
-
-### 官方隐私政策声明
-
-**隐私政策原文**（Section 3.1）：
+**来源：** [Xiaomi MiMo Open Platform Privacy Policy — Section 3.1](https://platform.xiaomimimo.com/docs/terms/privacy-policy)
 
 > "If you use the API services, we will collect your IP address and the content (text, audio, video, picture) you submit to analyze the relevant instructions based on the model you select and to generate the returned content. **Xiaomi will not use the content you provide for model training or any other purposes.**"
 
-**翻译**：小米不会使用你通过 API 提交的内容进行模型训练或任何其他目的。
+这个承诺覆盖范围很广——不仅是"不训练"，而且是"不用于任何其他目的"。对比 DeepSeek API 条款对此保持沉默，小米的承诺是明确且有力的。
 
-### 协议结构分析
+### 依据 2：Token Plan 条款没有像阿里云那样的陷阱
 
-**关键问题**：Token Plan 是否有专门的数据训练条款？
+这是本次调研的核心发现。
 
-| 协议条款 | 内容 |
-|---------|------|
-| 用户协议 1.1 | 适用范围："products, programs and services"（包含 Token Plan） |
-| 用户协议 1.2 | MiMo 平台隐私政策列为补充协议（supplementary agreement），与主协议具有同等法律效力 |
-| 用户协议 3.13 | Token Plan 条款，**仅涉及退款和调整政策，无数据使用约定** |
-| 用户协议 第4条 | "数据处理依据隐私政策" |
-| 隐私政策 | "Xiaomi will not use the content you provide for model training" |
+**阿里云 Coding Plan** 在通用条款之外加了专门的 5.2.2：
 
-**结论**：Token Plan 没有专门的"数据训练特别条款"，数据处理应适用隐私政策的承诺（不用于训练）。
+> "您同意并授权我们和我们的关联公司存储并使用您使用 Coding Plan 期间因调用模型而输入以及模型生成的内容（'Coding Plan 数据'）以用于**服务改进与模型优化**。"
 
-### 与阿里云 Coding Plan 对比
+**小米 Token Plan** 的对应条款（用户协议 3.13）只有：
 
-| 项目 | 阿里云 Coding Plan | 小米 Token Plan |
-|------|------------------|------------------|
-| 通用条款（API 按量付费） | "不会在未获您明确授权的情况下使用对话数据训练模型"（6.2.5） | "will not use the content for model training"（Privacy 3.1） |
-| 订阅套餐条款 | **专门章节 5.2**（"关于 Coding Plan 的特别约定"） | **普通条款 3.13**（嵌入平台服务章节） |
-| 数据训练特别条款 | ✅ **有**（5.2.2 明确授权"用于模型优化"） | ❌ **没有** |
-| 最终结论 | ⚠️ **Coding Plan 会用于训练** | ✅ **应适用隐私政策（不训练）** |
+> "Token Plan services are non-refundable and non-cancellable upon purchase. Xiaomi reserves the right to modify or adjust Token Plan based on operational needs..."
 
-**关键差异**：阿里云服务协议有专门的"关于 Coding Plan 的特别约定"章节（5.2），其中 5.2.2 明确授权数据用于"模型优化"；小米用户协议中 Token Plan 相关条款（3.13）只涉及退款，没有改变数据处理规则的"特别约定"。
+只讲退款，不讲数据。没有 5.2.2 那种"特别约定"。
 
-### 验证建议
+| 对比项 | 阿里云 Coding Plan | 小米 Token Plan |
+|--------|-------------------|-----------------|
+| 通用条款 | "不会在未获授权时训练"（6.2.5） | "will not use for training"（Privacy 3.1） |
+| 订阅套餐条款位置 | 专门章节 5.2 | 普通条款 3.13 |
+| 数据训练特别授权 | ✅ 有（5.2.2） | ❌ 没有 |
+| 数据训练结论 | ⚠️ 会训练 | ✅ 不训练 |
 
-尽管协议结构分析显示 Token Plan 应适用隐私政策，但仍建议：
+### 依据 3：协议结构确认隐私政策适用于 Token Plan
 
-1. 购买订阅页面是否显示额外的数据授权提示
-2. 联系官方确认：support-mimo@xiaomi.com
-3. 定期查看协议更新（用户协议 8.4 说小米有权修改）
+| 条款 | 内容 | 作用 |
+|------|------|------|
+| 用户协议 1.1 | 适用范围："products, programs and services" | Token Plan 在协议覆盖范围内 |
+| 用户协议 1.2 | MiMo 平台隐私政策列为补充协议，同等法律效力 | 隐私政策承诺适用 |
+| 用户协议 第4条 | "数据处理依据隐私政策" | 数据处理规则指向隐私政策 |
+| 用户协议 3.13 | Token Plan 条款：仅退款/调整，无数据约定 | 没有覆盖隐私政策的特别约定 |
 
----
+结论：Token Plan 的数据处理应适用隐私政策的承诺——不训练。
 
-## 六、与竞品对比
+### 依据 4：行业全景对比
 
-| 厂商 | 服务类型 | 数据训练政策 | 5小时限额 | 长上下文 |
-|------|---------|-------------|----------|---------|
-| **小米 MiMo** | Token Plan | ✅ 不训练（协议结构分析） | ❌ 无 | 1M |
-| **Anthropic Claude** | API/订阅 | ✅ 默认不训练 | ✅ 有 | 200K |
-| **阿里云百炼 API** | 按量付费 | ✅ 不训练 | ✅ 有 | 部分模型 1M |
-| **阿里云 Coding Plan** | 订阅套餐 | ⚠️ **明确训练**（5.2.2） | ✅ 有 | - |
-| **DeepSeek** | API/Web | ⚠️ 默认训练（可 opt-out） | - | - |
+| 厂商 | 服务类型 | 数据训练政策 | 特别约定？ |
+|------|---------|-------------|:---:|
+| **小米 MiMo** | Token Plan / API | ✅ 不训练（Privacy 3.1） | ❌ 无陷阱 |
+| **Anthropic Claude** | API / 订阅 | ✅ 默认不训练 | ❌ |
+| **阿里云百炼 API** | 按量付费 | ✅ 不训练（6.2.5） | ❌ |
+| **阿里云 Coding Plan** | 订阅套餐 | ⚠️ 明确训练（5.2.2） | ✅ 有陷阱 |
+| **DeepSeek** | API | ⚠️ 沉默未承诺 | — |
+| **Kimi** | API | ⚠️ 授权优化服务 | — |
 
----
+## 我该怎么办
 
-## 七、社区讨论摘要
+1. **正常使用没问题** — 协议层面已经确认不训练，比 DeepSeek/Kimi 的 API 条款都干净
+2. **敏感数据仍建议走本地部署** — MiMo-V2.5 已 MIT 开源（[HuggingFace](https://huggingface.co/XiaomiMiMo/MiMo-V2.5)），支持 SGLang/vLLM，数据完全不出机器
+3. **定期回查协议** — 用户协议 8.4 说小米有权修改协议，关注更新（官方联系：support-mimo@xiaomi.com）
+4. **企业合规场景** — 直接联系官方确认，不依赖公开协议的分析
 
-### V2EX 讨论（Token Plan 上线）
+## 附录：Token Plan 产品信息
 
-**主要话题**：
-- 价格和性价比讨论
-- 与 GLM、DeepSeek 性能对比
-- Token 消耗速度很快
-- 担忧小米对大模型的投入决心
+<details>
+<summary>套餐与定价（展开查看）</summary>
 
-**关键发现**：在 42 条回复中，**没有人讨论数据训练或隐私政策问题**。
+| 套餐 | 月费（中国） | 月费（海外） | Credits |
+|------|-------------|-------------|---------|
+| Lite | ¥39 | $6 | 6000万 |
+| Standard | ¥99 | $16 | 2亿 |
+| Pro | ¥329 | $50 | 7亿 |
+| Max | ¥659 | $100 | 16亿 |
 
-### 与阿里云 Coding Plan 讨论 V2EX 对比
+- 首次购买 88 折 / 夜间优惠（0:00-8:00）0.8x 消耗 / 连续包月折扣
+- 1M 超长上下文，不再额外收费
+- MiMo-V2.5: 1 token = 1 credit / MiMo-V2.5-Pro: 1 token = 2 credits
+- 无 5 小时滚动限额（区别于 Anthropic/OpenAI/阿里）
+- API Key 格式：Token Plan 用 `tp-xxxxx`，按量付费用 `sk-xxxxx`
 
-阿里云 Coding Plan 有用户主动发现条款 5.2.2，在 V2EX 发帖警告"你的数据会被用于训练"；小米 Token Plan 目前无类似讨论。
+</details>
 
----
-
-## 八、使用建议
-
-### 适合场景
-
-- Agent 开发（多轮调用、长上下文）
-- 重度编程用户（集中 coding session）
-- 需要灵活控制成本的开发者
-- 1M 上下文需求场景
-
-### 不适合场景
-
-- 需要企业级合规保障的场景（建议直接确认官方）
-- 极端敏感的项目（建议本地部署）
-
-### 本地部署替代方案
-
-MiMo-V2.5 已完全开源（MIT 协议），可本地部署：
-- 模型权重：https://huggingface.co/XiaomiMiMo/MiMo-V2.5
-- 支持 SGLang、vLLM 推理框架
-- 本地部署 = 数据完全不出机器
-
----
-
-## 九、参考来源
+## 参考来源
 
 - 小米 MiMo API 平台用户协议：https://platform.xiaomimimo.com/docs/terms/user-agreement
 - 小米 MiMo API 平台隐私政策：https://platform.xiaomimimo.com/docs/terms/privacy-policy
 - 阿里云百炼服务协议：https://terms.alicdn.com/legal-agreement/terms/common_platform_service/20230728213935489/20230728213935489.html
-- V2EX 讨论：https://www.v2ex.com/t/1203353（小米 Token Plan）、https://www.v2ex.com/t/1190601（阿里云 Coding Plan 隐私警告）
+- V2EX 讨论：阿里云 Coding Plan 隐私警告 — https://www.v2ex.com/t/1190601
