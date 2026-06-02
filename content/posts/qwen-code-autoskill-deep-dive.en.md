@@ -120,7 +120,7 @@ Currently only Hermes and Qwen Code implement automatic procedural skill distill
 
 ## References
 
-- Design doc: https://github.com/QwenLM/qwen-code/blob/main/docs/design/skill-nudge/skill-nudge.md
+- [Design doc](https://github.com/QwenLM/qwen-code/blob/main/docs/design/skill-nudge/skill-nudge.md)
 - Source: `packages/core/src/memory/skillReviewAgentPlanner.ts`
 - First commit: 2026-05-09 (`#3673`), enabled by default: 2026-05-27 (`#4547`)
-- Trace2Skill paper: https://arxiv.org/abs/2603.25158
+- [Trace2Skill paper](https://arxiv.org/abs/2603.25158)
