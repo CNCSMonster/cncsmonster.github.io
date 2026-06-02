@@ -269,16 +269,26 @@ a {
 }
 
 .post-card {
-    padding: 1.5rem 0;
+    padding: 1.25rem 0;
     border-bottom: 1px solid $border-color;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
     
     &:last-child {
         border-bottom: none;
     }
+
+    .post-card-content {
+        flex: 1;
+        min-width: 0;
+    }
     
     h2 {
-        font-size: 1.25rem;
-        margin-bottom: 0.5rem;
+        font-size: 1.15rem;
+        margin-bottom: 0.375rem;
+        line-height: 1.4;
         
         a {
             color: $text-color;
@@ -292,17 +302,43 @@ a {
     
     .post-card-meta {
         color: $text-light;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
     
     .post-summary {
-        margin-top: 0.5rem;
+        margin-top: 0.375rem;
+        font-size: 0.9rem;
+        color: $text-light;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .post-card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        flex-shrink: 0;
+        max-width: 200px;
+        justify-content: flex-end;
+
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: $bg-secondary;
+            color: $text-light;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            white-space: nowrap;
+        }
     }
 }
 
 // Post page
 .post {
-    max-width: 800px;
+    max-width: 1100px;
     margin: 0 auto;
     
     .post-header {
@@ -406,15 +442,14 @@ a {
                     }
 
                     ul {
-                        max-height: 0;
-                        overflow: hidden;
-                        opacity: 0;
-                        transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.2s ease;
+                        display: grid;
+                        grid-template-rows: 0fr;
+                        transition: grid-template-rows 0.3s ease;
                         padding-left: 1.25rem;
                         border-left: 2px solid lighten($border-color, 3%);
                         margin-top: 0;
 
-                        li {
+                        > li {
                             margin-bottom: 0.25rem;
 
                             a {
@@ -441,10 +476,20 @@ a {
                         }
                     }
 
-                    &:hover > ul,
-                    > a:focus + ul {
-                        max-height: 1000px;
-                        opacity: 1;
+                    &:hover > ul {
+                        grid-template-rows: 1fr;
+                        margin-top: 0.375rem;
+                    }
+
+                    &.active > a {
+                        color: $primary-color;
+                        border-left-color: $primary-color;
+                        background: rgba($primary-color, 0.06);
+                        font-weight: 600;
+                    }
+
+                    &.active > ul {
+                        grid-template-rows: 1fr;
                         margin-top: 0.375rem;
                     }
                 }
@@ -453,6 +498,8 @@ a {
     }
     
     .post-content {
+        flex: 1;
+        max-width: 800px;
         line-height: 1.8;
         
         h2, h3, h4, h5, h6 {
@@ -593,7 +640,7 @@ a {
 
 // Section page
 .section-page {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     
     h1 {
@@ -604,6 +651,38 @@ a {
     .section-description {
         color: $text-light;
         margin-bottom: 2rem;
+    }
+}
+
+// Tag filter
+.tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid $border-color;
+
+    .tag-btn {
+        padding: 0.375rem 0.875rem;
+        border: 1px solid $border-color;
+        border-radius: 2rem;
+        background: $bg-color;
+        color: $text-light;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+            border-color: $primary-color;
+            color: $primary-color;
+        }
+
+        &.active {
+            background: $primary-color;
+            border-color: $primary-color;
+            color: white;
+        }
     }
 }
 
@@ -1396,6 +1475,78 @@ a {
         nav {
             position: static;
             max-height: none;
+
+            ul > li > ul {
+                grid-template-rows: 1fr;
+                margin-top: 0.375rem;
+            }
         }
     }
+}
+
+// Zola syntax highlighting (highlight_theme = "css")
+// Covers z-code, z-source, z-comment, z-keyword, z-string, z-number, z-function, etc.
+.z-code, .z-source {
+    color: #f8f8f2;
+}
+.z-comment {
+    color: #6272a4;
+    font-style: italic;
+}
+.z-keyword, .z-control, .z-operator {
+    color: #ff79c6;
+}
+.z-string, .z-string-quoted {
+    color: #f1fa8c;
+}
+.z-number {
+    color: #bd93f9;
+}
+.z-function, .z-function-call, .z-variable-function {
+    color: #50fa7b;
+}
+.z-meta, .z-meta-keyword {
+    color: #ff79c6;
+}
+.z-type, .z-built-in {
+    color: #8be9fd;
+}
+.z-variable, .z-variable-parameter {
+    color: #f8f8f2;
+}
+.z-constant {
+    color: #bd93f9;
+}
+.z-punctuation {
+    color: #f8f8f2;
+}
+.z-annotation {
+    color: #50fa7b;
+}
+.z-attribute {
+    color: #50fa7b;
+}
+.z-tag {
+    color: #ff79c6;
+}
+.z-name {
+    color: #8be9fd;
+}
+.z-namespace {
+    color: #8be9fd;
+}
+.z-generic {
+    color: #8be9fd;
+}
+.z-identifier {
+    color: #f8f8f2;
+}
+.z-declaration {
+    color: #8be9fd;
+}
+.z-attr-name {
+    color: #50fa7b;
+}
+.z-attr-value {
+    color: #f1fa8c;
 }
