@@ -97,6 +97,41 @@ Matt = 工具箱（Toolkit）
 
 ---
 
+## AI 原生用法：把这篇文章交给你的 agent
+
+如果你已经习惯让 AI 帮你配环境，不需要自己逐条照抄命令。更好的用法是：**把这篇文章当成一份配置决策上下文，交给你的 coding agent，让它先检查现状，再决定装什么。**
+
+可以直接这样提示：
+
+```
+请阅读这篇文章，并按它的结论帮我配置 Agent Skills：
+
+1. 先检查我当前环境已经安装了哪些工程规范 skill。
+2. 如果我已经有 Addy Osmani / Pi 同源工程规范 skill，不要重复安装 Matt 的 /tdd 和 /diagnose。
+3. 只补 Matt 的互补项：grill-with-docs、improve-codebase-architecture、triage，以及必要时的 setup-matt-pocock-skills。
+4. 在执行安装前，先告诉我会改哪些目录。
+5. 不要修改项目里的 AGENTS.md / CLAUDE.md / docs/agents，除非我明确确认。
+```
+
+如果确认自己已经有 Addy / Pi 的工程规范 skill，可以让 agent 执行这个最小安装：
+
+```bash
+skills add mattpocock/skills -g -y   --skill setup-matt-pocock-skills grill-with-docs improve-codebase-architecture triage
+```
+
+装完之后的使用方式也可以交给 AI 判断：
+
+```
+我现在要开始一个新需求。请根据项目现状判断：
+- 是否需要先用 grill-with-docs 盘问需求？
+- 是否需要更新 CONTEXT.md 或 ADR？
+- 开发过程继续使用 Addy/Pi 的 spec、test、review、ship 哪些 skill？
+```
+
+也就是说，这篇文章不只是给人看的安装说明，也可以作为给 AI 的“配置说明书”。你把它交给新环境里的 agent，它就能理解：**Addy 是底座，Matt 是增强；不是二选一，也不是全都无脑装。**
+
+---
+
 ## 实操建议
 
 ```

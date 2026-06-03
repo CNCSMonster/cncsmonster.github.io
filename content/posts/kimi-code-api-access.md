@@ -71,7 +71,7 @@ export function createKimiDefaultHeaders(options: KimiIdentityOptions): Record<s
 
 ## Qwen Code：也应该优先走 Anthropic 兼容协议
 
-你提醒得对：Qwen Code 也支持 `modelProviders.anthropic`，所以它同样没必要优先走 OpenAI 兼容端点。
+Qwen Code 同样支持 `modelProviders.anthropic`，因此也没必要优先走 OpenAI 兼容端点。
 
 推荐配置形态是把 Kimi Code 放到 `modelProviders.anthropic` 里：
 
@@ -121,7 +121,7 @@ export function createKimiDefaultHeaders(options: KimiIdentityOptions): Record<s
 
 才会生效。
 
-再次提醒：这只是解释技术机制，不建议为了绕过限制伪造客户端身份。生产或公开配置应以 Kimi 官方允许的接入方式为准。
+> ⚠️ 以上仅解释技术机制，不建议为了绕过限制伪造客户端身份。生产或公开配置应以 Kimi 官方允许的接入方式为准。
 
 ## 这次排查的经验
 

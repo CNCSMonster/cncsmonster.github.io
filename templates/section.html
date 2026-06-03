@@ -9,18 +9,69 @@
     <p class="section-description">{{ section.description }}</p>
     {% endif %}
 
+    {# Tag filter navigation #}
+    <div class="tag-filter">
+        <button class="tag-btn active" data-tag="all">全部</button>
+        <button class="tag-btn" data-tag="ai-code-cli">AI Code CLI</button>
+        <button class="tag-btn" data-tag="agent-skill">Agent Skill</button>
+        <button class="tag-btn" data-tag="mcp">MCP</button>
+        <button class="tag-btn" data-tag="troubleshooting">Troubleshooting</button>
+        <button class="tag-btn" data-tag="privacy">隐私</button>
+        <button class="tag-btn" data-tag="research">调研</button>
+        <button class="tag-btn" data-tag="tool">工具</button>
+        <button class="tag-btn" data-tag="ocr">OCR</button>
+        <button class="tag-btn" data-tag="python">Python</button>
+    </div>
+
+    {# Posts list #}
     <div class="posts-list">
         {% for page in section.pages %}
-        <article class="post-card">
-            <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
-            <div class="post-card-meta">
-                <time datetime="{{ page.date }}">{{ page.date | date(format="%Y-%m-%d") }}</time>
+        <article class="post-card" data-tags="{% if page.taxonomies.tags %}{% for tag in page.taxonomies.tags %}{{ tag | slugify }}{% if not loop.last %} {% endif %}{% endfor %}{% endif %}">
+            <div class="post-card-content">
+                <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
+                <div class="post-card-meta">
+                    <time datetime="{{ page.date }}">{{ page.date | date(format="%Y-%m-%d") }}</time>
+                </div>
                 {% if page.summary %}
                 <p class="post-summary">{{ page.summary }}</p>
                 {% endif %}
             </div>
+            {% if page.taxonomies.tags %}
+            <div class="post-card-tags">
+                {% for tag in page.taxonomies.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
         </article>
         {% endfor %}
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('.tag-btn');
+    const posts = document.querySelectorAll('.post-card');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tag = this.dataset.tag;
+            
+            // Update active button
+            buttons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter posts
+            posts.forEach(post => {
+                if (tag === 'all') {
+                    post.style.display = '';
+                } else {
+                    const postTags = post.dataset.tags || '';
+                    post.style.display = postTags.includes(tag) ? '' : 'none';
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

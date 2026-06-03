@@ -67,6 +67,14 @@ Python (llama-cpp-python, OpenCL)
 
 **Intel Arc 140T is Arrow Lake H architecture, released late 2024.** Windows driver `32.0.101.6554` (2025-01-15) is an early Arrow Lake driver with incomplete WSL2 DXG support. When DXG sends requests, the driver doesn't understand them or has bugs, returning EINVAL/EOVERFLOW.
 
+## Debugging Reflection
+
+The first time you see `IGC segfault`, intuition says "IGC is the problem." So you check IGC versions, look for known bugs, search Reddit — IGC is the latest, no known issues. Shift direction. Test Vulkan (WSL2 doesn't support native Vulkan passthrough). Test DirectML (Windows-only, unusable in WSL2). Test Shimmy (same llama.cpp backend — completely unrelated variable).
+
+Four hours went into **tracing upward and sideways**. Downward takes one command, five minutes.
+
+Crash log formatting naturally draws your attention to the crashing layer. `IGC: Internal Compiler Error` — IGC's name is in the error message, your attention gets pinned there. But when any component crashes **while calling into an external layer**, the root cause is almost always in the layer being called. Self-contained computation failures are your own problem.
+
 ## Five Approaches Tested
 
 | Approach | GPU Recognition | Inference | Rating | Notes |

@@ -63,6 +63,9 @@ title = "CCM's Blog"
 build_search_index = true
 generate_feeds = true
 feed_filenames = ["atom.xml", "rss.xml"]
+taxonomies = [
+    {name = "tags", feed = true},
+]
 
 # ═══════════════════════════════════════════
 # UI Translation strings for trans() macro

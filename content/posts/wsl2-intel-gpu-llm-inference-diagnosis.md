@@ -69,6 +69,14 @@ Python (llama-cpp-python, OpenCL)
 
 **Intel Arc 140T 属于 Arrow Lake H 架构，2024 年底刚发布。** Windows 驱动 `32.0.101.6554`（2025-01-15）是 Arrow Lake 早期版本，对 WSL2 的 DXG 接口支持不完整。DXG 模块向 Windows 驱动发出请求时，驱动不理解或处理有 bug，导致 ioctl 返回 EINVAL/EOVERFLOW。
 
+## 踩坑反思
+
+第一次看到 `IGC segfault` 时，直觉是"IGC 有问题"。于是查 IGC 版本、看是不是已知 bug、翻 Reddit — IGC 是最新版，没有已知问题。换个方向，测试了 Vulkan（WSL2 不支持原生 Vulkan 透传）、DirectML（Windows 专属，WSL2 不适用）和 Shimmy（底层还是同一个 llama.cpp，完全无关的变量）。
+
+四个小时花在了**往上追和往旁边追**。往下只需要一个命令，五分钟。
+
+崩溃日志格式天然引导你关注崩溃的那一层。`IGC: Internal Compiler Error` — IGC 的名字在错误信息里，注意力就被钉在 IGC 上。但实际上，任何一个组件在**调用外部**时崩溃，根因几乎总是在被调的那一层。纯内部计算崩了才是自己的问题。
+
 ## 五种方案实测对比
 
 | 方案 | GPU 识别 | 推理 | 推荐度 | 备注 |

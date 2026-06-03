@@ -97,6 +97,41 @@ Recommended combined usage: follow Addy's pipeline normally, switch to Matt for 
 
 ---
 
+## AI-Native Usage: Hand This Article to Your Agent
+
+If you already use AI heavily, don't copy commands manually. A better pattern is to treat this article as **configuration context**: give it to your coding agent, ask it to inspect the current environment, then let it decide what to install.
+
+Use a prompt like this:
+
+```
+Read this article and configure Agent Skills according to its conclusion:
+
+1. First check which engineering discipline skills are already installed.
+2. If Addy Osmani / Pi-equivalent skills are already present, do not duplicate Matt's /tdd or /diagnose.
+3. Only add Matt's complementary skills: grill-with-docs, improve-codebase-architecture, triage, and setup-matt-pocock-skills if needed.
+4. Before installing, tell me which directories will be modified.
+5. Do not modify project AGENTS.md / CLAUDE.md / docs/agents unless I explicitly confirm.
+```
+
+If you already have Addy / Pi-style engineering skills, the minimal install is:
+
+```bash
+skills add mattpocock/skills -g -y   --skill setup-matt-pocock-skills grill-with-docs improve-codebase-architecture triage
+```
+
+After installation, you can keep using AI to choose the right workflow:
+
+```
+I'm starting a new feature. Based on this repo, decide:
+- Should we run grill-with-docs before implementation?
+- Should CONTEXT.md or ADRs be updated?
+- Which Addy/Pi skills should still be used for spec, test, review, and ship?
+```
+
+In other words, this article is not only a human-readable installation guide. It is also an AI-readable configuration brief. Give it to a new agent environment and it should understand: **Addy is the backbone; Matt is an enhancement layer. This is not either/or, and not install-everything blindly.**
+
+---
+
 ## Practical Advice
 
 ```
