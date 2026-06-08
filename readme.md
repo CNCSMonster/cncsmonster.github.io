@@ -2,9 +2,10 @@
 
 A personal homepage built with [Zola](https://www.getzola.org/), featuring:
 
-- 📚 **GitHub Notes** - Reading notes from technical books
-- ✍️ **Blog Posts** - Technical articles and tutorials
+- ✍️ **Blog Posts** - Technical articles, tutorials, and retrospectives
+- 📚 **E-books** - Systematic learning notes (mdBook)
 - 🚀 **Open Source** - My open source projects and contributions
+- 🗄️ **Archive** - Outdated content for historical reference
 
 ## Features
 
@@ -83,9 +84,10 @@ zola build
 .
 ├── config.toml              # Site configuration
 ├── content/
-│   ├── posts/               # Blog posts
-│   ├── github-notes/        # Reading notes
-│   └── open-source/         # Open source projects
+│   ├── posts/               # Blog posts (technical articles, tutorials, retrospectives)
+│   ├── open-source/         # Open source projects and contribution records
+│   ├── ebooks/              # E-books and systematic learning notes (mdBook)
+│   └── archive/             # Archived/outdated content for historical reference
 ├── static/
 │   ├── sass/                # SCSS stylesheets
 │   └── js/                  # JavaScript files
@@ -116,16 +118,22 @@ Your content here...
 
 ### New GitHub Note
 
-Create a new file in `content/github-notes/`:
+> ⚠️ `github-notes/` has been removed. Reading notes are now managed as e-books under `ebooks/` or as blog posts in `posts/`.
+
+### New E-book
+
+Create a new directory under `content/ebooks/`:
 
 ```markdown
+# content/ebooks/<book-name>/_index.md
 +++
-title = 'Book Name Notes'
-date = 2024-01-01T00:00:00+08:00
-tags = ['Book', 'Notes']
+title = 'Book Name'
+sort_by = 'weight'
 +++
 
-Your reading notes...
+# Book Title
+
+Reading notes and systematic learning content.
 ```
 
 ### New Open Source Project
@@ -140,6 +148,24 @@ tags = ['Language', 'Project']
 +++
 
 Project description...
+```
+
+### Archive Outdated Content
+
+Move old posts to `content/archive/` when they become outdated:
+
+```markdown
++++
+title = 'Old Post'
+date = 2024-01-01T00:00:00+08:00
+tags = ['deprecated']
+archived = true
++++
+
+> ⚠️ This content is archived and may no longer be accurate.
+> See [alternative] for current approaches.
+
+Original content...
 ```
 
 ## Configuration
