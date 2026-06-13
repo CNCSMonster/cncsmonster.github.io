@@ -18,8 +18,6 @@ taxonomies = [
 
 # Markdown rendering options
 [markdown]
-highlight_code = true
-highlight_theme = "css"
 render_emoji = false
 external_links_target_blank = true
 external_links_no_follow = true
