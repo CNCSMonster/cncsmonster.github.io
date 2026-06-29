@@ -1,0 +1,52 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>Kimi Code API 接入为什么会 403？ | CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Switch to English" class=lang-link href=/en/>EN</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>Kimi Code API 接入为什么会 403？</h1><div class=post-meta><time datetime=2026-05-24T00:00:00+08:00>2026-05-24</time></div></header><div class=post-layout><div class=post-content><p>我在把 Kimi Code 接入 pi 和 Qwen Code 时，遇到一个容易误判的问题：<blockquote><p>为什么 Kimi Code 官方说支持 OpenAI 兼容协议，但我用标准 OpenAI SDK 调 <code>coding/v1/chat/completions</code> 会返回 403？</blockquote><p>结论是：<strong>Kimi Code 的 OpenAI 兼容端点会检查 coding agent 客户端身份；对 pi 和 Qwen Code 来说，更稳的方式都是走 Anthropic 兼容端点。</strong><h2 id=liang-ge-duan-dian-bu-shi-wan-quan-deng-jia-de>两个端点不是完全等价的</h2><p>Kimi Code 官方文档提供两个协议端点：<table><thead><tr><th>协议<th>Base URL<th>常见用途<tbody><tr><td>OpenAI 兼容<td><code>https://api.kimi.com/coding/v1</code><td>Roo Code / OpenAI-compatible 工具<tr><td>Anthropic 兼容<td><code>https://api.kimi.com/coding/</code><td>Claude Code / Anthropic Messages 工具</table><p>一开始我用 OpenAI SDK 风格请求 OpenAI 兼容端点，返回 403，大意是 Kimi For Coding 只能在 Coding Agents 中使用。<p>读 Kimi Code CLI 源码后，原因比较清楚：Kimi Code CLI 请求中会附带一组 <code>X-Msh-*</code> 身份头，用来标识请求来自 Kimi Code CLI 这类 coding agent。<pre class=language-ts data-lang=ts><code class=language-ts data-lang=ts>// packages/oauth/src/identity.ts
+export function createKimiDefaultHeaders(options: KimiIdentityOptions): Record&LTstring, string> {
+  return {
+    'User-Agent': createKimiUserAgent(options),
+    'X-Msh-Platform': 'kimi-code-cli',
+    'X-Msh-Version': requiredAsciiHeader(options.version, 'Kimi identity version'),
+    'X-Msh-Device-Name': asciiHeader(hostname()),
+    'X-Msh-Device-Model': asciiHeader(deviceModel()),
+    'X-Msh-Os-Version': asciiHeader(release()),
+    'X-Msh-Device-Id': createKimiDeviceId(options.homeDir),
+  };
+}
+</code></pre><p>所以这里的 403 不是简单的 API Key 错误，也不只是 User-Agent 问题，而是 OpenAI 兼容端点还依赖额外的客户端身份信息。<blockquote><p>注意：Kimi 官方文档也提醒，使用时应保持工具真实身份标识，篡改客户端标识可能导致会员权益暂停。公开或生产使用时不要为了绕过限制伪造身份。</blockquote><h2 id=pi-tui-jian-zou-anthropic-jian-rong-xie-yi>pi：推荐走 Anthropic 兼容协议</h2><p>对 pi 来说，最省事也最干净的方式是直接配置 Anthropic 兼容端点：<pre class=language-json data-lang=json><code class=language-json data-lang=json>{
+  "kimi": {
+    "baseUrl": "https://api.kimi.com/coding/",
+    "api": "anthropic-messages",
+    "apiKey": "KIMI_CODE_API_KEY",
+    "models": [
+      {
+        "id": "kimi-for-coding",
+        "name": "[Kimi Coding Plan]",
+        "reasoning": true,
+        "input": ["text", "image"],
+        "contextWindow": 262144,
+        "maxTokens": 128000
+      }
+    ]
+  }
+}
+</code></pre><p>这个端点用 <code>x-api-key</code> 认证即可，不需要额外注入 <code>X-Msh-*</code> 头。我本地用 pi 实测可以正常返回。<h2 id=qwen-code-ye-ying-gai-you-xian-zou-anthropic-jian-rong-xie-yi>Qwen Code：也应该优先走 Anthropic 兼容协议</h2><p>Qwen Code 同样支持 <code>modelProviders.anthropic</code>，因此也没必要优先走 OpenAI 兼容端点。<p>推荐配置形态是把 Kimi Code 放到 <code>modelProviders.anthropic</code> 里：<pre class=language-json data-lang=json><code class=language-json data-lang=json>{
+  "modelProviders": {
+    "anthropic": [
+      {
+        "id": "kimi-for-coding",
+        "name": "[Kimi Code] K2.6",
+        "baseUrl": "https://api.kimi.com/coding",
+        "envKey": "KIMI_CODE_API_KEY",
+        "generationConfig": {
+          "contextWindowSize": 262144
+        }
+      }
+    ]
+  }
+}
+</code></pre><p>我查了当前 Qwen Code 源码：Anthropic provider 对非 Anthropic 原生 base URL 会走 proxy identity，使用 <code>Authorization: Bearer &LTkey></code>。我又用 curl 验证了 Kimi Code 的 Anthropic <code>/v1/messages</code> 端点同时接受 <code>x-api-key</code> 和 <code>Authorization: Bearer</code>，都能返回 200。<p>所以更准确的建议是：<ul><li>pi：走 <code>anthropic-messages</code>。<li>Qwen Code：走 <code>modelProviders.anthropic</code>。<li>只有在你明确要调试 OpenAI 兼容端点时，才需要研究 <code>X-Msh-*</code> 和 <code>customHeaders</code>。</ul><h2 id=ru-guo-reng-ran-zou-qwen-code-de-openai-jian-rong-duan-dian>如果仍然走 Qwen Code 的 OpenAI 兼容端点</h2><p>如果你确实在 Qwen Code 中走 OpenAI 兼容端点，需要注意一个配置位置问题：<code>customHeaders</code> 不能放在模型配置外层，而要放进 <code>generationConfig</code>。<p>原因是 Qwen Code 的 OpenAI-compatible provider 从 <code>contentGeneratorConfig.customHeaders</code> 读取自定义头，而 <code>contentGeneratorConfig</code> 是由 <code>generationConfig</code> 构造出来的。<p>也就是说：<pre class=language-json data-lang=json><code class=language-json data-lang=json>{
+  "generationConfig": {
+    "customHeaders": {
+      "...": "..."
+    }
+  }
+}
+</code></pre><p>才会生效。<blockquote><p>⚠️ 以上仅解释技术机制，不建议为了绕过限制伪造客户端身份。生产或公开配置应以 Kimi 官方允许的接入方式为准。</blockquote><h2 id=zhe-ci-pai-cha-de-jing-yan>这次排查的经验</h2><ul><li><strong>兼容协议不等于等价协议。</strong> OpenAI-compatible 和 Anthropic-compatible 只是接口形状相似，不代表认证、网关和风控逻辑相同。<li><strong>403 不一定是 Key 错。</strong> 也可能是请求头、客户端身份、端点策略不匹配。<li><strong>优先选择阻力最小的官方路径。</strong> 对 pi 和 Qwen Code 来说，Anthropic 兼容端点就是更合适的接入方式。</ul></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#liang-ge-duan-dian-bu-shi-wan-quan-deng-jia-de>两个端点不是完全等价的</a><li><a href=#pi-tui-jian-zou-anthropic-jian-rong-xie-yi>pi：推荐走 Anthropic 兼容协议</a><li><a href=#qwen-code-ye-ying-gai-you-xian-zou-anthropic-jian-rong-xie-yi>Qwen Code：也应该优先走 Anthropic 兼容协议</a><li><a href=#ru-guo-reng-ran-zou-qwen-code-de-openai-jian-rong-duan-dian>如果仍然走 Qwen Code 的 OpenAI 兼容端点</a><li><a href=#zhe-ci-pai-cha-de-jing-yan>这次排查的经验</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>版权声明：</strong> 本文采用 <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh rel=noopener target=_blank>CC BY-NC-SA 4.0</a> 协议进行许可。转载请注明出处！</div></footer><section class=comments id=comments><h2>评论</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=zh-CN data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=prev href=https://cncsmonster.github.io/posts/gsudo-trust-window-lesson/>← gsudo 信任窗口撤销复盘</a><a class=next href=https://cncsmonster.github.io/posts/kimi-data-training-policy/>Kimi 会用我的数据训练模型吗？中文、英文和 API 协议不一样 →</a></nav></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script async data-goatcounter=https://cncsmonster.goatcounter.com/count src=//gc.zgo.at/count.js></script><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(()=>{let j=1,l=`none`,h=null,k=``,m=`block`,i=0;var d=(()=>{const b=document.getElementById(`search-input`);const d=document.getElementById(`search-results`);if(!b||!d)return;let f=h;b.addEventListener(`input`,function(){const b=this.value.trim();if(b.length===i){d.innerHTML=k;d.style.display=l;return};clearTimeout(f);f=setTimeout(()=>{if(!a&&!c()){d.innerHTML=`<li class="no-results">搜索加载中...</li>`;d.style.display=m;return};const f=a.search(b);const g=10;if(f.length===i){d.innerHTML=`<li class="no-results">未找到相关结果</li>`}else{d.innerHTML=f.slice(i,g).map(a=>{const c=a.item;const d=e(c.title,b);const f=c.description?e(c.description,b):k;return `<li class="search-result"><a href="`+ c.path+ `"><h4>`+ d+ `</h4>`+ (f?`<p>`+ f+ `</p>`:k)+ `</a></li>`}).join(k)};d.style.display=m},150)});document.addEventListener(`click`,(a=>{if(!a.target.closest(`.search-container`)){d.style.display=l}}))});var c=(()=>{if(a)return !0;if(!b||b.length===i){console.warn(`搜索索引为空`);return !1};try{const c={includeScore:!1,includeMatches:!0,ignoreLocation:!0,threshold:0.15,minMatchCharLength:j,keys:[{name:`title`,weight:3},{name:`description`,weight:2},{name:`body`,weight:j},{name:`path`,weight:0.5}]};a=new Fuse(b,c);console.log(`搜索初始化成功，条目数:`,b.length);return !0}catch(a){console.error(`Fuse 初始化失败:`,a);return !1}});var g=(()=>{c();d()});var f=(a=>a.replace(/[.*+?^${}()|[\]\\]/g,`\\\\\$&`));var e=((a,b)=>{if(!a)return k;const c=new RegExp(`(`+ f(b)+ `)`,`gi`);return a.replace(c,`<mark>\$1</mark>`)});let a=h;const b=window.searchIndex||[];if(document.readyState===`loading`){document.addEventListener(`DOMContentLoaded`,g)}else{g()}})()</script>

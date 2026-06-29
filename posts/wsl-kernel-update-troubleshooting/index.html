@@ -1,0 +1,118 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>WSL 内核更新踩坑实录：从 403 错误到 CVE-2026-31431 修复 | CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Switch to English" class=lang-link href=/en/>EN</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>WSL 内核更新踩坑实录：从 403 错误到 CVE-2026-31431 修复</h1><div class=post-meta><time datetime=2026-06-29T00:00:00+08:00>2026-06-29</time></div></header><div class=post-layout><div class=post-content><blockquote><p>记录一次 WSL 内核更新的完整排查过程，涵盖 403 错误、MSI 缓存损坏、两层安装路径冲突等问题的定位与解决。</blockquote><h2 id=bei-jing>背景</h2><p>WSL 内核版本 <strong>6.6.87.2</strong> 存在 <strong>CVE-2026-31431</strong>（Copy Fail）本地提权漏洞，需要更新到 <strong>6.18.x</strong> 以上版本修复（来源：微软安全通告 <a rel="noopener nofollow noreferrer" href=https://msrc.microsoft.com/update-guide target=_blank>MSRC Advisory</a> / <a rel="noopener nofollow noreferrer" href=https://nvd.nist.gov/vuln/detail/CVE-2026-31431 target=_blank>NVD 公告</a>）。<p>在执行 <code>wsl --update</code> 时遇到 HTTP 403 错误，随后展开了一系列排查。<h2 id=wen-ti-xian-xiang>问题现象</h2><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell>PS> wsl --update
+正在检查更新。
+已禁止 (403)。
+错误代码: Wsl/UpdatePackage/0x80190193
+</code></pre><p>曾尝试切换不同代理节点，但无论哪个节点，<code>wsl --update</code> 始终返回 403。<h2 id=pai-cha-guo-cheng>排查过程</h2><h3 id=di-yi-bu-jian-cha-dang-qian-zhuang-tai>第一步：检查当前状态</h3><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># WSL 版本
+PS> wsl --version
+WSL 版本: 2.6.3.0
+内核版本: 6.6.87.2-1
+
+# AppX 包版本（已下载但未生效）
+PS> Get-AppxPackage -Name *WindowsSubsystemForLinux* | Select-Object Version
+Version
+-------
+2.7.3.0
+
+# 注册表中的安装版本
+PS> Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" |
+    Where-Object { $_.DisplayName -match "WSL|Linux" } |
+    Select-Object DisplayName, DisplayVersion, InstallDate
+
+DisplayName                 DisplayVersion InstallDate
+-----------                 -------------- -----------
+Windows Subsystem for Linux 2.6.3.0        20260212
+</code></pre><p><strong>发现矛盾</strong>：AppX 包显示 2.7.3.0，但实际运行的仍是 2.6.3.0。说明 Store 下载了新版包，但安装过程被阻塞。<h3 id=di-er-bu-cha-zhao-zu-sai-yuan-yin>第二步：查找阻塞原因</h3><p>检查 MSI 安装日志：<pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell>PS> Get-Content "$env:TEMP\MSIf13a6.LOG"
+Error 1714. The older version of Windows Subsystem for Linux cannot be removed.
+Contact your technical support group. System Error 1612.
+</code></pre><p><strong>Error 1612</strong> = “安装源不可用”。进一步检查：<pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 旧版 MSI 缓存文件
+PS> Test-Path "C:\Windows\Installer\12f16c6.msi"
+False  # 文件不存在！
+</code></pre><p><strong>根因 1</strong>：旧版 WSL 2.6.3.0 的 MSI 缓存文件 <code>C:\Windows\Installer\12f16c6.msi</code> 被删除了（可能是磁盘清理工具误删），导致 Windows Installer 无法卸载旧版本，新版本无法安装。<h3 id=di-san-bu-fen-xi-403-cuo-wu>第三步：分析 403 错误</h3><p>检查 Store 日志发现关键线索：<pre><code>16:55:21  Network connectivity level changed to 0x0   ← 网络断开
+16:55:15  Task canceled, reason: 'ResourceRevocation'  ← Store 任务被撤销
+17:14:29  Network connectivity level changed to 0x3   ← 网络恢复
+</code></pre><p>请求中的关键参数：<pre><code>market=CN
+productId=9NZKPSTSNW4P
+licensing.md.mp.microsoft.com
+</code></pre><p><strong>根因 2（初步假设）</strong>：<code>wsl --update</code> 走的是 Microsoft Store 许可验证通道（<code>licensing.md.mp.microsoft.com</code>），怀疑是中国区 Store 服务不稳定导致 403。<p><strong>验证过程</strong>：从 GitHub 下载 WSL 安装包完全正常（494MB 成功），说明网络本身没问题。<p><strong>进一步排查 — 定位真正根因</strong>：<p>当时环境使用了代理，出口 IP 与账户所在市场区域不一致。Store 许可请求中包含参数 <code>market=CN</code>：<pre><code>leaseUri: licensing.md.mp.microsoft.com/...&market=CN&...
+</code></pre><blockquote><p>微软 Store 许可服务器会校验请求来源 IP 与市场区域的匹配性。</blockquote><table><thead><tr><th>场景<th>出口 IP 区域<th>market<th>结果<tbody><tr><td>使用代理<td>非 CN 区域<td>CN<td><strong>403 — IP 与 market 不匹配</strong><tr><td>直连（无代理）<td>CN<td>CN<td>✅ 下载正常开始（不再 403）</table><p><strong>最终确认的根因 2</strong>：代理改变了出口 IP 的地理位置，与 Store 账户的市场区域（CN）不匹配，微软许可服务器返回 403 拒绝请求。关掉代理后 <code>wsl --update</code> 能正常开始下载（不再报 403），但后续仍然因网络问题无法完成。<p><strong>补充验证</strong>：关掉代理直连后，<code>wsl --update</code> 虽然解决了 403，但下载速度极慢且多次中断：<ul><li>第一次：下载到 ~1% 时连接重置（<code>0x80072eff</code>）<li>后续：不支持断点续传，每次都需从头开始<li>结论：在本文网络环境下，<code>wsl --update</code> 不具备实际可用性</ul><h3 id=di-si-bu-wei-shen-me-xin-ban-zhuang-liao-que-bu-sheng-xiao>第四步：为什么新版装了却不生效？</h3><p>前面两步解释了 <code>wsl --update</code> 为何失败（MSI 缓存缺失、403 错误）。但还有一个问题：<strong>第一步中看到 AppX 2.7.3.0 已经下载了，为什么系统实际运行的还是 2.6.3.0？</strong><p>检查 WSL 的调用链路：<pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 系统版 wsl.exe（薄壳转发器，负责将命令转发给 WSLService）
+PS> (Get-Item "C:\Windows\System32\wsl.exe").VersionInfo.ProductVersion
+10.0.26100.8457
+
+# Store 版 wsl.exe（在 WindowsApps 中）
+PS> (Get-Item "C:\Program Files\WindowsApps\...\wsl.exe").VersionInfo.ProductVersion
+2.7.3.0
+
+# 旧版 MSI 安装的 WSL（实际生效中的版本）
+PS> (Get-Item "C:\Program Files\WSL\wsl.exe").VersionInfo.ProductVersion
+2.6.3.0
+
+# WSLService 服务指向哪里？
+PS> Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\WSLService" |
+    Select-Object ImagePath
+ImagePath : "C:\Program Files\WSL\wslservice.exe"  ← 指向旧版！
+</code></pre><p>调用链路如下：<pre><code>wsl.exe (System32, 薄壳转发器)
+       │
+       ▼
+WSLService 服务 ──→ C:\Program Files\WSL\wslservice.exe  (2.6.3.0)
+</code></pre><p><strong>根因 3（补充）</strong>：Store 将新版安装到了 <code>C:\Program Files\WindowsApps\...\</code>，但 WSLService 始终指向 MSI 安装路径 <code>C:\Program Files\WSL\</code>。两者是互不感知的独立路径——即使 Store 更新“安装成功“，WSLService 也不会自动切换过去，系统继续运行旧版本。<h2 id=zhuan-zhe-guan-cha-wen-jian-jie-gou-zhao-dao-ling-yi-tiao-lu>转折：观察文件结构，找到另一条路</h2><p>排查到这里，三条路都走不通：<code>wsl --update</code> 被 403 阻断、Store 更新被 MSI 缓存问题卡住、直连下载慢且无断点续传。标准方案全部失效。<p>但我们手头有一个东西能用：从 GitHub 下载的完整安装包（msixbundle）。<p>解压这个包看看里面有什么：<pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 先将 msixbundle 中的 MSI 提取出来
+msiexec /a "C:\Program Files\WindowsApps\...\wsl.msi" `
+  /qb TARGETDIR="$env:TEMP\wsl_msi_extract"
+
+# 查看提取出的文件结构
+PS> Get-ChildItem "$env:TEMP\wsl_msi_extract\PFiles64\WSL" -Recurse | Select-Object FullName
+
+PFiles64\WSL\wsl.exe
+PFiles64\WSL\wslservice.exe
+PFiles64\WSL\system.vhd          ← 374MB，Linux 内核镜像
+PFiles64\WSL\tools\kernel        ← 17MB，内核引导文件
+PFiles64\WSL\...
+</code></pre><p>对比系统上正在运行的 WSL 目录：<pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell>PS> Get-ChildItem "C:\Program Files\WSL" | Select-Object Name
+
+wsl.exe
+wslservice.exe
+system.vhd                       ← 同名文件！
+tools\kernel                     ← 同名文件！
+...
+</code></pre><p><strong>关键发现</strong>：<code>PFiles64\WSL\</code> 的文件布局和 <code>C:\Program Files\WSL\</code> 完全一致——前者是 MSI 的安装映射，后者是实际的安装位置。其中 <code>system.vhd</code> 和 <code>tools\kernel</code> 就是内核层的全部文件。<p>反观第四步的结论：WSLService 指向 <code>C:\Program Files\WSL\</code>，这里才是内核实际生效的位置。那么：<blockquote><p>如果把新版 MSI 中提取的 <code>system.vhd</code> 和 <code>tools\kernel</code> 覆盖到 <code>C:\Program Files\WSL\</code>，能不能只更新内核，不动管理程序？</blockquote><p>WSL 的管理层（wsl.exe / wslservice.exe）和内核层（system.vhd + kernel）是独立运作的——管理层负责与 Windows 通信，内核层负责运行 Linux。这正是架构分层带来的可能性：<strong>替换内核层不需要触碰管理层</strong>。<p>于是决定一试。结果：一次成功，内核从 6.6.87.2 更新到 6.18.33.2，所有数据完好。<h2 id=jie-jue-fang-an>解决方案</h2><h3 id=he-xin-si-lu>核心思路</h3><p>基于上述发现，整理出以下操作步骤。核心思路：<strong>从 GitHub 下载完整包，从中提取内核文件，替换到 WSLService 指向的安装目录</strong>。<blockquote><p><strong>注意</strong>：手动替换内核文件是<strong>非官方方法</strong>，依赖 WSL 内部文件结构（微软未在文档中说明此做法）。未来 WSL 更新可能改变文件布局，导致此方法失效。长期应修复网络环境以使用 <code>wsl --update</code> 正常更新。</blockquote><h3 id=bu-zou-1-cong-github-xia-zai-wan-zheng-an-zhuang-bao>步骤 1：从 GitHub 下载完整安装包</h3><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 下载 WSL 2.7.10（约 494MB）
+curl.exe -L -o "$env:TEMP\WSL_2.7.10.msixbundle" `
+  "https://github.com/microsoft/WSL/releases/download/2.7.10/Microsoft.WSL_2.7.10.0_x64_ARM64.msixbundle"
+</code></pre><h3 id=bu-zou-2-an-zhuang-appx-bao>步骤 2：安装 AppX 包</h3><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 先关闭所有 WSL 进程
+wsl --shutdown
+
+# 安装（需要管理员权限）
+Add-AppxPackage -Path "$env:TEMP\WSL_2.7.10.msixbundle" -ForceApplicationShutdown
+</code></pre><h3 id=bu-zou-3-cong-msi-zhong-ti-qu-nei-he-wen-jian>步骤 3：从 MSI 中提取内核文件</h3><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 解压 wsl.msi（管理安装模式，不实际安装）
+msiexec /a "C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForLinux_2.7.10.0_x64__8wekyb3d8bbwe\wsl.msi" `
+  /qb TARGETDIR="$env:TEMP\wsl_msi_extract"
+
+# 提取出的关键文件：
+# - PFiles64\WSL\system.vhd      (374MB, 包含 Linux 内核)
+# - PFiles64\WSL\tools\kernel    (17MB, 内核引导文件)
+</code></pre><h3 id=bu-zou-4-ti-huan-nei-he-wen-jian>步骤 4：替换内核文件</h3><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 以管理员身份执行
+$extractDir = "$env:TEMP\wsl_msi_extract\PFiles64\WSL"
+$targetDir = "C:\Program Files\WSL"
+
+Copy-Item "$extractDir\system.vhd" "$targetDir\system.vhd" -Force
+Copy-Item "$extractDir\tools\kernel" "$targetDir\tools\kernel" -Force
+</code></pre><h3 id=bu-zou-5-yan-zheng>步骤 5：验证</h3><pre class=language-powershell data-lang=powershell><code class=language-powershell data-lang=powershell># 重启 WSL
+wsl --shutdown
+wsl
+
+# 检查内核版本
+PS> wsl -e uname -r
+6.18.33.2-microsoft-standard-WSL2  ✅
+
+# 检查数据完整性
+PS> wsl -e cat /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.4 LTS"  ✅
+</code></pre><h2 id=guan-jian-zhi-shi-dian>关键知识点</h2><h3 id=wsl-jia-gou-fen-ceng>WSL 架构分层</h3><pre><code>┌─────────────────────────────────────────
+│  用户层 (Ubuntu 系统)                    │
+│  ext4.vhdx — 你的所有文件和数据          │
+├─────────────────────────────────────────┤
+│  内核层 (Linux 内核)                     │
+│  system.vhd + tools/kernel              │
+├─────────────────────────────────────────┤
+│  管理层 (Windows 服务)                   │
+│  wslservice.exe / wsl.exe               │
+└─────────────────────────────────────────┘
+</code></pre><p><strong>数据与内核完全分离</strong>：更新内核不影响任何用户数据。<h3 id=nei-he-geng-xin-zhi-xu-ti-huan-liang-ge-wen-jian>内核更新只需替换两个文件</h3><table><thead><tr><th>文件<th>位置<th>作用<tbody><tr><td><code>system.vhd</code><td><code>C:\Program Files\WSL\</code><td>包含 Linux 内核 + 驱动模块<tr><td><code>tools/kernel</code><td><code>C:\Program Files\WSL\tools\</code><td>内核引导文件</table><p>不需要改注册表、不需要改服务配置、不需要卸载重装。<h3 id=wsl-update-shi-bai-de-ke-neng-yuan-yin><code>wsl --update</code> 失败的可能原因</h3><table><thead><tr><th>错误码<th>含义<th>常见原因<tbody><tr><td><code>0x80190193</code> (403)<td>服务器拒绝<td><strong>代理节点 IP 与 Store market 不匹配</strong>（代理改变出口 IP 后与账户区域不一致）<tr><td><code>0x80072eff</code><td>连接被重置<td>直连 Store CDN 时网络丢包/不稳定，下载中断<tr><td><code>0x80073D02</code><td>应用正在使用<td>WSL 进程未完全关闭<tr><td>Error 1714/1612<td>安装源不可用<td>MSI 缓存文件被删除</table><h3 id=liang-chong-geng-xin-fang-fa-dui-bi>两种更新方法对比</h3><table><thead><tr><th><th><code>wsl --update</code><th>手动替换内核文件<tbody><tr><td><strong>官方支持</strong><td>✅ 微软官方更新方式<td>❌ 非官方内部行为，依赖文件结构，未来可能不被维护<tr><td><strong>更新范围</strong><td>整个 WSL 包（管理程序 + 内核）<td>只替换内核文件（system.vhd + kernel），管理程序不动<tr><td><strong>下载量</strong><td>完整包（管理程序 + 内核，体积更大）<td>同样下载完整 msixbundle，但只提取内核文件使用<tr><td><strong>下载速度</strong><td>❌ 极慢，20 秒不到 1%（Store CDN 问题）<td>✅ 快，GitHub CDN ~3 分钟完成<tr><td><strong>失败模式 1</strong><td>❌ 403 错误 — 请求直接被拒（代理 IP 与 market 不匹配）<td>✅ 无此问题<tr><td><strong>失败模式 2</strong><td>❌ 连接重置 (0x80072eff) — 下载中途断开（网络不稳定）<td>✅ 无此问题<tr><td><strong>断点续传</strong><td>❌ 不支持，每次从头开始<td>✅ curl 支持断点续传<tr><td><strong>成功完成时间</strong><td>慢且不稳定，容易中断<td>~5 分钟（下载 3 分钟 + 替换 2 分钟）</table><p><strong>本环境实测结论</strong>：<ul><li><code>wsl --update</code> 是本环境下的<strong>首选推荐</strong>方式，但实测速度慢（20 秒不到 1%），容易遇到 403（代理/market 不匹配）、0x80072eff（连接重置）等错误导致下载中断，且不支持断点续传<li>手动替换内核文件是<strong>非官方的临时应急方案</strong>：依赖 WSL 内部文件结构，微软未在文档中说明或支持此做法，未来版本可能失效。仅在本环境网络条件下 <code>wsl --update</code> 确实无法完成时作为备选，<strong>5 分钟内完成</strong><li>长期建议：修复网络环境以使用 <code>wsl --update</code> 正常更新</ul><h3 id=zhu-yi-shi-xiang>注意事项</h3><ol><li><strong><code>C:\Windows\Installer\</code> 下的文件不要手动删除</strong> — 它们是系统安装/卸载/修复所必需的<li><strong>磁盘清理工具可能误删 MSI 缓存</strong> — 使用清理工具时需谨慎<li><strong>Store 版和 MSI 版不要混用</strong> — 会导致服务指向混乱<li><strong>国内使用 <code>wsl --update</code> 的常见坑</strong>： <ul><li><strong>代理 IP 与 Store market 不匹配</strong> → 403。关掉所有代理/加速器即可<li><strong>直连下载慢且易中断</strong> → <code>0x80072eff</code> 连接重置，且不支持断点续传</ul><li><strong>手动替换内核文件是非官方方法</strong>：微软未在文档中说明或支持此做法，依赖的内部文件结构可能在未来版本中变化</ol><h2 id=can-kao>参考</h2><ul><li><a rel="noopener nofollow noreferrer" href=https://nvd.nist.gov/vuln/detail/CVE-2026-31431 target=_blank>CVE-2026-31431 (Copy Fail)</a> — CVSS 7.8 HIGH，已被 CISA 列入已知利用漏洞目录<li><a rel="noopener nofollow noreferrer" href=https://github.com/microsoft/WSL/releases target=_blank>WSL GitHub Releases</a> — 完整安装包下载<li><a rel="noopener nofollow noreferrer" href=https://copy.fail target=_blank>copy.fail</a> — 漏洞详情网站</ul></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#bei-jing>背景</a><li><a href=#wen-ti-xian-xiang>问题现象</a><li><a href=#pai-cha-guo-cheng>排查过程</a> <ul><li><a href=#di-yi-bu-jian-cha-dang-qian-zhuang-tai>第一步：检查当前状态</a><li><a href=#di-er-bu-cha-zhao-zu-sai-yuan-yin>第二步：查找阻塞原因</a><li><a href=#di-san-bu-fen-xi-403-cuo-wu>第三步：分析 403 错误</a><li><a href=#di-si-bu-wei-shen-me-xin-ban-zhuang-liao-que-bu-sheng-xiao>第四步：为什么新版装了却不生效？</a></ul><li><a href=#zhuan-zhe-guan-cha-wen-jian-jie-gou-zhao-dao-ling-yi-tiao-lu>转折：观察文件结构，找到另一条路</a><li><a href=#jie-jue-fang-an>解决方案</a> <ul><li><a href=#he-xin-si-lu>核心思路</a><li><a href=#bu-zou-1-cong-github-xia-zai-wan-zheng-an-zhuang-bao>步骤 1：从 GitHub 下载完整安装包</a><li><a href=#bu-zou-2-an-zhuang-appx-bao>步骤 2：安装 AppX 包</a><li><a href=#bu-zou-3-cong-msi-zhong-ti-qu-nei-he-wen-jian>步骤 3：从 MSI 中提取内核文件</a><li><a href=#bu-zou-4-ti-huan-nei-he-wen-jian>步骤 4：替换内核文件</a><li><a href=#bu-zou-5-yan-zheng>步骤 5：验证</a></ul><li><a href=#guan-jian-zhi-shi-dian>关键知识点</a> <ul><li><a href=#wsl-jia-gou-fen-ceng>WSL 架构分层</a><li><a href=#nei-he-geng-xin-zhi-xu-ti-huan-liang-ge-wen-jian>内核更新只需替换两个文件</a><li><a href=#wsl-update-shi-bai-de-ke-neng-yuan-yin>wsl --update 失败的可能原因</a><li><a href=#liang-chong-geng-xin-fang-fa-dui-bi>两种更新方法对比</a><li><a href=#zhu-yi-shi-xiang>注意事项</a></ul><li><a href=#can-kao>参考</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>版权声明：</strong> 本文采用 <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh rel=noopener target=_blank>CC BY-NC-SA 4.0</a> 协议进行许可。转载请注明出处！</div></footer><section class=comments id=comments><h2>评论</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=zh-CN data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=next href=https://cncsmonster.github.io/posts/wsl2-xrdp-xfce-desktop/>WSL2 + xrdp + XFCE 桌面方案踩坑记录 →</a></nav></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script async data-goatcounter=https://cncsmonster.goatcounter.com/count src=//gc.zgo.at/count.js></script><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(()=>{let j=1,l=`none`,h=null,k=``,m=`block`,i=0;var d=(()=>{const b=document.getElementById(`search-input`);const d=document.getElementById(`search-results`);if(!b||!d)return;let f=h;b.addEventListener(`input`,function(){const b=this.value.trim();if(b.length===i){d.innerHTML=k;d.style.display=l;return};clearTimeout(f);f=setTimeout(()=>{if(!a&&!c()){d.innerHTML=`<li class="no-results">搜索加载中...</li>`;d.style.display=m;return};const f=a.search(b);const g=10;if(f.length===i){d.innerHTML=`<li class="no-results">未找到相关结果</li>`}else{d.innerHTML=f.slice(i,g).map(a=>{const c=a.item;const d=e(c.title,b);const f=c.description?e(c.description,b):k;return `<li class="search-result"><a href="`+ c.path+ `"><h4>`+ d+ `</h4>`+ (f?`<p>`+ f+ `</p>`:k)+ `</a></li>`}).join(k)};d.style.display=m},150)});document.addEventListener(`click`,(a=>{if(!a.target.closest(`.search-container`)){d.style.display=l}}))});var c=(()=>{if(a)return !0;if(!b||b.length===i){console.warn(`搜索索引为空`);return !1};try{const c={includeScore:!1,includeMatches:!0,ignoreLocation:!0,threshold:0.15,minMatchCharLength:j,keys:[{name:`title`,weight:3},{name:`description`,weight:2},{name:`body`,weight:j},{name:`path`,weight:0.5}]};a=new Fuse(b,c);console.log(`搜索初始化成功，条目数:`,b.length);return !0}catch(a){console.error(`Fuse 初始化失败:`,a);return !1}});var g=(()=>{c();d()});var f=(a=>a.replace(/[.*+?^${}()|[\]\\]/g,`\\\\\$&`));var e=((a,b)=>{if(!a)return k;const c=new RegExp(`(`+ f(b)+ `)`,`gi`);return a.replace(c,`<mark>\$1</mark>`)});let a=h;const b=window.searchIndex||[];if(document.readyState===`loading`){document.addEventListener(`DOMContentLoaded`,g)}else{g()}})()</script>

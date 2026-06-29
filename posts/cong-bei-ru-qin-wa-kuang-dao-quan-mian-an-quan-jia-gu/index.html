@@ -1,0 +1,185 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>从被入侵挖矿到全面安全加固 | CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Switch to English" class=lang-link href=/en/>EN</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>从被入侵挖矿到全面安全加固</h1><div class=post-meta><time datetime=2026-05-30T00:00:00+08:00>2026-05-30</time></div></header><div class=post-layout><div class=post-content><h2 id=xu-fa-xian-hei-ke-huan-zai-gong-ji>序：发现黑客还在攻击</h2><p>2026 年 5 月 29 日，在排查系统 CPU 发热问题时，我惊讶地发现：<strong>黑客仍在持续攻击我的电脑！</strong><pre><code>今日 SSH 暴力破解尝试：293 次
+攻击来源：通过 rathole 隧道 (your-server-ip:2334)
+被尝试用户名：ubuntu, test, root, centos, dell, user...
+</code></pre><p>更令人担忧的是，服务器端的安全配置仍然不完善：<table><thead><tr><th>问题<th>状态<tbody><tr><td>SSH 允许密码登录<td>❌<tr><td>SSH 允许 root 登录<td>❌<tr><td>无 fail2ban 防护<td>❌<tr><td>防火墙未启用<td>❌</table><p>这说明之前的修复只是“头痛医头”，没有从根本上解决问题。<strong>攻击者仍在尝试，我们的防线仍有漏洞。</strong><p>于是，我决定进行一次全面的安全加固。<h3 id=xi-tong-jia-gou>系统架构</h3><p>本次事件涉及三台主机，都通过 rathole 隧道将 SSH 服务暴露到公网：<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                      家中局域网                              │
+│  ┌─────────────┐    ┌─────────────┐                        │
+│  │   主机 A    │    │   主机 B    │                        │
+│  │  (WSL2)     │    │   (Mac)     │                        │
+│  │  SSH 服务   │    │  SSH 服务   │                        │
+│  └──────┬──────┘    └──────┬──────┘                        │
+│         │                  │                                │
+│         └────────┬─────────┘                                │
+│                  │ rathole 隧道                             │
+│                  ↓                                          │
+│         ┌──────────────┐                                   │
+│         │   服务器     │                                   │
+│         │ (your-server-ip)│                                 │
+│         └──────┬───────┘                                   │
+│                ↓                                            │
+│            公网访问                                         │
+└─────────────────────────────────────────────────────────────┘
+</code></pre><ul><li><strong>主机 A</strong>：主要受害者，被入侵并植入矿机<li><strong>主机 B</strong>：次要风险点，SSH 也暴露在公网<li><strong>服务器</strong>：运行 rathole 服务，转发流量</ul><hr><h2 id=yi-yuan-shi-ru-qin-shi-jian-2026-05-23>一、原始入侵事件(2026-05-23)</h2><h3 id=shi-jian-gai-shu>事件概述</h3><p>WSL 通过 rathole 内网穿透将 SSH 暴露到公网(非标准端口)。5 月 22 日晚,攻击者通过字典暴力破解 <code>test</code> 用户的弱密码,成功登录并植入门罗币矿机。到 5 月 23 日凌晨被发现时,矿机已满负荷运行约一天,占用 2.4 GiB 内存。<h3 id=gong-ji-lu-jing>攻击路径</h3><pre><code>公网扫描器 → 公网入口:非标准端口 (rathole 穿透)
+                  ↓
+            WSL SSH (内网)
+                  ↓ 字典爆破
+            test 用户 (弱密码)
+                  ↓
+            部署矿机 + crontab 后门
+</code></pre><h3 id=shou-hai-cheng-du>受害程度</h3><table><thead><tr><th>项目<th>情况<tbody><tr><td>矿机进程<td>伪装成 <code>systemd-udevdar</code>,吃满 CPU(1062%),占 2.4 GiB 内存。疑似 XMRig/RandomX 挖门罗币<tr><td>后门<td>crontab <code>@reboot /var/tmp/.sys_cache_94</code>(清理时空文件,未部署完)<tr><td>密码<td>攻击者登录后立刻改了 test 密码<tr><td>API Key 泄露<td><code>~/.bashrc</code> 中 DeepSeek API Key 明文存储,可能被窃取<tr><td>数据<td>无法确认攻击者是否读取/拷贝了文件</table><h3 id=lou-dong-qing-dan-ru-qin-shi-zhuang-tai-yi-quan-bu-xiu-fu>漏洞清单(入侵时状态,已全部修复)</h3><table><thead><tr><th>#<th>问题<th>严重度<th>当前状态<tbody><tr><td>1<td><strong>SSH 允许密码登录</strong> - 根本原因<td>🔴<td>✅ 已禁用<tr><td>2<td><strong>test 账户密码太弱</strong> - 字典一撞就进<td>🔴<td>✅ 已锁定<tr><td>3<td><strong>多余系统账户</strong> - 系统中存在不止一个弱密码的非核心账户<td>🟡<td>✅ 已清理<tr><td>4<td><strong>非标准端口不防扫描</strong> - 全端口扫描不挑端口号<td>🟡<td>✅ 已加固<tr><td>5<td><strong>无 fail2ban</strong> - 1412 次失败尝试无任何自动阻断<td>🟡<td>✅ 已安装<tr><td>6<td><strong>API Key 明文放 bashrc</strong> - 被入侵即泄露<td>🟡<td>✅ 已吊销</table><h3 id=shou-ci-xiu-fu-cuo-shi>首次修复措施</h3><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 1. 关闭密码登录(全局,所有用户)
+sudo sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# 2. 锁定失陷账户
+sudo passwd -l test
+
+# 3. 杀掉恶意进程
+sudo pkill -KILL -u test
+
+# 4. 清除 crontab 后门
+sudo rm /var/spool/cron/crontabs/test
+
+# 5. 删除后门脚本
+sudo rm /var/tmp/.sys_cache_94
+</code></pre><hr><h2 id=er-chi-xu-gong-ji-fa-xian-2026-05-29>二、持续攻击发现(2026-05-29)</h2><h3 id=fa-xian-guo-cheng>发现过程</h3><p>5 月 29 日,在排查系统 CPU 发热问题时,通过检查 SSH 日志发现了持续的暴力破解攻击:<pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 检查攻击日志
+grep "Invalid user" /var/log/auth.log | grep "2026-05-29" | wc -l
+# 输出:293
+</code></pre><h3 id=gong-ji-xiang-qing>攻击详情</h3><pre><code>时间范围:14:45 - 18:20(约 3.5 小时)
+攻击频率:每 30-60 秒一次
+攻击来源:通过 rathole 隧道,显示为 127.0.0.1
+被尝试用户名:ubuntu, test, root, centos, dell, user, vq, pq, ba, qg, ii, eq...
+</code></pre><h3 id=fu-wu-qi-duan-an-quan-wen-ti>服务器端安全问题</h3><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 检查服务器SSH配置
+ssh root@your-server-ip "grep -E '^(PermitRootLogin|PasswordAuthentication)' /etc/ssh/sshd_config"
+
+# 输出:
+PermitRootLogin yes        # ❌ 危险!
+PasswordAuthentication yes # ❌ 危险!
+</code></pre><h3 id=fen-xi-wei-shen-me-shou-ci-xiu-fu-bu-wan-zheng>分析:为什么首次修复不完整?</h3><table><thead><tr><th>问题<th>原因<tbody><tr><td>只修复了客户端<td>服务器端(your-server-ip)配置仍不安全<tr><td>无自动封禁机制<td>fail2ban 未安装,攻击者可以无限尝试<tr><td>无用户限制<td>没有 AllowUsers 配置,所有用户都暴露<tr><td>Mac 未加固<td>Mac 的 SSH 也通过 rathole 暴露,且无安全配置</table><hr><h2 id=san-quan-mian-an-quan-jia-gu-2026-05-29>三、全面安全加固(2026-05-29)</h2><h3 id=3-1-ke-hu-duan-ben-ji-jia-gu>3.1 客户端(本机)加固</h3><h4 id=an-zhuang-fail2ban>安装 fail2ban</h4><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 安装
+sudo apt install -y fail2ban
+
+# 配置
+cat > /etc/fail2ban/jail.local << 'EOF'
+[DEFAULT]
+bantime = 86400
+findtime = 600
+maxretry = 3
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+backend = systemd
+journalmatch = _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+maxretry = 3
+bantime = 86400
+findtime = 600
+EOF
+
+# 启动
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+</code></pre><h4 id=ssh-pei-zhi-jia-gu>SSH 配置加固</h4><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash>cat > /etc/ssh/sshd_config.d/hardening.conf << 'EOF'
+# SSH加固配置
+MaxStartups 3:50:10
+MaxSessions 3
+MaxAuthTries 3
+LoginGraceTime 30
+AllowUsers your-username
+PasswordAuthentication no
+PermitRootLogin no
+EOF
+
+sudo systemctl restart sshd
+</code></pre><h3 id=3-2-fu-wu-qi-duan-your-server-ip-jia-gu>3.2 服务器端(your-server-ip)加固</h3><h4 id=warning-pei-zhi-chong-tu-wen-ti>⚠️ 配置冲突问题</h4><p>服务器默认配置存在冲突,需要先修复:<pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 检查配置
+ssh root@your-server-ip "grep -E '^(PasswordAuthentication|PermitRootLogin)' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf"
+
+# 输出示例(存在冲突):
+# /etc/ssh/sshd_config:PermitRootLogin yes          ❌ 覆盖 hardening.conf
+# /etc/ssh/sshd_config:PasswordAuthentication yes    ❌ 覆盖 hardening.conf
+# /etc/ssh/sshd_config.d/50-cloud-init.conf:PasswordAuthentication yes  ❌ 覆盖 hardening.conf
+# /etc/ssh/sshd_config.d/hardening.conf:PermitRootLogin prohibit-password  ✅ 被覆盖
+# /etc/ssh/sshd_config.d/hardening.conf:PasswordAuthentication no          ✅ 被覆盖
+</code></pre><p><strong>问题</strong>:<code>sshd_config</code> 和 <code>50-cloud-init.conf</code> 中的配置会覆盖 <code>hardening.conf</code> 的配置。<p><strong>修复方法</strong>:<pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 1. 注释掉 sshd_config 中的冲突配置
+sed -i 's/^PermitRootLogin yes/#PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/^PasswordAuthentication yes/#PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# 2. 注释掉 50-cloud-init.conf 中的冲突配置
+sed -i 's/^PasswordAuthentication yes/#PasswordAuthentication yes/' /etc/ssh/sshd_config.d/50-cloud-init.conf
+
+# 3. 重启 SSH 服务
+systemctl restart ssh
+</code></pre><h4 id=an-zhuang-fail2ban-1>安装 fail2ban</h4><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 连接服务器
+ssh root@your-server-ip
+
+# 安装 fail2ban
+apt install -y fail2ban
+
+# 配置 fail2ban
+cat > /etc/fail2ban/jail.local << 'EOF'
+[DEFAULT]
+bantime = 86400
+findtime = 600
+maxretry = 3
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+backend = systemd
+journalmatch = _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+maxretry = 3
+bantime = 86400
+findtime = 600
+EOF
+
+systemctl enable fail2ban
+systemctl start fail2ban
+</code></pre><h4 id=ssh-jia-gu>SSH 加固</h4><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash>cat > /etc/ssh/sshd_config.d/hardening.conf << 'EOF'
+MaxStartups 3:50:10
+MaxSessions 3
+MaxAuthTries 3
+LoginGraceTime 30
+PasswordAuthentication no
+PermitRootLogin prohibit-password
+EOF
+
+systemctl restart sshd
+</code></pre><h3 id=3-3-mac-jia-gu>3.3 Mac 加固</h3><pre class=language-bash data-lang=bash><code class=language-bash data-lang=bash># 禁用密码登录
+sudo sed -i '' 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+
+# 禁止root登录
+sudo sed -i '' 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# 测试配置
+sudo sshd -t
+
+# 重启SSH
+sudo launchctl stop com.openssh.sshd
+sudo launchctl start com.openssh.sshd
+</code></pre><hr><h2 id=si-an-quan-deng-ji-dui-bi>四、安全等级对比</h2><h3 id=fang-hu-ti-xi-yan-jin>防护体系演进</h3><table><thead><tr><th>维度<th>入侵前<th>首次修复后<th>全面加固后<tbody><tr><td><strong>整体安全</strong><td>🔴 高危<td>🟡 中等<td>🟢 安全<tr><td><strong>暴力破解防护</strong><td>❌ 无<td>⚠️ 基础<td>✅ fail2ban 自动封禁<tr><td><strong>密码认证</strong><td>⚠️ 允许<td>⚠️ 部分禁用<td>✅ 全部禁用<tr><td><strong>用户限制</strong><td>❌ 无<td>⚠️ 部分<td>✅ AllowUsers<tr><td><strong>连接限制</strong><td>❌ 无<td>❌ 无<td>✅ MaxStartups<tr><td><strong>服务管理</strong><td>⚠️ 手动<td>⚠️ 手动<td>✅ systemd 自动重启<tr><td><strong>Mac 防护</strong><td>❌ 无<td>❌ 无<td>✅ 完整加固</table><h3 id=dang-qian-fang-hu-ti-xi>当前防护体系</h3><pre><code>攻击者
+  ↓
+服务器 (your-server-ip)
+  ↓
+fail2ban → 3次失败 → 封禁24小时 ✅
+  ↓
+SSH加固 → 密码禁用 → 无法暴力破解 ✅
+  ↓
+rathole隧道
+  ↓
+客户端SSH
+  ↓
+AllowUsers → 只允许your-username ✅
+  ↓
+✅ 安全
+</code></pre><hr><h2 id=wu-yan-zheng-jie-guo-2026-05-31>五、验证结果(2026-05-31)</h2><h3 id=shi-ji-yan-zheng>实际验证</h3><h4 id=ke-hu-duan-windows-wsl2>客户端(Windows WSL2)</h4><table><thead><tr><th>验证项<th>测试方法<th>结果<tbody><tr><td><strong>SSH 密码登录被拒绝</strong><td><code>ssh -o PubkeyAuthentication=no test@127.0.0.1</code><td><code>Permission denied (publickey)</code> ✅<tr><td><strong>root 登录被拒绝</strong><td><code>ssh root@127.0.0.1</code><td><code>Permission denied (publickey)</code> ✅<tr><td><strong>AllowUsers 配置生效</strong><td>用 test 用户尝试登录<td><code>not allowed because not listed in AllowUsers</code> ✅</table><h4 id=fu-wu-qi-duan-your-server-ip>服务器端(your-server-ip)</h4><table><thead><tr><th>验证项<th>测试方法<th>结果<tbody><tr><td><strong>SSH 密码登录被拒绝</strong><td><code>ssh -o PubkeyAuthentication=no root@your-server-ip</code><td><code>Permission denied (publickey)</code> ✅<tr><td><strong>普通用户密码登录被拒绝</strong><td><code>ssh -o PubkeyAuthentication=no your-username@your-server-ip</code><td><code>Permission denied (publickey)</code> ✅<tr><td><strong>配置冲突已修复</strong><td>检查配置文件<td><code>sshd_config</code> 和 <code>50-cloud-init.conf</code> 已注释冲突配置 ✅<tr><td><strong>fail2ban 服务运行</strong><td><code>systemctl status fail2ban</code><td><code>active</code> ✅<tr><td><strong>fail2ban 监控日志</strong><td><code>fail2ban-client status sshd</code><td><code>File list: /var/log/auth.log</code> ✅</table><h3 id=li-lun-ke-xing-wei-shi-ji-hong-fa>理论可行(未实际触发)</h3><table><thead><tr><th>验证项<th>理论依据<tbody><tr><td><strong>fail2ban 自动封禁</strong><td>配置正确:maxretry=3, bantime=86400, findtime=600。filter 规则匹配 “Invalid user” 和 “not allowed” 模式。需 3 次失败触发封禁。</table><h3 id=fail2ban-gong-zuo-yuan-li>fail2ban 工作原理</h3><pre><code>攻击者尝试登录
+    ↓
+sshd 记录日志到 journal(_SYSTEMD_UNIT=ssh.service)
+    ↓
+fail2ban 读取 journal 日志(backend = systemd)
+    ↓
+filter 匹配失败模式("Invalid user" / "not allowed")
+    ↓
+累计失败次数(maxretry = 3)
+    ↓
+超过阈值 → 封禁 IP(bantime = 86400)
+</code></pre><hr><h2 id=liu-he-xin-jiao-xun>六、核心教训</h2><h3 id=1-an-quan-bu-kao-yin-cang-kao-mi-yao>1. 安全不靠隐藏,靠密钥</h3><p>换端口是障眼法。masscan/zmap 这类工具可以在几分钟内扫描整个 IPv4 的指定端口段–攻击者不需要知道你的具体端口,扫一遍全网就全出来了。非标准端口只是少了一些噪声级别的攻击,真正的扫描器照样能找到。<strong>只有禁用密码、强制密钥认证能真正挡住。</strong><h3 id=2-mei-yi-ge-xi-tong-zhang-hu-du-shi-ru-kou>2. 每一个系统账户都是入口</h3><p>系统上有多个用户(包括一个弱密码的 <code>test</code>)。攻击者试到 <code>test</code> 就成了。任何暴露到公网的服务,所有本地用户都同时暴露在攻击面下–只要有一个密码弱,整个系统就门户大开。<h3 id=3-gong-wang-bao-lu-ling-xin-ren>3. 公网暴露 = 零信任</h3><p>rathole 把内网服务直接映射到公网,等同于把 SSH 直接放到互联网上。<strong>必须假设公网流量 100% 是恶意的。</strong><h3 id=4-bei-ru-qin-hou-yao-cha-chi-jiu-hua>4. 被入侵后要查持久化</h3><p>攻击者做了三件事:<strong>矿机、改密码、留 crontab</strong>。如果只杀进程不动 crontab,重启矿机又复活。排查时至少检查:<ul><li><code>crontab -l</code> / <code>/var/spool/cron/crontabs/</code><li><code>~/.ssh/authorized_keys</code> 是否多了不明密钥<li><code>~/.bashrc</code> / <code>~/.profile</code> 是否有后门代码<li>systemd user services<li><code>/tmp</code> / <code>/var/tmp</code> / <code>/dev/shm</code> 可疑文件</ul><h3 id=5-rathole-sui-dao-xu-yao-shuang-xiang-jia-gu>5. rathole 隧道需要双向加固</h3><p>rathole 会把内网服务完全暴露到公网,<strong>必须在客户端和服务器端都做安全加固</strong>。只修一端等于没修。<h3 id=6-fail2ban-dui-localhost-wu-xiao>6. fail2ban 对 localhost 无效</h3><p>通过 rathole 转发的连接显示为 127.0.0.1,fail2ban 无法封禁真正的攻击者IP。需要在<strong>服务器端</strong>也安装 fail2ban。<h3 id=7-ding-qi-jian-cha-an-quan-pei-zhi>7. 定期检查安全配置</h3><p>安全不是一次性工作,需要定期检查:<ul><li>监控 SSH 日志<li>检查 fail2ban 封禁记录<li>审计系统用户和权限</ul><hr><h2 id=qi-shi-hou-qing-dan-ru-qin-hou-gai-zuo-shen-me>七、事后清单:入侵后该做什么</h2><p>如果发现被入侵,按这个顺序过一遍:<ol><li><strong>杀进程止血</strong> - <code>pkill -KILL -u <失陷用户></code> 先把矿机/后门进程停掉<li><strong>查持久化</strong> - crontab、authorized_keys、bashrc/profile、systemd user services、/tmp 和 /var/tmp 隐藏文件<li><strong>吊销泄露的凭证</strong> - 入侵者可能已经读走了配置文件中的 API Key、token,到对应平台后台全部吊销换新<li><strong>关密码改密钥</strong> - 这是根本防线,不是换端口<li><strong>清理多余账户</strong> - 回顾系统上有哪些用户、哪些有弱密码、哪些根本不需要<li><strong>全链路加固</strong> - 不只修客户端,还要修服务器端和所有通过 rathole 暴露的服务</ol><hr><h2 id=ba-xiang-guan-pei-zhi-wen-jian>八、相关配置文件</h2><table><thead><tr><th>文件<th>位置<th>说明<tbody><tr><td>客户端 SSH 配置<td><code>/etc/ssh/sshd_config.d/hardening.conf</code><td>AllowUsers, 密码禁用<tr><td>服务器 SSH 配置<td><code>/etc/ssh/sshd_config.d/hardening.conf</code><td>root限制, 密码禁用<tr><td>fail2ban 配置<td><code>/etc/fail2ban/jail.local</code><td>自动封禁规则<tr><td>rathole 服务<td><code>/etc/systemd/system/rathole.service</code><td>笔记本电脑转发<tr><td>rathole-mac 服务<td><code>/etc/systemd/system/rathole-mac.service</code><td>Mac 转发<tr><td>Mac SSH 配置<td><code>/etc/ssh/sshd_config</code><td>密码禁用, root限制</table><hr><h2 id=zong-jie>总结</h2><p>这次事件从发现入侵到全面加固,经历了两个阶段:<ol><li><strong>首次修复(5月23日)</strong>:只修复了客户端,头痛医头<li><strong>全面加固(5月29日)</strong>:发现攻击仍在继续,进行全链路加固</ol><p><strong>关键教训</strong>:<ul><li>安全不靠隐藏,靠密钥<li>公网暴露 = 零信任<li>被入侵后要查持久化<li>rathole 隧道需要双向加固<li>fail2ban 需要在服务器端安装</ul><p><strong>最终状态</strong>:<ul><li>✅ 客户端 SSH 加固完成<li>✅ 服务器端 SSH 加固完成<li>✅ Mac SSH 加固完成<li>✅ fail2ban 自动封禁配置完成<li>✅ 验证测试通过</ul><p><strong>攻击者仍在尝试,但我们的防线已经建立。</strong></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#xu-fa-xian-hei-ke-huan-zai-gong-ji>序：发现黑客还在攻击</a> <ul><li><a href=#xi-tong-jia-gou>系统架构</a></ul><li><a href=#yi-yuan-shi-ru-qin-shi-jian-2026-05-23>一、原始入侵事件(2026-05-23)</a> <ul><li><a href=#shi-jian-gai-shu>事件概述</a><li><a href=#gong-ji-lu-jing>攻击路径</a><li><a href=#shou-hai-cheng-du>受害程度</a><li><a href=#lou-dong-qing-dan-ru-qin-shi-zhuang-tai-yi-quan-bu-xiu-fu>漏洞清单(入侵时状态,已全部修复)</a><li><a href=#shou-ci-xiu-fu-cuo-shi>首次修复措施</a></ul><li><a href=#er-chi-xu-gong-ji-fa-xian-2026-05-29>二、持续攻击发现(2026-05-29)</a> <ul><li><a href=#fa-xian-guo-cheng>发现过程</a><li><a href=#gong-ji-xiang-qing>攻击详情</a><li><a href=#fu-wu-qi-duan-an-quan-wen-ti>服务器端安全问题</a><li><a href=#fen-xi-wei-shen-me-shou-ci-xiu-fu-bu-wan-zheng>分析:为什么首次修复不完整?</a></ul><li><a href=#san-quan-mian-an-quan-jia-gu-2026-05-29>三、全面安全加固(2026-05-29)</a> <ul><li><a href=#3-1-ke-hu-duan-ben-ji-jia-gu>3.1 客户端(本机)加固</a> <ul><li><a href=#an-zhuang-fail2ban>安装 fail2ban</a><li><a href=#ssh-pei-zhi-jia-gu>SSH 配置加固</a></ul><li><a href=#3-2-fu-wu-qi-duan-your-server-ip-jia-gu>3.2 服务器端(your-server-ip)加固</a> <ul><li><a href=#warning-pei-zhi-chong-tu-wen-ti>⚠️ 配置冲突问题</a><li><a href=#an-zhuang-fail2ban-1>安装 fail2ban</a><li><a href=#ssh-jia-gu>SSH 加固</a></ul><li><a href=#3-3-mac-jia-gu>3.3 Mac 加固</a></ul><li><a href=#si-an-quan-deng-ji-dui-bi>四、安全等级对比</a> <ul><li><a href=#fang-hu-ti-xi-yan-jin>防护体系演进</a><li><a href=#dang-qian-fang-hu-ti-xi>当前防护体系</a></ul><li><a href=#wu-yan-zheng-jie-guo-2026-05-31>五、验证结果(2026-05-31)</a> <ul><li><a href=#shi-ji-yan-zheng>实际验证</a> <ul><li><a href=#ke-hu-duan-windows-wsl2>客户端(Windows WSL2)</a><li><a href=#fu-wu-qi-duan-your-server-ip>服务器端(your-server-ip)</a></ul><li><a href=#li-lun-ke-xing-wei-shi-ji-hong-fa>理论可行(未实际触发)</a><li><a href=#fail2ban-gong-zuo-yuan-li>fail2ban 工作原理</a></ul><li><a href=#liu-he-xin-jiao-xun>六、核心教训</a> <ul><li><a href=#1-an-quan-bu-kao-yin-cang-kao-mi-yao>1. 安全不靠隐藏,靠密钥</a><li><a href=#2-mei-yi-ge-xi-tong-zhang-hu-du-shi-ru-kou>2. 每一个系统账户都是入口</a><li><a href=#3-gong-wang-bao-lu-ling-xin-ren>3. 公网暴露 = 零信任</a><li><a href=#4-bei-ru-qin-hou-yao-cha-chi-jiu-hua>4. 被入侵后要查持久化</a><li><a href=#5-rathole-sui-dao-xu-yao-shuang-xiang-jia-gu>5. rathole 隧道需要双向加固</a><li><a href=#6-fail2ban-dui-localhost-wu-xiao>6. fail2ban 对 localhost 无效</a><li><a href=#7-ding-qi-jian-cha-an-quan-pei-zhi>7. 定期检查安全配置</a></ul><li><a href=#qi-shi-hou-qing-dan-ru-qin-hou-gai-zuo-shen-me>七、事后清单:入侵后该做什么</a><li><a href=#ba-xiang-guan-pei-zhi-wen-jian>八、相关配置文件</a><li><a href=#zong-jie>总结</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>版权声明：</strong> 本文采用 <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh rel=noopener target=_blank>CC BY-NC-SA 4.0</a> 协议进行许可。转载请注明出处！</div></footer><section class=comments id=comments><h2>评论</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=zh-CN data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=prev href=https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/>← WSL2 + Intel 集显跑 LLM 推理：为什么不行？分层诊断全记录</a><a class=next href=https://cncsmonster.github.io/posts/pi-permission-gate-security-extension/>给 Pi 编码代理加一道安全门：pi-permission-gate →</a></nav></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script async data-goatcounter=https://cncsmonster.goatcounter.com/count src=//gc.zgo.at/count.js></script><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(()=>{let j=1,l=`none`,h=null,k=``,m=`block`,i=0;var d=(()=>{const b=document.getElementById(`search-input`);const d=document.getElementById(`search-results`);if(!b||!d)return;let f=h;b.addEventListener(`input`,function(){const b=this.value.trim();if(b.length===i){d.innerHTML=k;d.style.display=l;return};clearTimeout(f);f=setTimeout(()=>{if(!a&&!c()){d.innerHTML=`<li class="no-results">搜索加载中...</li>`;d.style.display=m;return};const f=a.search(b);const g=10;if(f.length===i){d.innerHTML=`<li class="no-results">未找到相关结果</li>`}else{d.innerHTML=f.slice(i,g).map(a=>{const c=a.item;const d=e(c.title,b);const f=c.description?e(c.description,b):k;return `<li class="search-result"><a href="`+ c.path+ `"><h4>`+ d+ `</h4>`+ (f?`<p>`+ f+ `</p>`:k)+ `</a></li>`}).join(k)};d.style.display=m},150)});document.addEventListener(`click`,(a=>{if(!a.target.closest(`.search-container`)){d.style.display=l}}))});var c=(()=>{if(a)return !0;if(!b||b.length===i){console.warn(`搜索索引为空`);return !1};try{const c={includeScore:!1,includeMatches:!0,ignoreLocation:!0,threshold:0.15,minMatchCharLength:j,keys:[{name:`title`,weight:3},{name:`description`,weight:2},{name:`body`,weight:j},{name:`path`,weight:0.5}]};a=new Fuse(b,c);console.log(`搜索初始化成功，条目数:`,b.length);return !0}catch(a){console.error(`Fuse 初始化失败:`,a);return !1}});var g=(()=>{c();d()});var f=(a=>a.replace(/[.*+?^${}()|[\]\\]/g,`\\\\\$&`));var e=((a,b)=>{if(!a)return k;const c=new RegExp(`(`+ f(b)+ `)`,`gi`);return a.replace(c,`<mark>\$1</mark>`)});let a=h;const b=window.searchIndex||[];if(document.readyState===`loading`){document.addEventListener(`DOMContentLoaded`,g)}else{g()}})()</script>

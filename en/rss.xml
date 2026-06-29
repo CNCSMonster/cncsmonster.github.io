@@ -1,0 +1,1741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sat, 20 Jun 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>WSL2 + xrdp + XFCE Desktop: A Post-Mortem</title>
+          <pubDate>Sat, 20 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl2-xrdp-xfce-desktop-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl2-xrdp-xfce-desktop-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl2-xrdp-xfce-desktop-en/">&lt;p&gt;Can WSL2 serve as a full Linux desktop machine? I tried the xrdp + XFCE route, and the answer is &lt;strong&gt;it doesn’t work&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 was never designed for a complete desktop&lt;&#x2F;strong&gt; — Microsoft built WSLg to run individual GUI apps, not to give you a desktop server&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;xrdp assumes a real Linux server&lt;&#x2F;strong&gt; — WSL2 has no real display hardware, no VT, no stable networking&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Here’s the full post-mortem.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;the-issues&quot;&gt;The Issues&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;prelude-xrdp-binding-address-misconfiguration&quot;&gt;Prelude: xrdp binding address misconfiguration&lt;&#x2F;h3&gt;
+&lt;p&gt;Instinctively wrote &lt;code&gt;address=127.0.0.1&lt;&#x2F;code&gt;, but this version of xrdp controls binding via &lt;code&gt;port=&lt;&#x2F;code&gt;, not &lt;code&gt;address=&lt;&#x2F;code&gt;. Fixed by changing to &lt;code&gt;port=tcp:&#x2F;&#x2F;.:3389&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;issue-1-black-screen-or-session-exits-immediately-after-connecting&quot;&gt;Issue 1: Black screen or session exits immediately after connecting&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Cause&lt;&#x2F;strong&gt;: WSLg sets &lt;code&gt;WAYLAND_DISPLAY=wayland-0&lt;&#x2F;code&gt;. XFCE&#x2F;GTK components prefer Wayland, but xrdp only provides X11.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Fix&lt;&#x2F;strong&gt;: Clear Wayland variables in &lt;code&gt;&#x2F;etc&#x2F;xrdp&#x2F;startwm.sh&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;unset WAYLAND_DISPLAY
+export GDK_BACKEND=x11
+export QT_QPA_PLATFORM=xcb
+export SDL_VIDEODRIVER=x11
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;&#x2F;etc&#x2F;xrdp&#x2F;startwm.sh&lt;&#x2F;code&gt; is xrdp’s default session startup script — called by xrdp when a user connects via RDP. Think of it as xrdp’s equivalent of &lt;code&gt;.xinitrc&lt;&#x2F;code&gt;. On a regular Linux server it doesn’t need modification; here it’s used to clear the Wayland variables injected by WSLg.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;issue-2-desktop-elements-too-small-on-hidpi-displays&quot;&gt;Issue 2: Desktop elements too small on HiDPI displays&lt;&#x2F;h3&gt;
+&lt;p&gt;Test environment: 2880x1800 display, Windows scaling at 200%.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Approaches tried&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Lowering mstsc resolution to 1440x900 → desktop shrinks with black borders&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GDK_SCALE=2&lt;&#x2F;code&gt; global scaling → XFCE crashes outright&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Final compromise&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;GDK_DPI_SCALE=1.5&lt;&#x2F;code&gt; to scale fonts only (&lt;code&gt;GDK_SCALE&lt;&#x2F;code&gt; changes window geometry, which XFCE can’t handle)&lt;&#x2F;li&gt;
+&lt;li&gt;Panel &lt;code&gt;icon-size&lt;&#x2F;code&gt; changed from default 16 to 48&lt;&#x2F;li&gt;
+&lt;li&gt;Panel height set to 64&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;issue-3-home-folder-won-t-open&quot;&gt;Issue 3: HOME folder won’t open&lt;&#x2F;h3&gt;
+&lt;p&gt;Error: &lt;code&gt;获取文件信息时出错 &quot;&#x2F;home&#x2F;...&#x2F;thinclient_drives&quot;：传输端点未连接。&lt;&#x2F;code&gt; (Error getting file info: transport endpoint not connected)&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Cause&lt;&#x2F;strong&gt;: xrdp’s drive redirection creates a FUSE mount point &lt;code&gt;thinclient_drives&lt;&#x2F;code&gt; under the home directory. It doesn’t auto-unmount when the connection drops.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Fix&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo umount -l &amp;#x2F;home&amp;#x2F;&amp;lt;username&amp;gt;&amp;#x2F;thinclient_drives
+sudo rm -rf &amp;#x2F;home&amp;#x2F;&amp;lt;username&amp;gt;&amp;#x2F;thinclient_drives
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;WSLg’s &lt;code&gt;WAYLAND_DISPLAY&lt;&#x2F;code&gt; pollutes X11 sessions — remote desktop setups must clear it manually&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GDK_SCALE&lt;&#x2F;code&gt; and &lt;code&gt;GDK_DPI_SCALE&lt;&#x2F;code&gt; are fundamentally different: the former changes window geometry, the latter only scales fonts&lt;&#x2F;li&gt;
+&lt;li&gt;XFCE panel icon size is controlled independently by &lt;code&gt;icon-size&lt;&#x2F;code&gt;, separate from panel height&lt;&#x2F;li&gt;
+&lt;li&gt;xrdp’s &lt;code&gt;thinclient_drives&lt;&#x2F;code&gt; tends to linger under WSL&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Does StepFun Train on API Data? A Policy Investigation</title>
+          <pubDate>Sat, 13 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/</link>
+          <guid>https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/">&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I use Step Plan or StepFun API. Will my code&#x2F;conversation data be used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;It doesn’t explicitly exclude training, nor does it explicitly commit to it.&lt;&#x2F;strong&gt; None of the three core documents (Privacy Policy, User Agreement, Paid Service Agreement) contain phrases like “will not use for training” or “training exclusion”. The English TOS retains the broad authorization of “improve the Services”.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;I use&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Will it train?&lt;&#x2F;th&gt;&lt;th&gt;Clause basis&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Step Plan (subscription)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ No commitment to exclude&lt;&#x2F;td&gt;&lt;td&gt;Paid agreement has no training clause, refers to platform privacy policy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API pay-as-you-go&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ No commitment to exclude&lt;&#x2F;td&gt;&lt;td&gt;User Agreement §6.5: “provide, diagnose, improve, optimize, upgrade” purposes&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Enterprise&#x2F;private deployment&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Not disclosed&lt;&#x2F;td&gt;&lt;td&gt;Requires business negotiation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;evidence-1-privacy-policy-has-no-training-related-statements&quot;&gt;Evidence 1: Privacy Policy has no training-related statements&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun Open Platform Privacy Policy&lt;&#x2F;a&gt; (2026-04-23)&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 review: The policy still &lt;strong&gt;does not contain any statements about “model training” or “will not use for training”&lt;&#x2F;strong&gt;. Data usage purposes are limited to “providing intelligent conversation and content generation services” and “anonymized operational statistics”.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Key clause&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We will collect information you actively input… as well as service output information. We will analyze and calculate the above information in order to better understand your needs and context…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;“Analysis and calculation” can be understood as context processing required for real-time inference, but may also include offline analysis.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-2-english-tos-retains-improve-the-services&quot;&gt;Evidence 2: English TOS retains “improve the Services”&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;StepFun Terms of Service&lt;&#x2F;a&gt; (Section 4.1.4)&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We may use Content to provide, maintain, develop, and &lt;strong&gt;improve the Services&lt;&#x2F;strong&gt;…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Among them, “develop, and improve the Services” can cover model training, fine-tuning, evaluation and other purposes.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Comparison&lt;&#x2F;strong&gt;: OpenAI and Anthropic’s API terms explicitly exclude training purposes. StepFun lags significantly in this regard.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-3-step-plan-paid-agreement-has-no-training-clause&quot;&gt;Evidence 3: Step Plan Paid Agreement has no training clause&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan Paid Service Agreement&lt;&#x2F;a&gt; (2026-05-25)&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 review: The agreement &lt;strong&gt;does not contain clauses specifically targeting data usage, model training, or data retention&lt;&#x2F;strong&gt;, nor does it make any new commitments excluding data training or data retention. Clauses involving data liability are limited to users bearing responsibility for data breaches caused by third-party tools.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-4-data-retention-period-preliminary-but-insufficient&quot;&gt;Evidence 4: Data retention period — preliminary but insufficient&lt;&#x2F;h3&gt;
+&lt;p&gt;New explanation in privacy policy (first explicitly extracted in this review):&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We will only retain your personal information for the period necessary for the purpose of providing the platform’s related services… After you cancel your account, actively delete personal information, or exceed the necessary period, we will delete or anonymize your personal information.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Exceptions&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Compliance with legal requirements for information retention&lt;&#x2F;li&gt;
+&lt;li&gt;Reasonable extension for financial, audit, dispute resolution purposes&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Gap&lt;&#x2F;strong&gt;: How long is the “necessary period”, what are the criteria for “exceeding the necessary period”, and whether there is an audit mechanism are not explained.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;industry-comparison&quot;&gt;Industry Comparison&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th&gt;Service&lt;&#x2F;th&gt;&lt;th&gt;Data training policy&lt;&#x2F;th&gt;&lt;th&gt;Transparency&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly does not train&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly does not train&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Xiaomi MiMo&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;✅ Privacy policy literally promises “will not use for training”&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Alibaba Cloud Bailian&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Does not train (general clause)&lt;&#x2F;td&gt;&lt;td&gt;Medium&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Alibaba Cloud Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Subscription&lt;&#x2F;td&gt;&lt;td&gt;⚠️ General clause says no training, but subscription clause 5.2.2 specifically authorizes training&lt;&#x2F;td&gt;&lt;td&gt;Low&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;❌ Silent, no commitment&lt;&#x2F;td&gt;&lt;td&gt;Low&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;No commitment, retains “improve the Services”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Low&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ StepFun is in the same tier as DeepSeek, significantly behind OpenAI, Anthropic, and Xiaomi MiMo.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What Should I Do&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;normal-use&quot;&gt;Normal Use&lt;&#x2F;h3&gt;
+&lt;p&gt;The agreement does not confirm no training, but StepFun has not explicitly stated that it will train. If you can accept this ambiguous state, you can continue to use it, but you need to follow these habits:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Desensitize submissions&lt;&#x2F;strong&gt;: Avoid including company names, personal names, specific numbers, and internal project code names in prompts&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Segmented processing&lt;&#x2F;strong&gt;: Core algorithms&#x2F;sensitive logic are processed locally, only generic&#x2F;abstract parts are submitted to the API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Balance monitoring&lt;&#x2F;strong&gt;: Pay-as-you-go users set balance alerts to avoid data deletion clauses triggered by arrears&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;sensitive-data-scenarios&quot;&gt;Sensitive Data Scenarios&lt;&#x2F;h3&gt;
+&lt;p&gt;If the following data is involved, &lt;strong&gt;public APIs are not recommended&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;User personal information (PII)&lt;&#x2F;li&gt;
+&lt;li&gt;Financial, medical, and government data&lt;&#x2F;li&gt;
+&lt;li&gt;Undisclosed core intellectual property (technical solutions before patent application)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Alternatives&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Switch to vendors that explicitly commit to no training&lt;&#x2F;strong&gt;: Such as Xiaomi MiMo (privacy policy literal commitment), Alibaba Cloud Bailian API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Local deployment&lt;&#x2F;strong&gt;: StepFun partially open-sources models (Step-3.5-Flash, etc.), can run locally, data does not leave the machine at all&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise isolation&lt;&#x2F;strong&gt;: Contact &lt;code&gt;platform@stepfun.com&lt;&#x2F;code&gt; to confirm private deployment or exclusive instance options&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;questions-to-ask-before-enterprise-contracting&quot;&gt;Questions to Ask Before Enterprise Contracting&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Can we explicitly agree in the contract that “enterprise data will not be used for any model training”&lt;&#x2F;li&gt;
+&lt;li&gt;Data retention period and deletion timeline after contract termination&lt;&#x2F;li&gt;
+&lt;li&gt;Whether VPC&#x2F;exclusive instance&#x2F;private deployment is provided&lt;&#x2F;li&gt;
+&lt;li&gt;SLA commitments and compensation for data breaches&lt;&#x2F;li&gt;
+&lt;li&gt;What constraints are there on data flow through third-party tools&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun Open Platform Privacy Policy&lt;&#x2F;a&gt; (2026-04-23, reviewed 2026-06-13)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;user-agreement.html&quot;&gt;StepFun Open Platform User Agreement&lt;&#x2F;a&gt; (2026-04-08)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan Paid Service Agreement&lt;&#x2F;a&gt; (2026-05-25, reviewed 2026-06-13)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;English Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Qwen Code PR #4647: Fix Linux&#x2F;WSL2 Clipboard Image Paste</title>
+          <pubDate>Mon, 08 Jun 2026 03:05:08 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/open-source/qwen-code-clipboard-fix/</link>
+          <guid>https://cncsmonster.github.io/en/open-source/qwen-code-clipboard-fix/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/open-source/qwen-code-clipboard-fix/">&lt;h2 id=&quot;contribution-overview&quot;&gt;Contribution Overview&lt;&#x2F;h2&gt;
+&lt;p&gt;Submitted &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;pull&#x2F;4647&quot;&gt;PR #4647&lt;&#x2F;a&gt; to &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&quot;&gt;Qwen Code&lt;&#x2F;a&gt;, fixing clipboard image paste failure on Linux&#x2F;WSL2.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Problem&lt;&#x2F;strong&gt;: In WSL2 + WSLg (Wayland) environments, the &lt;code&gt;@teddyzhu&#x2F;clipboard&lt;&#x2F;code&gt; native module uses X11 protocol to access clipboard and cannot read images, causing paste to fail silently.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Solution&lt;&#x2F;strong&gt;: Replace the native module on Linux with platform-native tools (&lt;code&gt;wl-paste&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;xclip&lt;&#x2F;code&gt;), and handle the &lt;code&gt;image&#x2F;bmp&lt;&#x2F;code&gt; format exposed by Windows clipboard.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Status&lt;&#x2F;strong&gt;: ✅ Merged (2026-06-08)&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;core-changes&quot;&gt;Core Changes&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-wayland-x11-dual-backend-support&quot;&gt;1. Wayland&#x2F;X11 Dual Backend Support&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Wayland&lt;&#x2F;strong&gt;: &lt;code&gt;wl-paste --list-types&lt;&#x2F;code&gt; for detection, &lt;code&gt;wl-paste --type image&#x2F;png&lt;&#x2F;code&gt; for saving&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;X11&lt;&#x2F;strong&gt;: &lt;code&gt;xclip -selection clipboard -t TARGETS -o&lt;&#x2F;code&gt; for detection, &lt;code&gt;xclip -selection clipboard -t image&#x2F;png -o&lt;&#x2F;code&gt; for saving&lt;&#x2F;li&gt;
+&lt;li&gt;Auto-select backend based on &lt;code&gt;WAYLAND_DISPLAY&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;DISPLAY&lt;&#x2F;code&gt; environment variables&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-bmp-to-png-conversion&quot;&gt;2. BMP to PNG Conversion&lt;&#x2F;h3&gt;
+&lt;p&gt;Windows clipboard exposes images as &lt;code&gt;image&#x2F;bmp&lt;&#x2F;code&gt; via WSL2, requiring Python PIL conversion:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; Save BMP → call python3 PIL conversion → return PNG path
+const bmpPath = tempFilePath.replace(&amp;#x27;.png&amp;#x27;, &amp;#x27;.bmp&amp;#x27;);
+await saveFromCommand(&amp;#x27;wl-paste&amp;#x27;, [&amp;#x27;--type&amp;#x27;, &amp;#x27;image&amp;#x2F;bmp&amp;#x27;], bmpPath);
+&amp;#x2F;&amp;#x2F; python3 -c &amp;quot;from PIL import Image; Image.open(bmp).save(png)&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;3-security-hardening&quot;&gt;3. Security Hardening&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Symlink attack protection&lt;&#x2F;strong&gt;: &lt;code&gt;fs.open(filePath, &#x27;wx&#x27;)&lt;&#x2F;code&gt; with &lt;code&gt;O_EXCL&lt;&#x2F;code&gt; prevents pre-placed symlinks from overwriting arbitrary files&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Command injection protection&lt;&#x2F;strong&gt;: Python script receives paths via &lt;code&gt;sys.argv&lt;&#x2F;code&gt;, avoiding string interpolation&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Timeout mechanism&lt;&#x2F;strong&gt;: All &lt;code&gt;spawn()&lt;&#x2F;code&gt; calls have 5-second timeout to prevent hangs&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;4-test-coverage&quot;&gt;4. Test Coverage&lt;&#x2F;h3&gt;
+&lt;p&gt;Added 19 tests covering:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Backend auto-detection (Wayland&#x2F;X11&#x2F;none)&lt;&#x2F;li&gt;
+&lt;li&gt;Image detection paths&lt;&#x2F;li&gt;
+&lt;li&gt;Save error paths (timeout, spawn failure, stdout error)&lt;&#x2F;li&gt;
+&lt;li&gt;Cleanup logic (BMP temp files, empty files)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;tech-stack&quot;&gt;Tech Stack&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Node.js &#x2F; TypeScript&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;wl-clipboard&lt;&#x2F;code&gt; (Wayland) &#x2F; &lt;code&gt;xclip&lt;&#x2F;code&gt; (X11)&lt;&#x2F;li&gt;
+&lt;li&gt;Python 3 + Pillow (BMP conversion)&lt;&#x2F;li&gt;
+&lt;li&gt;Vitest (testing)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;links&quot;&gt;Links&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;PR&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;pull&#x2F;4647&quot;&gt;#4647&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Issues&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;issues&#x2F;3517&quot;&gt;#3517&lt;&#x2F;a&gt;, &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;issues&#x2F;2885&quot;&gt;#2885&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>How Qwen Code Learns Your Coding Habits: AutoSkill Mechanism Deep Dive</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/">&lt;p&gt;After using Qwen Code for a while, you might notice unfamiliar skills appearing in &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — &lt;code&gt;skill-review&lt;&#x2F;code&gt;, &lt;code&gt;skill-testing&lt;&#x2F;code&gt; — each tagged with &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; in their frontmatter. You didn’t create them. Nobody did manually.&lt;&#x2F;p&gt;
+&lt;p&gt;This is Qwen Code’s &lt;strong&gt;AutoSkill mechanism&lt;&#x2F;strong&gt;: an automatic distillation system for procedural knowledge. This article reverse-engineers the mechanism from source code and design documents, covering its architecture, security model, and academic origins.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-is-autoskill&quot;&gt;What is AutoSkill&lt;&#x2F;h2&gt;
+&lt;p&gt;In one sentence: &lt;strong&gt;after a session ends, Qwen Code automatically evaluates whether your workflow is worth reusing, and if so, saves it as a project-level skill.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;It differs from Auto Memory in focus:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Auto Memory&lt;&#x2F;th&gt;&lt;th&gt;AutoSkill&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Knowledge type&lt;&#x2F;td&gt;&lt;td&gt;Declarative (who you are, project context)&lt;&#x2F;td&gt;&lt;td&gt;Procedural (how you do things)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;Every session end&lt;&#x2F;td&gt;&lt;td&gt;Sessions with ≥ 20 tool calls&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write target&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;memory&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Content&lt;&#x2F;td&gt;&lt;td&gt;User preferences, project context&lt;&#x2F;td&gt;&lt;td&gt;Reusable workflows, best practices&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Memory remembers &lt;em&gt;who you are&lt;&#x2F;em&gt;. AutoSkill remembers &lt;em&gt;how you work&lt;&#x2F;em&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;trigger-conditions&quot;&gt;Trigger Conditions&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Session ends
+  ├─ toolCallCount ≥ 20 ?        &amp;#x2F;&amp;#x2F; Too few calls → skip
+  ├─ skillsModifiedInSession ?   &amp;#x2F;&amp;#x2F; User edited skills this round → skip
+  └─ Both pass → scheduleSkillReview()
+               └─ Fork standalone agent (8-turn limit, 2-min timeout)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The threshold ensures only sessions with substantial tool usage trigger review — avoiding low-quality skills from simple Q&amp;amp;A sessions. The review runs in an independent agent (not a continuation of your conversation), capped at 8 turns and 2 minutes.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;permission-sandbox-the-core-security-design&quot;&gt;Permission Sandbox: The Core Security Design&lt;&#x2F;h2&gt;
+&lt;p&gt;The most elegant part of AutoSkill is its security model. The review agent is locked in a strict sandbox:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Tool&lt;&#x2F;th&gt;&lt;th&gt;Permission&lt;&#x2F;th&gt;&lt;th&gt;Security Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;read_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Prevents reading &lt;code&gt;~&#x2F;.aws&#x2F;credentials&lt;&#x2F;code&gt; and injecting into SKILL.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;ls&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;write_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&amp;lt;name&amp;gt;&#x2F;SKILL.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Can only create &lt;strong&gt;non-existent&lt;&#x2F;strong&gt; files (prevents overwriting)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;edit&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; + target must contain &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Cannot modify user-authored skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Core principle: &lt;strong&gt;auto-skill can only touch what it created — never user-authored skills.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-source-auto-skill-protection&quot;&gt;The &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; Protection&lt;&#x2F;h3&gt;
+&lt;p&gt;Two layers of defense:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Hard constraint (permission manager)&lt;&#x2F;strong&gt;: &lt;code&gt;edit&lt;&#x2F;code&gt; reads frontmatter first; no &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; → rejected&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Soft constraint (system prompt)&lt;&#x2F;strong&gt;: “You may ONLY modify skill files that contain ‘source: auto-skill’”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;If you add &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; to your own skill, you’re opting in to automatic updates by the review agent.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;preventing-name-collision-overwrites&quot;&gt;Preventing Name Collision Overwrites&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; write_file only allows creating new files
+try {
+  await fs.stat(ctx.filePath);
+  return &amp;#x27;deny&amp;#x27;;  &amp;#x2F;&amp;#x2F; File exists → reject
+} catch (err) {
+  if (err.code === &amp;#x27;ENOENT&amp;#x27;) return &amp;#x27;allow&amp;#x27;;  &amp;#x2F;&amp;#x2F; Doesn&amp;#x27;t exist → allow creation
+  return &amp;#x27;deny&amp;#x27;;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Creating a new skill → &lt;code&gt;write_file&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Updating an existing auto-skill → must use &lt;code&gt;edit&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Overwriting any existing file → rejected ❌&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anti-symlink-traversal&quot;&gt;Anti-symlink Traversal&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;assertRealProjectSkillPath()&lt;&#x2F;code&gt; uses &lt;code&gt;fs.realpath()&lt;&#x2F;code&gt; to resolve the actual path, confirming it stays within &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — preventing writes to arbitrary locations via symlinks.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;academic-origins&quot;&gt;Academic Origins&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Trace2Skill paper (arXiv: 2603.25158)
+    ↓
+Hermes Agent (Nous Research, open-source) — original prompt source
+    ↓ Qwen Code design doc: &amp;quot;ported from Hermes _SKILL_REVIEW_PROMPT, minimal adaptation&amp;quot;
+Qwen Code AutoSkill
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The Qwen Code design document explicitly states:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The review agent’s prompt is directly ported from Hermes &lt;code&gt;_SKILL_REVIEW_PROMPT&lt;&#x2F;code&gt; with minimal adaptation.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Hermes’s original prompt is far more detailed — including CLASS-LEVEL skill organization, preference embedding, protected skills, and Do NOT capture lists. Qwen’s version is significantly streamlined, focusing on “non-trivial approaches” and “trial-and-error processes.”&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;hermes-vs-qwen-code&quot;&gt;Hermes vs Qwen Code&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Hermes&lt;&#x2F;th&gt;&lt;th&gt;Qwen Code&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;In-session agent call + post-session review&lt;&#x2F;td&gt;&lt;td&gt;Post-session background fork only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Protection&lt;&#x2F;td&gt;&lt;td&gt;ContextVar tracking + tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; frontmatter + file-level permission manager&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write scope&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.hermes&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (global)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (project-level)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Prompt complexity&lt;&#x2F;td&gt;&lt;td&gt;Detailed (skill organization, preference embedding, etc.)&lt;&#x2F;td&gt;&lt;td&gt;Streamlined (focused on reusable workflows)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;comparison-with-other-agents&quot;&gt;Comparison with Other Agents&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Agent&lt;&#x2F;th&gt;&lt;th&gt;Auto-distills procedural skills&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hermes Agent&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (in-session + post-session)&lt;&#x2F;td&gt;&lt;td&gt;First open-source implementation, with tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Qwen Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (post-session)&lt;&#x2F;td&gt;&lt;td&gt;Ported Hermes prompt + file-level permission sandbox&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Claude Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Auto Memory records declarative knowledge only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Cursor&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills are entirely manual&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills entirely manual, Memory managed manually&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Codex CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Built-in skills + AGENTS.md extension, no auto-distillation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Gemini CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Manual SKILL.md creation, Memory reads GEMINI.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Currently only Hermes and Qwen Code implement automatic procedural skill distillation. All other major AI coding agents remain in manual-management territory.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;blob&#x2F;main&#x2F;docs&#x2F;design&#x2F;skill-nudge&#x2F;skill-nudge.md&quot;&gt;Design doc&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Source: &lt;code&gt;packages&#x2F;core&#x2F;src&#x2F;memory&#x2F;skillReviewAgentPlanner.ts&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;First commit: 2026-05-09 (&lt;code&gt;#3673&lt;&#x2F;code&gt;), enabled by default: 2026-05-27 (&lt;code&gt;#4547&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2603.25158&quot;&gt;Trace2Skill paper&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Shimmy: An Ollama Alternative in Rust — Tested on WSL2 + Intel GPU</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/">&lt;p&gt;Looking for a lighter local LLM inference server than Ollama? &lt;strong&gt;Shimmy&lt;&#x2F;strong&gt; is written in Rust, ships as a single binary, offers 100% OpenAI API compatibility, and runs with zero configuration. This post covers what it is, how it compares to Ollama, and what happened when I tested it on WSL2 with Intel integrated graphics.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is Part 1 of a “Local LLM Inference Environment” series. &lt;a href=&quot;&#x2F;posts&#x2F;wsl2-intel-gpu-llm-inference-diagnosis-en&#x2F;&quot;&gt;Part 2: Why Intel GPU Can’t Run LLM Inference in WSL2 →&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;what-is-shimmy&quot;&gt;What is Shimmy&lt;&#x2F;h2&gt;
+&lt;p&gt;One line: &lt;strong&gt;a Rust drop-in replacement for Ollama&lt;&#x2F;strong&gt; — lighter, faster, zero dependencies.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Shimmy&lt;&#x2F;th&gt;&lt;th&gt;Ollama&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Language&lt;&#x2F;td&gt;&lt;td&gt;Rust&lt;&#x2F;td&gt;&lt;td&gt;Go&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Dependencies&lt;&#x2F;td&gt;&lt;td&gt;Single binary, none&lt;&#x2F;td&gt;&lt;td&gt;Requires llama.cpp dynamic libs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;License&lt;&#x2F;td&gt;&lt;td&gt;MIT&lt;&#x2F;td&gt;&lt;td&gt;Non-commercial restrictions&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;GPU support&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Vulkan &#x2F; OpenCL &#x2F; MLX&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Metal&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Model formats&lt;&#x2F;td&gt;&lt;td&gt;GGUF + SafeTensors&lt;&#x2F;td&gt;&lt;td&gt;GGUF&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API compatibility&lt;&#x2F;td&gt;&lt;td&gt;OpenAI 100%&lt;&#x2F;td&gt;&lt;td&gt;OpenAI + custom API&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Port allocation&lt;&#x2F;td&gt;&lt;td&gt;Auto (default 11435)&lt;&#x2F;td&gt;&lt;td&gt;Fixed (11434)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Response caching&lt;&#x2F;td&gt;&lt;td&gt;LRU + TTL, 20-40% speedup&lt;&#x2F;td&gt;&lt;td&gt;None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Project: https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Linux x86_64
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-linux-x86_64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# macOS ARM64 (with MLX for Apple Silicon)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-macos-arm64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# Windows x64 (with CUDA + Vulkan + OpenCL)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-windows-x86_64.exe -o shimmy.exe
+
+# Start
+.&amp;#x2F;shimmy serve --gpu-backend auto
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Zero config: auto-discovers models from HuggingFace cache, Ollama local directories. Hot-swap models without restarting.&lt;&#x2F;p&gt;
+&lt;p&gt;Once running, it exposes an OpenAI-compatible &lt;code&gt;&#x2F;v1&#x2F;chat&#x2F;completions&lt;&#x2F;code&gt; endpoint — existing OpenAI tools work with zero code changes:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;curl http:&amp;#x2F;&amp;#x2F;localhost:11435&amp;#x2F;v1&amp;#x2F;chat&amp;#x2F;completions \
+  -H &amp;quot;Content-Type: application&amp;#x2F;json&amp;quot; \
+  -d &amp;#x27;{&amp;quot;model&amp;quot;:&amp;quot;your-model&amp;quot;,&amp;quot;messages&amp;quot;:[{&amp;quot;role&amp;quot;:&amp;quot;user&amp;quot;,&amp;quot;content&amp;quot;:&amp;quot;hello&amp;quot;}]}&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;architecture&quot;&gt;Architecture&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Rust + Tokio&lt;&#x2F;strong&gt;: Memory-safe, async high performance&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;llama.cpp backend&lt;&#x2F;strong&gt;: Industry-standard GGUF inference&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GPU backend priority&lt;&#x2F;strong&gt;: CUDA → Vulkan → OpenCL → MLX → CPU (fallback)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Dynamic port management&lt;&#x2F;strong&gt;: Zero conflicts, auto-assign&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;real-world-test-wsl2-intel-gpu&quot;&gt;Real-World Test: WSL2 + Intel GPU&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;test-environment&quot;&gt;Test Environment&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Item&lt;&#x2F;th&gt;&lt;th&gt;Value&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Core Ultra 7 255H (12 cores)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;RAM&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;19GB&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Arc 140T (Arrow Lake H)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Env&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;WSL2 (Linux 6.6.87)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Library installed (&lt;code&gt;libvulkan_intel.so&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;v1.9.0 (built from source with &lt;code&gt;llama-vulkan&lt;&#x2F;code&gt; feature)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;test-1-qwen3-5-0-8b-gguf-x-failed&quot;&gt;Test 1: Qwen3.5-0.8B GGUF — ❌ Failed&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;llama_model_load: error loading model: unknown model architecture: &amp;#x27;qwen35&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Shimmy v1.9.0 bundles a llama.cpp version that &lt;strong&gt;doesn’t support Qwen3.5 yet&lt;&#x2F;strong&gt;. Qwen3.5 uses a hybrid SSM (Mamba) + Transformer architecture requiring a newer llama.cpp.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;test-2-qwen2-5-safetensors-warning-loads-no-inference&quot;&gt;Test 2: Qwen2.5 SafeTensors — ⚠️ Loads, no inference&lt;&#x2F;h3&gt;
+&lt;p&gt;SafeTensors models load successfully, but Shimmy reports “Full transformer inference coming soon!” — inference support is still in development.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gpu-backend-results&quot;&gt;GPU Backend Results&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Backend&lt;&#x2F;th&gt;&lt;th&gt;Status&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CUDA&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No NVIDIA GPU&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Initializes but no real GPU&lt;&#x2F;td&gt;&lt;td&gt;WSL2 only exposes &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; software renderer&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenCL&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ Not compiled&lt;&#x2F;td&gt;&lt;td&gt;Enable with &lt;code&gt;--features llama-opencl&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MLX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ macOS only&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Key finding&lt;&#x2F;strong&gt;: &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; is Mesa’s CPU software renderer — it simulates Vulkan GPU using CPU multithreading. Using &lt;code&gt;--gpu-backend vulkan&lt;&#x2F;code&gt; still runs matrix ops on CPU, potentially slower than pure CPU mode due to Vulkan overhead.&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Device: llvmpipe (LLVM 20.1.2, 256 bits)
+Type: CPU  ← Not a real GPU!
+Vendor ID: 0x10005 (Mesa software renderer)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;The failure isn’t Shimmy’s fault — it’s a &lt;strong&gt;WSL2 + Intel GPU environment limitation&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 DXG kernel module incompatible with Intel GPU driver&lt;&#x2F;strong&gt; — dmesg shows persistent ioctl failures&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Intel GPU driver outdated&lt;&#x2F;strong&gt; — current 32.0.101.6554, latest 32.0.101.8801 (2026-05-15)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Windows Insider Preview Canary&lt;&#x2F;strong&gt; — build 26200 is pre-release, unstable compatibility&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;next-steps&quot;&gt;Next Steps&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Priority&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;Update Intel GPU driver to latest&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Exit Insider Preview, return to stable&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;Try Level Zero backend to bypass OpenCL DXG issues&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;who-should-use-shimmy&quot;&gt;Who Should Use Shimmy?&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ &lt;strong&gt;CUDA environment&lt;&#x2F;strong&gt; (NVIDIA GPU): Works out of the box, best performance&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;macOS Apple Silicon&lt;&#x2F;strong&gt;: MLX backend native support&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;Existing toolchains needing OpenAI API compatibility&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;WSL2 + Intel&#x2F;AMD integrated GPU&lt;&#x2F;strong&gt;: Vulkan backend limited, wait for driver updates&lt;&#x2F;li&gt;
+&lt;li&gt;❌ &lt;strong&gt;Pure CPU inference追求极致性能&lt;&#x2F;strong&gt;: Ollama may be more mature&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;shimmy&quot;&gt;Shimmy Crates.io&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics Driver Download&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Why Intel GPU Can&#x27;t Run LLM Inference in WSL2: A Layer-by-Layer Diagnosis</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl2-intel-gpu-llm-inference-diagnosis-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl2-intel-gpu-llm-inference-diagnosis-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl2-intel-gpu-llm-inference-diagnosis-en/">&lt;p&gt;In &lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel-en&#x2F;&quot;&gt;the previous post&lt;&#x2F;a&gt;, Shimmy failed to run on WSL2 with Intel integrated graphics. This post digs into why — it’s not Shimmy’s fault, not llama.cpp’s fault, but a fundamental &lt;strong&gt;incompatibility between WSL2’s DXG kernel module and the Intel GPU driver at the protocol level&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Part 2 of the “Local LLM Inference Environment” series.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;core-finding&quot;&gt;Core Finding&lt;&#x2F;h2&gt;
+&lt;p&gt;Intel integrated graphics &lt;strong&gt;cannot be used for LLM inference in WSL2&lt;&#x2F;strong&gt;. The issue isn’t in IGC or OpenCL drivers — it’s WSL2’s DXG kernel module failing to communicate with the Intel Arc 140T Windows driver.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wsl2-gpu-stack&quot;&gt;WSL2 GPU Stack&lt;&#x2F;h2&gt;
+&lt;p&gt;Four layers from hardware to Python:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Python (llama-cpp-python, OpenCL)
+         ↓
+[3] IGC — Intel Graphics Compiler
+         ↓
+[2] OpenCL ICD (intel-opencl-icd)
+         ↓
+[1] WSL2 DXG kernel module (&amp;#x2F;dev&amp;#x2F;dxg)
+         ↓
+[0] Windows Intel GPU driver
+         ↓
+     Physical GPU (Intel Arc 140T &amp;#x2F; Arrow Lake H)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;per-layer-diagnosis&quot;&gt;Per-Layer Diagnosis&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Layer&lt;&#x2F;th&gt;&lt;th&gt;Component&lt;&#x2F;th&gt;&lt;th&gt;Status&lt;&#x2F;th&gt;&lt;th&gt;Evidence&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;[0]&lt;&#x2F;td&gt;&lt;td&gt;Windows driver (32.0.101.6554)&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;Outdated&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;2025-01-15, Intel shipped many Arrow Lake updates since&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[1]&lt;&#x2F;td&gt;&lt;td&gt;WSL2 DXG (kernel 6.6.87.2)&lt;&#x2F;td&gt;&lt;td&gt;🔴 &lt;strong&gt;Massive ioctl failures&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;dmesg errors from 5 seconds after boot&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[2]&lt;&#x2F;td&gt;&lt;td&gt;OpenCL ICD (23.43.27642.40)&lt;&#x2F;td&gt;&lt;td&gt;✅ Enumerates GPU&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;clGetDeviceIDs&lt;&#x2F;code&gt; returns Intel Graphics&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[3]&lt;&#x2F;td&gt;&lt;td&gt;IGC (1.0.15468.25)&lt;&#x2F;td&gt;&lt;td&gt;✅ Library intact&lt;&#x2F;td&gt;&lt;td&gt;Compilation OK, but kernel submission goes through DXG → crash&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Layer 1 is the real failure point.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;dmesg-evidence&quot;&gt;dmesg Evidence&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;dmesg&lt;&#x2F;code&gt; is flooded with DXG ioctl errors from boot — &lt;strong&gt;not triggered by running llama.cpp&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;[    5.459659] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22  (EINVAL)
+[    5.460357] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -2   (ENOENT)
+[    5.460880] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+...
+[78509.821263] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+[78509.825964] misc dxg: dxgkio_reserve_gpu_va:     Ioctl failed: -75  (EOVERFLOW)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;errno&lt;&#x2F;th&gt;&lt;th&gt;Meaning&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;-2 (ENOENT)&lt;&#x2F;td&gt;&lt;td&gt;Adapter not found&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-22 (EINVAL)&lt;&#x2F;td&gt;&lt;td&gt;Invalid parameter — WSL2 DXG sends params the driver doesn’t understand&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-75 (EOVERFLOW)&lt;&#x2F;td&gt;&lt;td&gt;GPU virtual address reservation overflow&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;WSL2’s dxg module and the Windows Intel GPU driver are incompatible at the protocol level.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Intel Arc 140T is Arrow Lake H architecture, released late 2024.&lt;&#x2F;strong&gt; Windows driver &lt;code&gt;32.0.101.6554&lt;&#x2F;code&gt; (2025-01-15) is an early Arrow Lake driver with incomplete WSL2 DXG support. When DXG sends requests, the driver doesn’t understand them or has bugs, returning EINVAL&#x2F;EOVERFLOW.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;debugging-reflection&quot;&gt;Debugging Reflection&lt;&#x2F;h2&gt;
+&lt;p&gt;The first time you see &lt;code&gt;IGC segfault&lt;&#x2F;code&gt;, intuition says “IGC is the problem.” So you check IGC versions, look for known bugs, search Reddit — IGC is the latest, no known issues. Shift direction. Test Vulkan (WSL2 doesn’t support native Vulkan passthrough). Test DirectML (Windows-only, unusable in WSL2). Test Shimmy (same llama.cpp backend — completely unrelated variable).&lt;&#x2F;p&gt;
+&lt;p&gt;Four hours went into &lt;strong&gt;tracing upward and sideways&lt;&#x2F;strong&gt;. Downward takes one command, five minutes.&lt;&#x2F;p&gt;
+&lt;p&gt;Crash log formatting naturally draws your attention to the crashing layer. &lt;code&gt;IGC: Internal Compiler Error&lt;&#x2F;code&gt; — IGC’s name is in the error message, your attention gets pinned there. But when any component crashes &lt;strong&gt;while calling into an external layer&lt;&#x2F;strong&gt;, the root cause is almost always in the layer being called. Self-contained computation failures are your own problem.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;five-approaches-tested&quot;&gt;Five Approaches Tested&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Approach&lt;&#x2F;th&gt;&lt;th&gt;GPU Recognition&lt;&#x2F;th&gt;&lt;th&gt;Inference&lt;&#x2F;th&gt;&lt;th&gt;Rating&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Vulkan (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ Only llvmpipe&lt;&#x2F;td&gt;&lt;td&gt;CPU fallback&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Mesa needs native &lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;OpenCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;✅ Enumerates OK&lt;&#x2F;td&gt;&lt;td&gt;❌ DXG ioctl crash&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Retry after driver update&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;SYCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ Confirmed dead&lt;&#x2F;td&gt;&lt;td&gt;Needs ABI patch&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Community has given up&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ Works out of box&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Only viable option now&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;IPEX-LLM (Win)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ 17-18 t&#x2F;s&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;Verified on Lunar Lake&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;details&quot;&gt;Details&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Vulkan (WSL2)&lt;&#x2F;strong&gt;: No &lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt; device, Mesa Intel Vulkan ICD can’t initialize. GPU count = 0.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;OpenCL (WSL2)&lt;&#x2F;strong&gt;: GPU recognized (&lt;code&gt;Intel(R) Graphics [0x7d51]&lt;&#x2F;code&gt;), but IGC crashes on kernel submission — root cause is DXG layer.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;SYCL (WSL2)&lt;&#x2F;strong&gt;: Reddit r&#x2F;IntelArc users confirmed (2026-04) that WSL2 can’t detect Intel GPU via standard SYCL runtime. Community consensus: use Windows native.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;: Native Intel GPU support, WSL2 calls via HTTP API. &lt;strong&gt;Verified working, zero config.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;IPEX-LLM (Windows native)&lt;&#x2F;strong&gt;: Replacing IPEX-LLM’s bundled Ollama binary achieved 17-18 tokens&#x2F;s on Lunar Lake Arc 140V with qwen3:8b at 100% GPU utilization.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;next-steps&quot;&gt;Next Steps&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Priority&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;🔑 Update Windows Intel GPU driver (6554 → 8801)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;Update WSL2: &lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Return to stable Windows (exit Insider Preview Canary)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;Try Level Zero backend (&lt;code&gt;sudo apt install intel-level-zero-gpu&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics Driver Download&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;basic-commands&quot;&gt;Microsoft WSL Basic Commands&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy Project&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel-en&#x2F;&quot;&gt;Previous: Shimmy Review&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Add a Security Gate to Your Pi Coding Agent: pi-permission-gate</title>
+          <pubDate>Sat, 30 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/</link>
+          <guid>https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/">&lt;blockquote&gt;
+&lt;p&gt;Worried about accidentally deleting files or leaking API keys while using Pi? Try &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; — a rule-based permission interceptor that asks before sensitive operations and blocks dangerous commands automatically.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;in-one-sentence&quot;&gt;In One Sentence&lt;&#x2F;h2&gt;
+&lt;p&gt;Configure rules for your Pi agent to intercept reads&#x2F;writes on sensitive files and block dangerous commands. It doesn’t replace security audits, but does one thing well: &lt;strong&gt;ask before acting&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-it-can-do&quot;&gt;What It Can Do&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ Intercepts&lt;&#x2F;th&gt;&lt;th&gt;❌ Doesn’t Do&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Reading &lt;code&gt;~&#x2F;.ssh&#x2F;&lt;&#x2F;code&gt; private keys&lt;&#x2F;td&gt;&lt;td&gt;Audit logging&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Reading &lt;code&gt;.env&lt;&#x2F;code&gt; environment files&lt;&#x2F;td&gt;&lt;td&gt;MCP permission control&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Executing &lt;code&gt;rm -rf&lt;&#x2F;code&gt; commands&lt;&#x2F;td&gt;&lt;td&gt;Sub-agent permission forwarding&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Modifying files outside the project&lt;&#x2F;td&gt;&lt;td&gt;Complex policy engine&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pi install git:github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-permission-gate
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;configuration&quot;&gt;Configuration&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;global-rules-security-baseline&quot;&gt;Global Rules (Security Baseline)&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;~&#x2F;.pi&#x2F;agent&#x2F;permission-rules.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;defaultAction&amp;quot;: &amp;quot;ask&amp;quot;,
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;.ssh&amp;#x2F;**&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;SSH private keys&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    },
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;bash&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;rm -rf *&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;Dangerous deletion&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;project-rules-flexible-overrides&quot;&gt;Project Rules (Flexible Overrides)&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;&amp;lt;project&amp;gt;&#x2F;.pi&#x2F;permission-rules.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;trustedPaths&amp;quot;: [&amp;quot;.&amp;#x2F;data&amp;quot;, &amp;quot;.&amp;#x2F;tmp&amp;quot;],
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;, &amp;quot;write&amp;quot;, &amp;quot;edit&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;*&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;Project files&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;allow&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Configuration changes take effect immediately without restarting pi.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;user-experience&quot;&gt;User Experience&lt;&#x2F;h2&gt;
+&lt;p&gt;When the agent tries to access a sensitive file:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;⚠️ Sensitive Operation — SSH private keys
+
+Rule: **&amp;#x2F;.ssh&amp;#x2F;**
+Tool: read
+Target: &amp;#x2F;home&amp;#x2F;user&amp;#x2F;.ssh&amp;#x2F;id_rsa
+
+Allow?
+[Allow Once] [Always Allow] [Deny Once] [Always Deny]
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Always Allow&#x2F;Deny&lt;&#x2F;strong&gt;: Remember choice, auto-process next time&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Allow&#x2F;Deny Once&lt;&#x2F;strong&gt;: Only affects current operation&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;why-keep-it-simple&quot;&gt;Why Keep It Simple&lt;&#x2F;h2&gt;
+&lt;p&gt;Comparison with &lt;code&gt;pi-permission-system&lt;&#x2F;code&gt; (another permission extension):&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-system&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-gate&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Features&lt;&#x2F;td&gt;&lt;td&gt;Full (MCP, audit, sub-agents)&lt;&#x2F;td&gt;&lt;td&gt;Lean (files + commands)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Config&lt;&#x2F;td&gt;&lt;td&gt;JSON schema + YAML&lt;&#x2F;td&gt;&lt;td&gt;Simple JSON + glob&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Code&lt;&#x2F;td&gt;&lt;td&gt;~2000 lines&lt;&#x2F;td&gt;&lt;td&gt;~380 lines&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Use Case&lt;&#x2F;td&gt;&lt;td&gt;Teams&#x2F;Enterprise&lt;&#x2F;td&gt;&lt;td&gt;Individual developers&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;If you just need “ask before acting,” &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; is simpler and more direct.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-rules-not-ai&quot;&gt;Why Rules, Not AI&lt;&#x2F;h2&gt;
+&lt;p&gt;Security decisions need &lt;strong&gt;determinism&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Rule engine: 100% predictable, millisecond response&lt;&#x2F;li&gt;
+&lt;li&gt;AI judgment: May be inconsistent, requires API calls&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;“Probably should allow” isn’t good enough. Security needs explicit allow or deny.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;github&quot;&gt;GitHub&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;pi-permission-gate&quot;&gt;CNCSMonster&#x2F;pi-permission-gate&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;MIT licensed. Feedback welcome.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Engineering Discipline Skills Compared: Addy Osmani vs Matt Pocock</title>
+          <pubDate>Mon, 25 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/matt-pocock-vs-addy-osmani-skills/</link>
+          <guid>https://cncsmonster.github.io/en/posts/matt-pocock-vs-addy-osmani-skills/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/matt-pocock-vs-addy-osmani-skills/">&lt;h2 id=&quot;what-this-solves&quot;&gt;What This Solves&lt;&#x2F;h2&gt;
+&lt;p&gt;You’re already using Addy Osmani’s agent-skills (or their Pi ecosystem equivalents). Matt Pocock’s skills repo just exploded (100K+ stars at verification time) and looks similar.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;They’re the same type of thing: engineering discipline skills.&lt;&#x2F;strong&gt; Not for adding new capabilities (search, deploy, draw), but for constraining how the agent works (align on requirements, write tests, review code). The difference is packaging: Addy embeds discipline into a process pipeline, Matt breaks it into discrete manual commands.&lt;&#x2F;p&gt;
+&lt;p&gt;Should you invest time? Will they conflict? Can you use both?&lt;&#x2F;p&gt;
+&lt;p&gt;By the end: &lt;strong&gt;install, skip, or selectively install.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;bottom-line&quot;&gt;Bottom Line&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;No conflict. Best used together.&lt;&#x2F;strong&gt; Addy covers process completeness. Matt fills two gaps Addy doesn’t go deep enough on: adversarial requirement grilling (&lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; — goes beyond spec questioning by cross-referencing your domain model) and proactive architecture inspection (&lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt;). Both handle pre-work alignment, but at different depths.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;q1-they-look-similar-what-s-the-real-difference&quot;&gt;Q1: They look similar — what’s the real difference?&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;addyosmani&#x2F;agent-skills&quot;&gt;Addy Osmani&lt;&#x2F;a&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;mattpocock&#x2F;skills&quot;&gt;Matt Pocock&lt;&#x2F;a&gt;&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;What&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;A complete pipeline: idea → production&lt;&#x2F;td&gt;&lt;td&gt;A toolkit: surgical strikes on vibe coding failures&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Usage&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;By engineering phase: spec → plan → build → test → review → ship&lt;&#x2F;td&gt;&lt;td&gt;On-demand: &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; &lt;code&gt;&#x2F;tdd&lt;&#x2F;code&gt; &lt;code&gt;&#x2F;diagnose&lt;&#x2F;code&gt; …&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Count&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;23 skills&lt;&#x2F;td&gt;&lt;td&gt;10 engineering skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Author&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Director, Google Cloud AI&lt;&#x2F;td&gt;&lt;td&gt;TypeScript educator, ex-Vercel&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;For&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Teams needing process rigor&lt;&#x2F;td&gt;&lt;td&gt;Individuals&#x2F;small teams needing “don’t write crap code”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Fundamentally different design philosophies:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Addy = Pipeline
+  Assumes you&amp;#x27;re walking the full path → a skill for every step
+
+Matt = Toolkit
+  Assumes you fail at specific points → each skill fixes one failure mode
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This is not just my interpretation. The two READMEs state their positioning directly:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Addy Osmani &#x2F; agent-skills&lt;&#x2F;strong&gt;: “Skills encode the workflows, quality gates, and best practices that senior engineers use when building software. These ones are packaged so AI agents follow them consistently across every phase of development.”&lt;&#x2F;p&gt;
+&lt;p&gt;The key words are &lt;strong&gt;workflows &#x2F; quality gates &#x2F; every phase of development&lt;&#x2F;strong&gt;. That explains why Addy covers code review, frontend, security, CI&#x2F;CD, and shipping.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Matt Pocock &#x2F; skills&lt;&#x2F;strong&gt;: “These skills are designed to be small, easy to adapt, and composable.” And: “I built these skills as a way to fix common failure modes I see with Claude Code, Codex, and other coding agents.”&lt;&#x2F;p&gt;
+&lt;p&gt;The key words are &lt;strong&gt;small &#x2F; composable &#x2F; common failure modes&lt;&#x2F;strong&gt;. Matt is closer to a set of patches for common agent failure modes than a full software delivery lifecycle framework.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;q2-how-much-overlap-is-what-i-have-enough&quot;&gt;Q2: How much overlap? Is what I have enough?&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;What you need&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Addy&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Matt&lt;&#x2F;th&gt;&lt;th&gt;Verdict&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Write PRD&#x2F;specs&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ spec-driven-development&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &#x2F;to-prd&lt;&#x2F;td&gt;&lt;td&gt;Either works&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;TDD&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ test-driven-development&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &#x2F;tdd&lt;&#x2F;td&gt;&lt;td&gt;Either works&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Debugging&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ debugging-and-error-recovery&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &#x2F;diagnose&lt;&#x2F;td&gt;&lt;td&gt;Either works&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Code review&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ code-review-and-quality&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;UI&#x2F;frontend&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ frontend-ui-engineering&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;CI&#x2F;CD&#x2F;shipping&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ ci-cd, shipping-and-launch&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Security&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ security-and-hardening&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pre-work alignment&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ spec-driven-development (ask → produce spec)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; (challenge → produce glossary + ADRs)&lt;&#x2F;td&gt;&lt;td&gt;Both, different approaches&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Proactive architecture check&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ code-review is a gate, not an inspection&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Matt exclusive&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Issue triage&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;triage&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Matt exclusive&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Rapid prototyping&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;prototype&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Matt exclusive&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Note: Matt does not include code review, frontend, CI&#x2F;CD, or security because those areas are unimportant. He omits them because his repo is not trying to cover the entire software delivery lifecycle. It is a toolkit for fixing common agent failure modes. Those production-grade quality gates still belong with Addy. &lt;strong&gt;So the conclusion is not “replace Addy with Matt” — it is “use Addy as the backbone and Matt as an enhancement layer.”&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;Both require the agent to ask questions, but in opposite directions:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Addy spec-driven-development&lt;&#x2F;th&gt;&lt;th&gt;Matt grill-with-docs&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Starting point&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;“Surface your assumptions” → fill spec template&lt;&#x2F;td&gt;&lt;td&gt;“Explore the codebase first” → read CONTEXT.md &#x2F; ADRs &#x2F; code&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Question style&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;“What do you want? What are the constraints?” → fill 6-section template&lt;&#x2F;td&gt;&lt;td&gt;“Your glossary says X but you seem to mean Y?” “Your code contradicts what you said — which is right?” → drill down&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Direction&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Blank slate → spec (greenfield)&lt;&#x2F;td&gt;&lt;td&gt;Existing code&#x2F;docs → aligned understanding (brownfield)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Output&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;A structured spec document&lt;&#x2F;td&gt;&lt;td&gt;CONTEXT.md updates + ADRs + aligned understanding&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;End condition&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Spec approved by human&lt;&#x2F;td&gt;&lt;td&gt;Shared understanding reached&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Conclusion: Both cover the basics, including pre-work alignment.&lt;&#x2F;strong&gt; Matt’s exclusives are &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; for adversarial grilling (challenging you with domain model and code, not just filling a template) and &lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt; for proactive inspection. These are what vibe coding misses most.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;q3-will-they-conflict-is-one-enough&quot;&gt;Q3: Will they conflict? Is one enough?&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;No conflict.&lt;&#x2F;strong&gt; Different naming, different triggering, complementary philosophies.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;One is enough.&lt;&#x2F;strong&gt; If you already have Addy’s pipeline, you’re covered for daily work — you’re only missing the grilling and inspection capabilities. If you have no engineering discipline skills, start with Matt for a lighter footprint. Together is best: Addy as process backbone, Matt filling the critical gaps.&lt;&#x2F;p&gt;
+&lt;p&gt;Recommended combined usage: follow Addy’s pipeline normally, switch to Matt for requirement alignment and code quality — &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; as a deeper questioning layer (can replace &lt;code&gt;spec-driven-development&lt;&#x2F;code&gt;’s Specify phase, or complement it), &lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt; to supplement &lt;code&gt;code-review-and-quality&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;ai-native-usage-hand-this-article-to-your-agent&quot;&gt;AI-Native Usage: Hand This Article to Your Agent&lt;&#x2F;h2&gt;
+&lt;p&gt;If you already use AI heavily, don’t copy commands manually. A better pattern is to treat this article as &lt;strong&gt;configuration context&lt;&#x2F;strong&gt;: give it to your coding agent, ask it to inspect the current environment, then let it decide what to install.&lt;&#x2F;p&gt;
+&lt;p&gt;Use a prompt like this:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Read this article and configure Agent Skills according to its conclusion:
+
+1. First check which engineering discipline skills are already installed.
+2. If Addy Osmani &amp;#x2F; Pi-equivalent skills are already present, do not duplicate Matt&amp;#x27;s &amp;#x2F;tdd or &amp;#x2F;diagnose.
+3. Only add Matt&amp;#x27;s complementary skills: grill-with-docs, improve-codebase-architecture, triage, and setup-matt-pocock-skills if needed.
+4. Before installing, tell me which directories will be modified.
+5. Do not modify project AGENTS.md &amp;#x2F; CLAUDE.md &amp;#x2F; docs&amp;#x2F;agents unless I explicitly confirm.
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you already have Addy &#x2F; Pi-style engineering skills, the minimal install is:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;skills add mattpocock&amp;#x2F;skills -g -y   --skill setup-matt-pocock-skills grill-with-docs improve-codebase-architecture triage
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;After installation, you can keep using AI to choose the right workflow:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;I&amp;#x27;m starting a new feature. Based on this repo, decide:
+- Should we run grill-with-docs before implementation?
+- Should CONTEXT.md or ADRs be updated?
+- Which Addy&amp;#x2F;Pi skills should still be used for spec, test, review, and ship?
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In other words, this article is not only a human-readable installation guide. It is also an AI-readable configuration brief. Give it to a new agent environment and it should understand: &lt;strong&gt;Addy is the backbone; Matt is an enhancement layer. This is not either&#x2F;or, and not install-everything blindly.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;practical-advice&quot;&gt;Practical Advice&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;What to install:
+  ✅ &amp;#x2F;grill-with-docs       — Most important. Pre-work grilling + glossary building
+  ✅ &amp;#x2F;improve-codebase-architecture  — Run every few days
+  ✅ &amp;#x2F;triage                — If you use GitHub issues
+  ⚡ &amp;#x2F;tdd &amp;#x2F;diagnose         — Addy already covers these, optional
+
+How to use together:
+  1. New requirement → &amp;#x2F;grill-with-docs (not &amp;#x2F;spec)
+  2. Development → Addy pipeline as usual
+  3. Regularly → &amp;#x2F;improve-codebase-architecture
+  4. Wrap-up → Addy&amp;#x27;s &amp;#x2F;review → &amp;#x2F;ship
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;appendix-why-matt-pocock-went-viral&quot;&gt;Appendix: Why Matt Pocock Went Viral&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Created 2026-02-03; verified on 2026-05-25 at 103K+ stars &#x2F; 9.1K+ forks&lt;&#x2F;li&gt;
+&lt;li&gt;~60K newsletter subscribers, TypeScript educator, ex-Vercel&lt;&#x2F;li&gt;
+&lt;li&gt;Reasons: anti-vibe-coding stance + small and composable + personal brand trust&lt;&#x2F;li&gt;
+&lt;li&gt;Community: Reddit (r&#x2F;vibecoding, r&#x2F;ClaudeAI, r&#x2F;codex), Hacker News, Juejin, CSDN&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;mattpocock&#x2F;skills&quot;&gt;mattpocock&#x2F;skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;addyosmani&#x2F;agent-skills&quot;&gt;addyosmani&#x2F;agent-skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;api.github.com&#x2F;repos&#x2F;mattpocock&#x2F;skills&quot;&gt;GitHub API - Matt Pocock&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;api.github.com&#x2F;repos&#x2F;addyosmani&#x2F;agent-skills&quot;&gt;GitHub API - Addy Osmani&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;addyosmani.com&#x2F;&quot;&gt;Addy Osmani Homepage&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;explainx.ai&#x2F;blog&#x2F;matt-pocock-agent-skills-real-engineers&quot;&gt;ExplainaX: Matt Pocock’s agent skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;codex&#x2F;comments&#x2F;1s8xlja&#x2F;i_tried_the_grillme_skill_and_it_completely&#x2F;&quot;&gt;r&#x2F;codex: I tried the grill-me skill&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;ClaudeAI&#x2F;comments&#x2F;1sw6rss&#x2F;i_deleted_most_of_my_claude_skills_last_week&#x2F;&quot;&gt;r&#x2F;ClaudeAI: I deleted most of my Claude skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;juejin.cn&#x2F;post&#x2F;7633240840346271795&quot;&gt;Juejin: TypeScript Master’s AI Coding Secrets&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gitcode.csdn.net&#x2F;69f367f20a2f6a37c5a71245.html&quot;&gt;CSDN: The Skills Repo That Went Viral&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.knightli.com&#x2F;en&#x2F;2026&#x2F;05&#x2F;01&#x2F;mattpocock-skills-ai-agent-coding-workflows&#x2F;&quot;&gt;Knight Li: mattpocock&#x2F;skills overview&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;medium.com&#x2F;@anup.karanjkar08&#x2F;stop-treating-matt-pococks-skills-as-prompts-that-s-why-yours-aren-t-working-708f2c74edfc&quot;&gt;Medium: Stop Treating as Prompts&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+      <item>
+          <title>Does DeepSeek Train on API Data? A Policy Investigation</title>
+          <pubDate>Tue, 19 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/</link>
+          <guid>https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/">&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I use the DeepSeek API. Will my data be used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;The Open Platform Terms are silent — they don’t say yes, and they don’t say no.&lt;&#x2F;strong&gt; Unlike OpenAI or Anthropic, which explicitly commit to not training on API data.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;User Type&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Trains by default?&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Can opt out?&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Web&#x2F;App chat&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Yes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Turn off “Improve the model for everyone”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;⚠️ Unclear&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No toggle&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What Should I Do&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Assume it does train&lt;&#x2F;strong&gt; — if the terms don’t say they won’t, don’t assume they don’t&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Don’t send sensitive data via API&lt;&#x2F;strong&gt; — especially user privacy or trade secrets&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Use local deployment instead&lt;&#x2F;strong&gt; — DeepSeek open-sources model weights (MIT License); run locally to eliminate the risk&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Ask DeepSeek to clarify&lt;&#x2F;strong&gt; — &lt;a href=&quot;mailto:privacy@deepseek.com&quot;&gt;privacy@deepseek.com&lt;&#x2F;a&gt; &#x2F; &lt;a href=&quot;mailto:api-service@deepseek.com&quot;&gt;api-service@deepseek.com&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-general-terms-allow-training-with-opt-out-web-app&quot;&gt;1: General Terms allow training, with opt-out (Web&#x2F;App)&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-terms-of-use.html&quot;&gt;DeepSeek Terms of Use — Section 4.3&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“Under the premise of secure encryption technology processing, strict de-identification rendering, and irreversibility to identify specific individuals, we may, to a minimal extent, use Inputs and Outputs to provide, maintain, operate, develop or improve the Services or the underlying technologies supporting the Services.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“If you refuse to allow us to process the data in the manner described above, you can opt out by turning off ‘Improve the model for everyone’.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ Web&#x2F;App users: data used for training by default, but you can opt out.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-privacy-policy-explicitly-mentions-training&quot;&gt;2: Privacy Policy explicitly mentions training&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-privacy-policy.html&quot;&gt;DeepSeek Privacy Policy&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“To improve and develop the Services and to train and improve our technology, such as our machine learning models and algorithms.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;User right: &lt;em&gt;“the right to opt-out of using your Personal Data for training our models or optimizing our technologies.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ Training use is documented in writing, and opt-out rights are granted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-api-terms-lack-equivalent-commitment-key-finding&quot;&gt;3: API terms lack equivalent commitment (key finding)&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;DeepSeek Open Platform Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;Full-text comparison with the general Terms:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Clause&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;General Terms (Web&#x2F;App)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Open Platform Terms (API)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;States Input&#x2F;Output may be used for training&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Provides opt-out toggle&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ “Improve the model for everyone”&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Developer retains Input ownership&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.2&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;References Privacy Policy&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 5.5&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ The API terms neither confirm nor deny data use for training. No commitment = untrustworthy.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-industry-comparison-competitors-commit&quot;&gt;4: Industry comparison — competitors commit&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Paid API commits to no training?&lt;&#x2F;th&gt;&lt;th&gt;Source&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit (since March 2023)&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;your-data&quot;&gt;developers.openai.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;privacy.claude.com&#x2F;en&#x2F;articles&#x2F;7996868-is-my-data-used-for-model-training&quot;&gt;privacy.claude.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google Cloud Gemini&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.cloud.google.com&#x2F;gemini&#x2F;docs&#x2F;discover&#x2F;data-governance&quot;&gt;docs.cloud.google.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ Not committed&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;Open Platform Terms&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ DeepSeek’s silence is not industry standard — it lags behind competitors.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>How I Fixed WSL2 Input Method Lag — A Debugging Story</title>
+          <pubDate>Fri, 15 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</link>
+          <guid>https://cncsmonster.github.io/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/">&lt;h2 id=&quot;running-into-the-same-problem&quot;&gt;Running into the Same Problem?&lt;&#x2F;h2&gt;
+&lt;p&gt;Typing Chinese in a WSL2 terminal feels “sluggish” — a sticky delay between keystroke and character appearing on screen.&lt;&#x2F;p&gt;
+&lt;p&gt;Run these three lines first to confirm it’s the same issue, then jump straight to &lt;strong&gt;Quick Fix&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness   # Default 60. &amp;gt;10 with plenty of free RAM → threshold too loose
+free -h | grep Swap           # Plenty of free RAM but hundreds of MB in swap → likely legacy&amp;#x2F;thrashing
+df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F; | tail -1       # System drive &amp;gt;80% → IME file I&amp;#x2F;O affected
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause-in-one-sentence&quot;&gt;Root Cause in One Sentence&lt;&#x2F;h2&gt;
+&lt;p&gt;Three separate lines all bottlenecked on the keystroke-to-echo path:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Keystroke → [Windows Input Pipeline] ← C: drive full, IME sluggish
+          → Terminal                ← same as above
+          → [ConPTY → WSL]         ← autoMemoryReclaim interrupts VM frequently
+          → shell → echo           ← swap thrashing, PTY echo delayed
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;C: drive near full&lt;&#x2F;strong&gt; → Windows input method framework and terminal rendering both slow down&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swappiness=60 (default)&lt;&#x2F;strong&gt; → system pushes processes into swap despite 18 GB of free RAM&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swap thrashing&lt;&#x2F;strong&gt; → swapped-out pages are intermittently read back, I&#x2F;O lands right in the PTY echo window&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;One layer alone wouldn’t be noticeable. Three layers stacked, landing in the tens of milliseconds between keystroke and echo.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-fix&quot;&gt;Quick Fix&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;lower-swappiness-persist-immediate-effect&quot;&gt;① Lower swappiness + persist (immediate effect)&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo sysctl vm.swappiness=10                                          # Takes effect immediately
+echo &amp;quot;vm.swappiness=10&amp;quot; | sudo tee -a &amp;#x2F;etc&amp;#x2F;sysctl.conf                # Loaded by systemd on boot
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ Before editing &lt;code&gt;&#x2F;etc&#x2F;sysctl.conf&lt;&#x2F;code&gt;, check if a &lt;code&gt;vm.swappiness&lt;&#x2F;code&gt; entry already exists — modify it if present, append if not. Avoid duplicate lines.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;warning-clear-swap-watch-out-for-wsl2-specifics&quot;&gt;⚠️ ② Clear swap (watch out for WSL2 specifics)&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL2’s swap isn’t managed by &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt; — &lt;code&gt;swapon -a&lt;&#x2F;code&gt; does nothing for it.&lt;&#x2F;p&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. Find what&amp;#x27;s occupying swap
+for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;${swp:-0}&amp;quot; -gt 10000 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid) (PID=$(basename $(dirname $pid)))&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This lists process names and PIDs, e.g. &lt;code&gt;1039088 KB - node-MainThread (PID=1200819)&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 2. Kill the biggest offenders (replace with actual PIDs from the output above)
+kill -9 &amp;lt;PID1&amp;gt; &amp;lt;PID2&amp;gt;
+
+# 3. Wipe and rebuild swap
+sudo swapoff -a                   # Deactivate swap (clears the signature)
+sudo mkswap &amp;#x2F;dev&amp;#x2F;sdc &amp;amp;&amp;amp; sudo swapon &amp;#x2F;dev&amp;#x2F;sdc   # Rebuild signature and re-enable
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;clean-up-the-c-drive-windows-side&quot;&gt;③ Clean up the C: drive (Windows side)&lt;&#x2F;h3&gt;
+&lt;p&gt;In Windows PowerShell:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;rd &amp;#x2F;s &amp;#x2F;q %TEMP%                  # Clear temp files
+powercfg &amp;#x2F;hibernate off          # Disable hibernation, frees ~16 GB
+cleanmgr &amp;#x2F;sagerun:1              # Disk cleanup
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;set-automemoryreclaim-to-disabled&quot;&gt;④ Set autoMemoryReclaim to disabled&lt;&#x2F;h3&gt;
+&lt;p&gt;Edit &lt;code&gt;C:\Users\&amp;lt;username&amp;gt;\.wslconfig&lt;&#x2F;code&gt; on Windows (or &lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;Users&#x2F;&amp;lt;username&amp;gt;&#x2F;.wslconfig&lt;&#x2F;code&gt; inside WSL):&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt; means WSL won’t return freed memory to Windows, but internal WSL reuse is unaffected — 20 GB is a cap, not a reservation. Actual memory usage depends entirely on your workload. The benefit of &lt;code&gt;disabled&lt;&#x2F;code&gt; is eliminating the HYP interrupts caused by &lt;code&gt;gradual&lt;&#x2F;code&gt;, making WSL more stable. The only cost: freed idle memory inside WSL won’t be immediately returned to Windows (internal reuse remains unaffected).&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[experimental]
+autoMemoryReclaim=disabled
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;reboot-or-manually-clean-up-leftover-processes&quot;&gt;⑤ Reboot (or manually clean up leftover processes)&lt;&#x2F;h3&gt;
+&lt;p&gt;After the first four fixes, the keyboard still felt slightly off. Turned out there were 26 stale zsh sessions and 8 gitstatusd daemons accumulated over 15 days without a reboot. A full system reboot cleared everything with WSL restarting.&lt;&#x2F;p&gt;
+&lt;p&gt;Or, without rebooting, manually handle it inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pkill gitstatusd          # Kill stale git monitoring processes
+# Find orphan zsh sessions (PPID=1) and kill them:
+ps -eo pid,ppid,cmd | awk &amp;#x27;$2==1 &amp;amp;&amp;amp; &amp;#x2F;zsh&amp;#x2F; {print $1}&amp;#x27; | xargs kill -9
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;results&quot;&gt;Results&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;&#x2F;th&gt;&lt;th&gt;Before&lt;&#x2F;th&gt;&lt;th&gt;After&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;60&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;10&lt;&#x2F;strong&gt; (persisted)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap used&lt;&#x2F;td&gt;&lt;td&gt;2.0 GB&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;8.6 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;C: drive&lt;&#x2F;td&gt;&lt;td&gt;81%&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;64%&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap I&#x2F;O&lt;&#x2F;td&gt;&lt;td&gt;constant &amp;gt; 0&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Input method&lt;&#x2F;td&gt;&lt;td&gt;noticeably laggy&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;responsive&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;full-troubleshooting-log&quot;&gt;Full Troubleshooting Log&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;What follows is the real-time record of the layer-by-layer investigation. Read on if you’re curious about the “why” or want to learn the debugging approach.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;symptoms&quot;&gt;Symptoms&lt;&#x2F;h3&gt;
+&lt;p&gt;Typing Chinese in a WSL2 terminal felt laggy — a sticky, delayed sensation between pressing a key and seeing the character appear. Not a full freeze, just “not responsive.”&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;pitfall-i-didn-t-know-the-full-pipeline-at-first&quot;&gt;Pitfall: I didn’t know the full pipeline at first&lt;&#x2F;h3&gt;
+&lt;p&gt;IME lag requires tracing the entire keystroke-to-echo path. I reconstructed this pipeline after the fact using Microsoft documentation (Keyboard Input Overview + TSF + ConPTY architecture):&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Keyboard hardware → [Windows Input Pipeline] → Terminal → [ConPTY → WSL] → shell → echo
+                          ↑ IME lives here
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Windows Input Pipeline&lt;&#x2F;strong&gt;: keyboard driver → scan codes → keyboard layout → TSF&#x2F;IME processes Chinese → generates WM_CHAR character messages. IME isn’t a standalone step — it’s embedded in the input pipeline.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Terminal → ConPTY → WSL&lt;&#x2F;strong&gt;: Windows Terminal connects to WSL2 init via ConPTY (Windows Pseudo Console), which forwards to the Linux PTY, arriving at zsh.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;But I didn’t know any of this during the investigation. I approached it by checking both ends — Windows side, then WSL side.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-1-windows-task-manager-ruled-out-ram&quot;&gt;Step 1: Windows Task Manager → ruled out RAM&lt;&#x2F;h3&gt;
+&lt;p&gt;First instinct was memory pressure. &lt;code&gt;Ctrl + Shift + Esc&lt;&#x2F;code&gt; → Performance → Memory — usage was normal. Not the problem.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-2-wsl-basic-metrics-found-swap-anomaly&quot;&gt;Step 2: WSL basic metrics → found swap anomaly&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;top -bn1 | head          # Load 0.19, CPU idle 97%
+free -h                  # Free RAM 18.6 GB &amp;#x2F; Total 20 GB
+cat &amp;#x2F;proc&amp;#x2F;meminfo        # Swap used: 2.6 GB ← red flag
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness  # = 60 (default)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;&#x2F;th&gt;&lt;th&gt;Value&lt;&#x2F;th&gt;&lt;th&gt;Meaning&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;60&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Swapping starts when free RAM drops below ~8 GB — threshold too loose&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap used&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;2.6 GB&lt;&#x2F;strong&gt; &#x2F; 8 GB&lt;&#x2F;td&gt;&lt;td&gt;Historical — swapped out during earlier long sessions when RAM was full; kernel doesn’t proactively swap back&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;14-day swap activity&lt;&#x2F;td&gt;&lt;td&gt;~50M page-ins, ~50M page-outs&lt;&#x2F;td&gt;&lt;td&gt;Swap wasn’t sitting idle — massive historical read&#x2F;write volume&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Swap usage (2.6 GB) is historical. Swap thrashing is the problem.&lt;&#x2F;strong&gt; The usage itself doesn’t cause lag. The intermittent page-in I&#x2F;O from thrashing does.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-3-who-s-in-swap&quot;&gt;Step 3: Who’s in swap&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;$swp&amp;quot; -gt 0 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid)&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Two orphan &lt;code&gt;qwen&lt;&#x2F;code&gt; (Tongyi Qianwen CLI) processes held 1.6 GB — each had allocated 44 GB of virtual address space but only 1–2 MB RSS. Their original terminals were long gone; the processes were adopted by systemd (PID 1).&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-4-confirmed-swap-thrashing&quot;&gt;Step 4: Confirmed swap thrashing&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;vmstat 1                    # si column consistently &amp;gt; 0
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;memory   # some avg10=3.48
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;io       # some avg10=3.97
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;step-5-c-drive-nearly-full&quot;&gt;Step 5: C: drive nearly full&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F;   # 196 GB capacity, 159 GB used, 38 GB free (81%)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;At 81% full, Windows IME’s dictionary reads and writes become sluggish. PowerShell scanning identified &lt;code&gt;AppData\Local\Temp&lt;&#x2F;code&gt; (8 GB) and &lt;code&gt;hiberfil.sys&lt;&#x2F;code&gt; (~16 GB) as the main culprits.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;root-cause-mapping&quot;&gt;Root Cause Mapping&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;Keystroke → [Windows Input Pipeline] ← C: drive 81% full, IME file I&amp;#x2F;O slowed
+          → Terminal                ← same as above
+          → [ConPTY → WSL]         ← autoMemoryReclaim=gradual, VM frequently paused
+          → shell → echo           ← swap thrashing, PTY echo delayed by I&amp;#x2F;O
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;A single layer’s delay might be imperceptible. All three stacked, landing in the few dozen milliseconds between keystroke and echo.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;warning-pitfall-wsl2-swap-recovery&quot;&gt;⚠️ Pitfall: WSL2 swap recovery&lt;&#x2F;h3&gt;
+&lt;p&gt;After &lt;code&gt;swapoff -a&lt;&#x2F;code&gt;, &lt;code&gt;swapon -a&lt;&#x2F;code&gt; does nothing — because WSL2’s swap isn’t managed by &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt; (fstab is empty). Instead, WSL2 init directly mounts &lt;code&gt;&#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;. Recovery requires &lt;code&gt;mkswap &#x2F;dev&#x2F;sdc &amp;amp;&amp;amp; swapon &#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Debug WSL2 lag from both ends&lt;&#x2F;strong&gt;: rule out the obvious (Task Manager) first, then dig into what you normally overlook (swap, PSI, orphan processes).&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Large free RAM ≠ no lag&lt;&#x2F;strong&gt;: swappiness=60 is too aggressive for desktop&#x2F;WSL use. Lower it to 10 — don’t touch swap until RAM is truly needed.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Swap is about thrashing, not usage&lt;&#x2F;strong&gt;: 2 GB of swap usage doesn’t cause lag. Small, frequent page-in&#x2F;page-out bursts do.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Orphan process swap is a liability too&lt;&#x2F;strong&gt;: inactive processes with 44 GB VSZ each in swap generate continuous page faults.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;glossary&quot;&gt;Glossary&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Skim these if unfamiliar — not required to follow the fix above.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;swappiness&lt;&#x2F;strong&gt;: Linux kernel parameter (0–100) controlling how aggressively memory is swapped out. Default is 60. At 10, the kernel only swaps when RAM is truly scarce.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;swap (swap space)&lt;&#x2F;strong&gt; : a disk partition used as overflow when physical RAM runs low. WSL2 swap size is configured via &lt;code&gt;swap=8G&lt;&#x2F;code&gt; in &lt;code&gt;.wslconfig&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;PSI (Pressure Stall Information)&lt;&#x2F;strong&gt; : Linux kernel pressure metrics. &lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;memory&lt;&#x2F;code&gt; and &lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;io&lt;&#x2F;code&gt; show how much time the system spends stalled on memory or disk I&#x2F;O.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;HYP interrupt&lt;&#x2F;strong&gt;: Hyper-V callback interrupt. WSL2 runs as a Hyper-V VM, and the host (Windows) communicates with the VM through these interrupts. A count in the hundreds of millions indicates extremely frequent interaction.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;ConPTY&lt;&#x2F;strong&gt;: Windows Pseudo Console — Windows Terminal connects to the Linux PTY inside WSL2 through this.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;autoMemoryReclaim&lt;&#x2F;strong&gt;: WSL2 experimental feature controlling whether freed WSL memory is returned to Windows. &lt;code&gt;gradual&lt;&#x2F;code&gt; returns it slowly; &lt;code&gt;disabled&lt;&#x2F;code&gt; never returns it.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;inputdev&#x2F;about-keyboard-input&quot;&gt;Microsoft Keyboard Input Overview&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;tsf&#x2F;text-services-framework&quot;&gt;Windows Text Services Framework (TSF)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;wsl-config&quot;&gt;WSL2 &lt;code&gt;.wslconfig&lt;&#x2F;code&gt; Reference&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;admin-guide&#x2F;sysctl&#x2F;vm.html&quot;&gt;Linux swappiness Documentation&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;accounting&#x2F;psi.html&quot;&gt;Linux PSI Documentation&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>gsudo — A GUI Privilege-Escalation Frontend for AI Agents</title>
+          <pubDate>Mon, 11 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/open-source/gsudo/</link>
+          <guid>https://cncsmonster.github.io/en/open-source/gsudo/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/open-source/gsudo/">&lt;p&gt;&lt;strong&gt;Zero-dependency, cross-platform GUI sudo frontend — lets AI Coding Agents safely execute privileged commands in the background.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-problem-does-this-solve&quot;&gt;What Problem Does This Solve?&lt;&#x2F;h2&gt;
+&lt;p&gt;AI Agents running in non-root terminals need &lt;code&gt;sudo&lt;&#x2F;code&gt; for privileged operations — but &lt;code&gt;sudo&lt;&#x2F;code&gt; requires an interactive tty for password input. The agent’s subprocess has no tty. Result: command fails, agent deadlocks, or hallucinates.&lt;&#x2F;p&gt;
+&lt;p&gt;gsudo inserts a GUI confirmation layer between the agent and the system: the agent calls &lt;code&gt;gsudo&lt;&#x2F;code&gt;, the user confirms and enters credentials via a graphical window, the command runs as root, and the output returns to the agent.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;core-design&quot;&gt;Core Design&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;stdout-stderr-separation&quot;&gt;stdout&#x2F;stderr Separation&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;stdout → raw command output (AI can parse directly)
+stderr → gsudo banner + status (human-readable)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;When the agent runs &lt;code&gt;gsudo whoami&lt;&#x2F;code&gt; with &lt;code&gt;capture_output=True&lt;&#x2F;code&gt;, &lt;code&gt;stdout&lt;&#x2F;code&gt; is simply &lt;code&gt;root&lt;&#x2F;code&gt;. No regex-parsing wrapper text required.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;why-custom-tkinter-instead-of-pkexec&quot;&gt;Why Custom Tkinter Instead of pkexec&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;gsudo (sudo -S + Tkinter)&lt;&#x2F;th&gt;&lt;th&gt;pkexec&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Command preview&lt;&#x2F;td&gt;&lt;td&gt;✅ Full command + AI-generated reason shown&lt;&#x2F;td&gt;&lt;td&gt;❌ Not customizable&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Cross-platform&lt;&#x2F;td&gt;&lt;td&gt;✅ Linux&#x2F;macOS&#x2F;Windows&lt;&#x2F;td&gt;&lt;td&gt;❌ Linux only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Environment variables&lt;&#x2F;td&gt;&lt;td&gt;✅ Fully preserved&lt;&#x2F;td&gt;&lt;td&gt;❌ Strictly sanitized&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Dependencies&lt;&#x2F;td&gt;&lt;td&gt;Zero (Python stdlib)&lt;&#x2F;td&gt;&lt;td&gt;Requires PolicyKit&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt; reads the password from stdin pipe — &lt;code&gt;subprocess.run&lt;&#x2F;code&gt; passes it directly. gsudo itself runs without root privileges.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;cross-platform-adaptation&quot;&gt;Cross-Platform Adaptation&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Linux&lt;&#x2F;th&gt;&lt;th&gt;macOS&lt;&#x2F;th&gt;&lt;th&gt;Windows&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Privilege mechanism&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;Start-Process -Verb RunAs&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;GUI interaction&lt;&#x2F;td&gt;&lt;td&gt;Password field&lt;&#x2F;td&gt;&lt;td&gt;Password field&lt;&#x2F;td&gt;&lt;td&gt;Confirm button&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;System dialog&lt;&#x2F;td&gt;&lt;td&gt;None&lt;&#x2F;td&gt;&lt;td&gt;None&lt;&#x2F;td&gt;&lt;td&gt;UAC (secure desktop, cannot bypass)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Password&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;❌ (UAC is intent confirmation, not auth)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;On Windows, PowerShell commands are base64-encoded to prevent injection.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;multi-instance-concurrency&quot;&gt;Multi-Instance Concurrency&lt;&#x2F;h3&gt;
+&lt;p&gt;No global lock. Multiple agents needing privilege simultaneously get simultaneous dialogs — the user decides which to handle first. A lock would leave later instances hanging in the terminal.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;no-password-caching&quot;&gt;No Password Caching&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;sudo&lt;&#x2F;code&gt; has its own timestamp — gsudo adds no extra caching. Privilege escalation should always require explicit user confirmation.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;tech-stack&quot;&gt;Tech Stack&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Python 3.6+&lt;&#x2F;li&gt;
+&lt;li&gt;Tkinter (ttk) — standard library, zero install&lt;&#x2F;li&gt;
+&lt;li&gt;Linux&#x2F;macOS: &lt;code&gt;sudo -S&lt;&#x2F;code&gt; stdin password pipe&lt;&#x2F;li&gt;
+&lt;li&gt;Windows: PowerShell + base64 encoding → UAC&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Dependency (Linux only)
+sudo apt install python3-tk
+
+# Install
+curl -o ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo https:&amp;#x2F;&amp;#x2F;raw.githubusercontent.com&amp;#x2F;CNCSMonster&amp;#x2F;gsudo&amp;#x2F;main&amp;#x2F;scripts&amp;#x2F;gsudo
+chmod +x ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo
+
+# Register as Agent Skill
+ln -sf &amp;#x2F;path&amp;#x2F;to&amp;#x2F;gsudo ~&amp;#x2F;.agents&amp;#x2F;skills&amp;#x2F;gsudo
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;verification-status&quot;&gt;Verification Status&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Platform&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Status&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Linux&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Verified on real hardware&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;macOS&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No device&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Windows&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No desktop environment&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;project-link&quot;&gt;Project Link&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;GitHub: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;gsudo&quot;&gt;CNCSMonster&#x2F;gsudo&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>gsudo: A Graphical sudo Frontend for Your AI Coding Agent</title>
+          <pubDate>Mon, 11 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/gsudo-ai-agent-gui-sudo/</link>
+          <guid>https://cncsmonster.github.io/en/posts/gsudo-ai-agent-gui-sudo/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/gsudo-ai-agent-gui-sudo/">&lt;p&gt;&lt;strong&gt;Your AI is writing code in the terminal, suddenly needs sudo privileges — and gets stuck. Meanwhile, you’re doing something else in the foreground and don’t even notice.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;&#x2F;h2&gt;
+&lt;p&gt;AI Coding Agents (pi, Claude Code, Qwen Code, etc.) run inside a terminal, but the terminal isn’t launched as root. When the agent needs to run &lt;code&gt;sudo apt install&lt;&#x2F;code&gt; or &lt;code&gt;systemctl restart&lt;&#x2F;code&gt;, &lt;code&gt;sudo&lt;&#x2F;code&gt; prompts for a password on the terminal — but the AI’s subprocess environment has no interactive tty, so the password can’t be entered. The command simply fails.&lt;&#x2F;p&gt;
+&lt;p&gt;The AI then reacts in one of three frustrating ways:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Endless retries&lt;&#x2F;strong&gt; — sees “permission denied” and retries in a loop, task completely deadlocked&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Hallucination&lt;&#x2F;strong&gt; — treats the error output as command results, continues with fabricated data (you only discover this after investigating)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Gives up&lt;&#x2F;strong&gt; — “I don’t have permission to complete this task”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;All three make autonomous AI operation unreliable.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;&#x2F;h2&gt;
+&lt;p&gt;gsudo is a graphical privilege-escalation frontend designed for AI Agents. Here’s how it works:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;AI calls  gsudo --reason &amp;quot;install nginx&amp;quot; -- apt install -y nginx
+                   ↓
+        ┌─────────────────────────────┐
+        │ 🔐 Administrator Access     │  ← Always-on-top popup
+        │ ℹ install nginx             │     Shows command &amp;amp; reason
+        │ sudo apt install...         │
+        │ Password: [●●●●●●]          │  ← You type your password
+        │        [Deny]  [Execute]    │
+        └─────────────────────────────┘
+                   ↓
+           Command executes as root
+           Output returned to AI
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;While you’re working on something else, the dialog pops up as a top-level window — no need to switch terminals or guess which instance needs attention.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;try-it-in-one-command&quot;&gt;Try It in One Command&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Dependency (Linux only — macOS&amp;#x2F;Windows include it by default)
+sudo apt install python3-tk
+
+# Install
+curl -o ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo https:&amp;#x2F;&amp;#x2F;raw.githubusercontent.com&amp;#x2F;CNCSMonster&amp;#x2F;gsudo&amp;#x2F;main&amp;#x2F;scripts&amp;#x2F;gsudo
+chmod +x ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo
+
+# Test it
+gsudo --reason &amp;quot;testing gsudo&amp;quot; -- whoami
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;a-detail-that-matters-ai-doesn-t-need-to-parse-wrapper-text&quot;&gt;A Detail That Matters: AI Doesn’t Need to Parse Wrapper Text&lt;&#x2F;h2&gt;
+&lt;p&gt;A typical helper tool outputs something like:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;🔐 Requesting admin privileges
+  sudo whoami
+✓ Command executed successfully
+root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The AI has to regex its way to &lt;code&gt;root&lt;&#x2F;code&gt;. gsudo separates command output from status messages:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;stdout → root              ← AI&amp;#x27;s capture_output gets this directly
+stderr → 🔐 ... ✓ ...      ← Status messages, meant for humans
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The AI reads clean stdout — no parsing needed.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;cross-platform&quot;&gt;Cross-Platform&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Linux&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;macOS&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Windows&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Privilege mechanism&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;UAC&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;User interaction&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Password prompt&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Password prompt&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Click to confirm&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Built with Python + Tkinter. Zero external dependencies.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;project&quot;&gt;Project&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;GitHub: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;gsudo&quot;&gt;CNCSMonster&#x2F;gsudo&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Verified on Linux — macOS &#x2F; Windows pending device testing&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>How to Reset a Forgotten Password in WSL</title>
+          <pubDate>Fri, 08 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl-wang-ji-mi-ma-zhong-zhi-fang-fa/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl-wang-ji-mi-ma-zhong-zhi-fang-fa/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl-wang-ji-mi-ma-zhong-zhi-fang-fa/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Applies to:&lt;&#x2F;strong&gt; Default WSL user is a regular user and you’ve forgotten the password (can’t sudo).
+&lt;strong&gt;Does not apply to:&lt;&#x2F;strong&gt; Default user is root (no password problem exists).&lt;&#x2F;p&gt;
+&lt;p&gt;If you use an AI coding agent that can execute commands (Claude Code, Cursor Agent, Pi, etc.), just share the link to this article — it will guide you through the steps. Traditional code completion tools (e.g. Copilot) are not applicable.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;1-enter-wsl-as-root&quot;&gt;1. Enter WSL as Root&lt;&#x2F;h2&gt;
+&lt;p&gt;Run the following in Windows PowerShell (Win key → search “PowerShell”):&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl -u root
+# Or specify the distro: wsl -d Ubuntu-24.04 -u root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;wsl.exe&lt;&#x2F;code&gt; is a Windows-side tool that can launch WSL as any Linux user — it bypasses the Linux authentication system, so the old password isn’t needed.&lt;&#x2F;p&gt;
+&lt;p&gt;Don’t know your distro name? Run &lt;code&gt;wsl -l -v&lt;&#x2F;code&gt; first to list them, then use &lt;code&gt;wsl -d &amp;lt;name&amp;gt; -u root&lt;&#x2F;code&gt;.
+When it succeeds, your prompt should change to &lt;code&gt;root@...&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;2-reset-the-password&quot;&gt;2. Reset the Password&lt;&#x2F;h2&gt;
+&lt;p&gt;Now in a root shell, run:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# See which users exist (usually matches your Windows username)
+ls &amp;#x2F;home
+# Example output: cncsmonster  lost+found
+
+# Reset the password (use the actual username from the step above)
+passwd &amp;lt;username&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;passwd&lt;&#x2F;code&gt; executed as root allows you to set a new password directly — no old password required.
+When typing the new password, nothing shows on screen (not even asterisks) — this is normal Linux behavior. Press Enter after typing, confirm it once more, and you’ll see &lt;code&gt;passwd: password updated successfully&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-verify&quot;&gt;3. Verify&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Exit the root shell, back to PowerShell
+exit
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Back in PowerShell, log into WSL as your regular user:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Inside WSL, test:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo whoami
+# Enter your new password when prompted
+# Output should be: root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</description>
+      </item>
+      <item>
+          <title>Fixing Claude Code WebFetch: Bypassing preflight to Rescue Failed Site Fetching</title>
+          <pubDate>Thu, 07 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/claude-code-fix-webfetch-preflight/</link>
+          <guid>https://cncsmonster.github.io/en/posts/claude-code-fix-webfetch-preflight/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/claude-code-fix-webfetch-preflight/">&lt;h2 id=&quot;background&quot;&gt;Background&lt;&#x2F;h2&gt;
+&lt;p&gt;When using third-party LLM providers (e.g. Zhipu, or other Anthropic-compatible APIs), Claude Code’s built-in network tools have problems: WebSearch is unavailable, and WebFetch appears to be blocked by Chinese websites. By analyzing Claude Code’s source code and running real tests, I found the root cause and a fix.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;source-code-facts-claude-code-2-x&quot;&gt;Source Code Facts (Claude Code 2.x)&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Source location: &lt;code&gt;claude-code-haha&#x2F;src&#x2F;tools&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;webfetch-architecture&quot;&gt;WebFetch Architecture&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;Call chain:
+  ① preflight domain safety check → POST https:&amp;#x2F;&amp;#x2F;api.anthropic.com&amp;#x2F;api&amp;#x2F;web&amp;#x2F;domain_info
+     Hardcoded — not controlled by ANTHROPIC_BASE_URL
+  ② Local HTTP fetch → axios.get(url), outgoing from the user&amp;#x27;s machine
+  ③ Content summarization → ANTHROPIC_BASE_URL (Haiku), routed through user&amp;#x27;s provider
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Key files:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;WebFetchTool.ts&lt;&#x2F;code&gt; — tool definition and permission checks&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;utils.ts&lt;&#x2F;code&gt; — &lt;code&gt;getWithPermittedRedirects()&lt;&#x2F;code&gt; performs local fetching via &lt;code&gt;axios.get()&lt;&#x2F;code&gt; (line 262)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;utils.ts&lt;&#x2F;code&gt; — &lt;code&gt;checkDomainBlocklist()&lt;&#x2F;code&gt; preflight check (line 176)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;websearch-architecture&quot;&gt;WebSearch Architecture&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;Call chain:
+  Construct server_tool_use schema (type: web_search_20250305)
+  → Inject into Messages API request
+  → Anthropic server performs the search
+  → Client consumes streamed web_search_tool_result
+  Entirely server-side; client never initiates HTTP search requests
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Key files:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WebSearchTool&#x2F;WebSearchTool.ts&lt;&#x2F;code&gt; — &lt;code&gt;isEnabled()&lt;&#x2F;code&gt; only allows firstParty&#x2F;vertex&#x2F;foundry (line 168)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebSearchTool&#x2F;prompt.ts&lt;&#x2F;code&gt; — explicitly states “Searches are performed automatically within a single API call”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anthropic-base-url-scope&quot;&gt;ANTHROPIC_BASE_URL Scope&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Affected&lt;&#x2F;th&gt;&lt;th&gt;Not Affected&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Chat Completions API&lt;&#x2F;td&gt;&lt;td&gt;WebFetch preflight (hardcoded to api.anthropic.com)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;WebFetch content summarization (Haiku)&lt;&#x2F;td&gt;&lt;td&gt;WebFetch local fetch (axios.get)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;WebSearch unavailable (third-party providers don’t implement it)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;the-fix&quot;&gt;The Fix&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;one-config-line-to-fix-webfetch&quot;&gt;One Config Line to Fix WebFetch&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&amp;#x2F;&amp;#x2F; .claude&amp;#x2F;settings.local.json
+{
+  &amp;quot;skipWebFetchPreflight&amp;quot;: true
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;How it works&lt;&#x2F;strong&gt;: skips the &lt;code&gt;checkDomainBlocklist()&lt;&#x2F;code&gt; API call. Local &lt;code&gt;axios.get()&lt;&#x2F;code&gt; fetches directly without passing through Anthropic’s safety check.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;verified-results&quot;&gt;Verified Results&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Target&lt;&#x2F;th&gt;&lt;th&gt;skipWebFetchPreflight=false&lt;&#x2F;th&gt;&lt;th&gt;skipWebFetchPreflight=true&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;deepseek.com&lt;&#x2F;td&gt;&lt;td&gt;❌ Unable to verify…&lt;&#x2F;td&gt;&lt;td&gt;✅ DeepSeek | 深度求索&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;docs.bigmodel.cn&lt;&#x2F;td&gt;&lt;td&gt;❌ Unable to verify…&lt;&#x2F;td&gt;&lt;td&gt;✅ (verified)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;websearch-no-fix-available&quot;&gt;WebSearch: No Fix Available&lt;&#x2F;h3&gt;
+&lt;p&gt;Third-party providers don’t implement Anthropic’s server_tool protocol. &lt;code&gt;isEnabled()&lt;&#x2F;code&gt; returns false directly — the tool isn’t registered. &lt;strong&gt;Not a config issue — a provider capability limitation.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;mcp-search-as-a-supplement&quot;&gt;MCP Search as a Supplement&lt;&#x2F;h3&gt;
+&lt;p&gt;After the WebFetch fix, it’s already the primary fetching tool. The following MCP tools provide search capabilities (search engine vs. single-page fetch are different capabilities):&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Tool&lt;&#x2F;th&gt;&lt;th&gt;Use Case&lt;&#x2F;th&gt;&lt;th&gt;Free Tier&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Tavily MCP&lt;&#x2F;td&gt;&lt;td&gt;Best for technical documentation search&lt;&#x2F;td&gt;&lt;td&gt;1000 queries&#x2F;month&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Brave Search MCP&lt;&#x2F;td&gt;&lt;td&gt;General-purpose search + independent index&lt;&#x2F;td&gt;&lt;td&gt;2000 queries&#x2F;month&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;final-configuration&quot;&gt;Final Configuration&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;skipWebFetchPreflight&amp;quot;: true,
+  &amp;quot;permissions&amp;quot;: {
+    &amp;quot;allow&amp;quot;: [
+      &amp;quot;WebFetch&amp;quot;,
+      &amp;quot;Bash(curl:*)&amp;quot;,
+      &amp;quot;Bash(claude mcp *)&amp;quot;,
+      &amp;quot;Bash(python3 *)&amp;quot;
+    ],
+    &amp;quot;deny&amp;quot;: [&amp;quot;WebSearch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;network-tool-capability-matrix-after-fix&quot;&gt;Network Tool Capability Matrix (After Fix)&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Tool&lt;&#x2F;th&gt;&lt;th&gt;Status&lt;&#x2F;th&gt;&lt;th&gt;How It Works&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;WebFetch&lt;&#x2F;td&gt;&lt;td&gt;✅ Fixed&lt;&#x2F;td&gt;&lt;td&gt;Local axios.get(), bypasses Anthropic preflight&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;WebSearch&lt;&#x2F;td&gt;&lt;td&gt;❌ deny&lt;&#x2F;td&gt;&lt;td&gt;Third-party providers don’t implement server_tool&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Brave MCP&lt;&#x2F;td&gt;&lt;td&gt;Installed&lt;&#x2F;td&gt;&lt;td&gt;Local process, requires API Key&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Tavily MCP&lt;&#x2F;td&gt;&lt;td&gt;Installed&lt;&#x2F;td&gt;&lt;td&gt;Local process, requires API Key&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;curl&lt;&#x2F;td&gt;&lt;td&gt;✅ Fallback&lt;&#x2F;td&gt;&lt;td&gt;Zero dependencies&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;priority-strategy&quot;&gt;Priority Strategy&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Fetch specific webpage content  → WebFetch (fixed, unlimited)
+Search docs&amp;#x2F;API references      → Tavily MCP (best search quality)
+General web search              → Brave Search MCP (independent index)
+Quick fetch from known doc sites → llms.txt + curl (zero token cost)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;key-lessons&quot;&gt;Key Lessons&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Error messages can be misleading&lt;&#x2F;strong&gt;: &lt;code&gt;&quot;unable to verify domain is safe&quot;&lt;&#x2F;code&gt; looked like the target site was blocking the request. In reality, the Anthropic preflight was silently intercepting it.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Source code beats speculation&lt;&#x2F;strong&gt;: I initially assumed WebFetch fetched from Anthropic’s servers. The source code proved it’s a local &lt;code&gt;axios&lt;&#x2F;code&gt; call.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;One config line can solve a huge problem&lt;&#x2F;strong&gt;: The single most effective move in this entire investigation was &lt;code&gt;skipWebFetchPreflight: true&lt;&#x2F;code&gt;. All the earlier MCP tinkering was because I didn’t know this setting existed.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+      <item>
+          <title>Enhancing AI Code CLI Capabilities Should Use MCP Protocol, Not Built-in Tool Source Code</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/ai-code-cli-mcp-protocol-not-internal-tools/</link>
+          <guid>https://cncsmonster.github.io/en/posts/ai-code-cli-mcp-protocol-not-internal-tools/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/ai-code-cli-mcp-protocol-not-internal-tools/">&lt;p&gt;&lt;strong&gt;Don’t build on code that’s about to be deleted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-happened&quot;&gt;What Happened&lt;&#x2F;h2&gt;
+&lt;p&gt;The older version of Qwen Code had a built-in &lt;code&gt;web_search&lt;&#x2F;code&gt; tool supporting three search backends: Tavily, Google, and DashScope (DashScope was eligible for Qwen OAuth authentication). But its provider selection was static — you’d configure a single default, the tool would call that one provider per search, and failures were just errors. No fallback.&lt;&#x2F;p&gt;
+&lt;p&gt;My goal was to add runtime provider fallback inside the tool: try Tavily first, then Google, then DashScope. If the first one fails, automatically move to the next. That way a single backend going down wouldn’t kill search entirely.&lt;&#x2F;p&gt;
+&lt;p&gt;On 2026-04-24, while my solution was still local — Qwen Code PR #3502 landed. &lt;strong&gt;It deleted the entire &lt;code&gt;web_search&lt;&#x2F;code&gt; built-in tool&lt;&#x2F;strong&gt; and replaced it with an MCP-based architecture. All the old config keys (&lt;code&gt;webSearch&lt;&#x2F;code&gt; block, &lt;code&gt;advanced.tavilyApiKey&lt;&#x2F;code&gt;, &lt;code&gt;--tavily-api-key&lt;&#x2F;code&gt; CLI flag, etc.) were deprecated. I had been working against a target that no longer existed.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-this-approach-was-doomed&quot;&gt;Why This Approach Was Doomed&lt;&#x2F;h2&gt;
+&lt;p&gt;The problem wasn’t the idea — the old implementation genuinely lacked runtime fallback, and adding it was a reasonable improvement. The problem was the foundation:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;web_search&lt;&#x2F;code&gt; went from existence to deletion in a single PR. The AI Code CLI category is less than two years old. Built-in tools can be refactored, merged, or deleted at any time.&lt;&#x2F;li&gt;
+&lt;li&gt;MCP is a cross-CLI standard. Qwen Code, Claude Code, Gemini CLI all support it. Tools built on MCP are independent of any CLI implementation — there’s no risk of “I spent weeks modifying source code, and then the tool got deleted.”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;reflection-the-right-approach&quot;&gt;Reflection: The Right Approach&lt;&#x2F;h2&gt;
+&lt;p&gt;Fallback itself was a good idea — the old version needed it, and the MCP layer needs it too. The mistake was &lt;strong&gt;where&lt;&#x2F;strong&gt; I chose to implement it:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;❌ Modifying CLI built-in tool source code to add fallback&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Writing a standalone MCP server that internally handles multi-provider fallback&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Same functionality. Placed in built-in tool source, it’s one PR away from deletion. Placed in an MCP server, it’s decoupled from the CLI version lifecycle — you control when it lives or dies.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;takeaways&quot;&gt;Takeaways&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;When building capability enhancements for AI Code CLIs, &lt;strong&gt;prioritize the MCP layer&lt;&#x2F;strong&gt; — tools live independently of CLI implementation, immune to upstream refactoring.&lt;&#x2F;li&gt;
+&lt;li&gt;Before you start, check the module’s lifecycle: is it stable core functionality, or experimental code that could be replaced at any time?&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Getting Qwen Code to Work with Tavily Search</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-tavily-mcp-setup/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-tavily-mcp-setup/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-tavily-mcp-setup/">&lt;h2 id=&quot;1-get-an-api-key&quot;&gt;1. Get an API Key&lt;&#x2F;h2&gt;
+&lt;p&gt;Sign up at &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;tavily.com&#x2F;&quot;&gt;Tavily&lt;&#x2F;a&gt; and copy your API key.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-set-the-environment-variable&quot;&gt;2. Set the Environment Variable&lt;&#x2F;h2&gt;
+&lt;p&gt;Persist &lt;code&gt;TAVILY_API_KEY&lt;&#x2F;code&gt; as a system environment variable (replace &lt;code&gt;tvly-xxxxxxxx&lt;&#x2F;code&gt; with your actual key).&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Linux &#x2F; macOS:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;echo &amp;#x27;export TAVILY_API_KEY=&amp;quot;tvly-xxxxxxxx&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.profile
+source ~&amp;#x2F;.profile
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;If you’ve already set this before, open &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; in an editor to replace or remove the old entry — avoid duplicate lines.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Windows (PowerShell):&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;[Environment]::SetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;tvly-xxxxxxxx&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;No admin privileges required. This writes a persistent environment variable for the current user, but doesn’t modify the already-open PowerShell process — close and reopen the terminal for it to take effect.&lt;&#x2F;p&gt;
+&lt;p&gt;After reopening PowerShell, verify:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you want to continue testing immediately in the current PowerShell window without reopening, sync it once:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY = [Environment]::GetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Your API key grants access to a paid tier. Run the commands above yourself — don’t let an AI agent do it for you.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-install-tavily-mcp&quot;&gt;3. Install Tavily MCP&lt;&#x2F;h2&gt;
+&lt;p&gt;Tell Qwen Code:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Please install Tavily MCP using the qwen mcp add command, then search for something to verify it works.
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Done.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Verified: 2026-05-05, Qwen Code 0.15.6 + tavily-mcp 0.2.19&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</description>
+      </item>
+      <item>
+          <title>Learn Claude Code Notes</title>
+          <pubDate>Thu, 09 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/ebooks/learn-claude-code-notes/</link>
+          <guid>https://cncsmonster.github.io/en/ebooks/learn-claude-code-notes/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/ebooks/learn-claude-code-notes/">&lt;p&gt;Learn Claude Code Notes&lt;&#x2F;p&gt;
+&lt;p&gt;My study notes on Claude Code, written with mdBook.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>About</title>
+          <pubDate>Wed, 08 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/about/</link>
+          <guid>https://cncsmonster.github.io/en/about/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/about/">&lt;p&gt;Life is more than keyboards and distant stars—it’s also about poetry and the road less traveled.&lt;&#x2F;p&gt;
+&lt;p&gt;I believe good tools save time and unleash human creativity for more meaningful work.
+Continuously exploring how AI can boost productivity—enabling us to explore both the cosmos and the poetry of life.&lt;&#x2F;p&gt;
+&lt;div class=&quot;tech-grid&quot;&gt;
+&lt;div&gt;
+&lt;h2 id=&quot;experience&quot;&gt;Experience&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Compilers&lt;&#x2F;li&gt;
+&lt;li&gt;Communication Middleware&lt;&#x2F;li&gt;
+&lt;li&gt;Intelligent Driving Toolchain&lt;&#x2F;li&gt;
+&lt;li&gt;Robotics Toolchain&lt;&#x2F;li&gt;
+&lt;li&gt;AI Agents (Desktop&#x2F;Mobile&#x2F;Code)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;
+&lt;div&gt;
+&lt;h2 id=&quot;interests&quot;&gt;Interests&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;R&amp;amp;D Efficiency Toolchain&lt;&#x2F;li&gt;
+&lt;li&gt;LLM Applications&lt;&#x2F;li&gt;
+&lt;li&gt;Embodied AI&lt;&#x2F;li&gt;
+&lt;li&gt;System Performance Optimization&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;
+&lt;div&gt;
+&lt;h2 id=&quot;exploring&quot;&gt;Exploring&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Code Agent&lt;&#x2F;li&gt;
+&lt;li&gt;LLM Knowledge Base&lt;&#x2F;li&gt;
+&lt;li&gt;Robot Operating System&lt;&#x2F;li&gt;
+&lt;li&gt;Communication Middleware&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;
+&lt;&#x2F;div&gt;
+&lt;div class=&quot;contact&quot;&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cncsmonster&quot;&gt;GitHub&lt;&#x2F;a&gt; · &lt;a href=&quot;mailto:cncsmonster@163.com&quot;&gt;cncsmonster@163.com&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;div&gt;
+</description>
+      </item>
+      <item>
+          <title>Rust Patterns Notes</title>
+          <pubDate>Tue, 07 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/ebooks/rust-patterns-notes/</link>
+          <guid>https://cncsmonster.github.io/en/ebooks/rust-patterns-notes/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/ebooks/rust-patterns-notes/">&lt;h1 id=&quot;rust-patterns-notes&quot;&gt;Rust Patterns Notes&lt;&#x2F;h1&gt;
+&lt;p&gt;My study notes on Rust design patterns, written with mdBook.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Dotfiles — My Development Environment Configuration</title>
+          <pubDate>Tue, 07 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/open-source/dotfiles/</link>
+          <guid>https://cncsmonster.github.io/en/open-source/dotfiles/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/open-source/dotfiles/">&lt;p&gt;&lt;strong&gt;A collection of development environment configurations — set up a complete dev environment with one command.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-problem-does-this-solve&quot;&gt;What Problem Does This Solve?&lt;&#x2F;h2&gt;
+&lt;p&gt;You get a new machine (or reinstall the OS). How do you quickly restore your familiar development environment?&lt;&#x2F;p&gt;
+&lt;p&gt;Install software and configure files one by one? That takes hours or even days.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;&#x2F;h2&gt;
+&lt;p&gt;This project is an &lt;strong&gt;automated development environment setup script&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;One-command deploy&lt;&#x2F;strong&gt; — &lt;code&gt;.&#x2F;setup.sh&lt;&#x2F;code&gt; handles everything automatically&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Complete toolchain&lt;&#x2F;strong&gt; — Helix, Zsh, Rust, Go, Node.js, and more&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Reproducible&lt;&#x2F;strong&gt; — pinned versions ensure consistent setups&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;You can:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Use it directly&lt;&#x2F;strong&gt; — get an environment matching mine&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Learn from it&lt;&#x2F;strong&gt; — see how dotfiles can be organized&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Customize it&lt;&#x2F;strong&gt; — fork it and build your own&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;git clone https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;cncsmonster&amp;#x2F;dotfiles.git
+cd dotfiles &amp;amp;&amp;amp; .&amp;#x2F;setup.sh
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Completes in ~20–50 minutes depending on machine specs and network speed.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;project-link&quot;&gt;Project Link&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GitHub&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cncsmonster&#x2F;dotfiles&quot;&gt;cncsmonster&#x2F;dotfiles&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;Star and PRs welcome! ⭐&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>gen-mdbook-summary — Auto-generate mdBook SUMMARY.md</title>
+          <pubDate>Tue, 07 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/open-source/gen-mdbook-summary/</link>
+          <guid>https://cncsmonster.github.io/en/open-source/gen-mdbook-summary/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/open-source/gen-mdbook-summary/">&lt;p&gt;&lt;strong&gt;A tool that automatically generates SUMMARY.md for mdBook projects.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-problem-does-this-solve&quot;&gt;What Problem Does This Solve?&lt;&#x2F;h2&gt;
+&lt;p&gt;Writing a technical book with mdBook — every new chapter means manually editing &lt;code&gt;SUMMARY.md&lt;&#x2F;code&gt;?&lt;&#x2F;p&gt;
+&lt;p&gt;As chapters grow, keeping the table of contents in sync becomes tedious and error-prone.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;&#x2F;h2&gt;
+&lt;p&gt;This tool &lt;strong&gt;scans your directory structure and generates SUMMARY.md&lt;&#x2F;strong&gt; automatically.&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Auto-scan&lt;&#x2F;strong&gt; — recursively scans the target directory&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Smart filtering&lt;&#x2F;strong&gt; — supports &lt;code&gt;.gmsignore&lt;&#x2F;code&gt; files&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;One-command generation&lt;&#x2F;strong&gt; — &lt;code&gt;gms -d src -o src&#x2F;SUMMARY.md&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cargo install gen-mdbook-summary
+gms -d src -o src&amp;#x2F;SUMMARY.md
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;project-links&quot;&gt;Project Links&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GitHub&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cncsmonster&#x2F;gen-mdbook-summary&quot;&gt;cncsmonster&#x2F;gen-mdbook-summary&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;crates.io&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;gen-mdbook-summary&quot;&gt;gen-mdbook-summary&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>xdotter — A Lightweight Dotfile Manager</title>
+          <pubDate>Tue, 07 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/open-source/xdotter/</link>
+          <guid>https://cncsmonster.github.io/en/open-source/xdotter/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/open-source/xdotter/">&lt;p&gt;&lt;strong&gt;Zero-dependency, single-file dotfile manager.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-problem-does-this-solve&quot;&gt;What Problem Does This Solve?&lt;&#x2F;h2&gt;
+&lt;p&gt;New machine — how do you quickly restore all your config files (&lt;code&gt;.bashrc&lt;&#x2F;code&gt;, &lt;code&gt;.gitconfig&lt;&#x2F;code&gt;, etc.)?&lt;&#x2F;p&gt;
+&lt;p&gt;Copy them manually? Easy to miss something. Use existing tools? Complex dependencies, tedious setup.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;&#x2F;h2&gt;
+&lt;p&gt;xdotter’s answer: &lt;strong&gt;one config folder + symlinks&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Zero dependencies&lt;&#x2F;strong&gt; — single &lt;code&gt;.pyz&lt;&#x2F;code&gt; file, download and run&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Declarative config&lt;&#x2F;strong&gt; — TOML file defines the mapping&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;One-command deploy&lt;&#x2F;strong&gt; — &lt;code&gt;xd deploy&lt;&#x2F;code&gt; creates all symlinks&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Compared to dotter:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Simpler&lt;&#x2F;strong&gt; — symlinks only, no copy&#x2F;other deployment modes&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Zero deps&lt;&#x2F;strong&gt; — no Rust compilation needed, Python comes pre-installed&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Intuitive config&lt;&#x2F;strong&gt; — single TOML file, no complex templating&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Download
+gh release download --repo cncsmonster&amp;#x2F;xdotter --pattern xd.pyz --output ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;xd
+
+# Create config and deploy
+xd new &amp;amp;&amp;amp; xd deploy
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;project-link&quot;&gt;Project Link&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GitHub&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cncsmonster&#x2F;xdotter&quot;&gt;cncsmonster&#x2F;xdotter&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;Stars, issues, and PRs welcome! ⭐&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Subscribe</title>
+          <pubDate>Tue, 07 Apr 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/subscribe/</link>
+          <guid>https://cncsmonster.github.io/en/subscribe/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/subscribe/"></description>
+      </item>
+      <item>
+          <title>Python Package Management with UV</title>
+          <pubDate>Fri, 03 Jan 2025 00:22:09 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/shi-yong-uv-guan-li-python-bao/</link>
+          <guid>https://cncsmonster.github.io/en/posts/shi-yong-uv-guan-li-python-bao/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/shi-yong-uv-guan-li-python-bao/">&lt;p&gt;UV is a blazing-fast Python package and project manager written in Rust.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;reference&quot;&gt;Reference&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;astral-sh&#x2F;uv&quot;&gt;astral-sh&#x2F;uv&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Using pip
+pip install uv
+
+# Or using the standalone installer
+curl -LsSf https:&amp;#x2F;&amp;#x2F;astral.sh&amp;#x2F;uv&amp;#x2F;install.sh | sh
+
+# Or using cargo
+cargo install uv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;using-uv-to-run-python-projects&quot;&gt;Using UV to Run Python Projects&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Navigate to the project root first
+# Initialize UV project configuration
+uv init
+
+# Add dependencies
+uv add &amp;lt;package-name&amp;gt;
+
+# Run a Python script
+uv run python script.py
+
+# Run arbitrary commands
+uv run &amp;lt;command&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;common-commands&quot;&gt;Common Commands&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Create a virtual environment
+uv venv
+
+# Install packages
+uv pip install &amp;lt;package&amp;gt;
+
+# Export dependencies
+uv pip compile requirements.in -o requirements.txt
+
+# Sync dependencies
+uv pip sync requirements.txt
+
+# Show dependency tree
+uv pip tree
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;advantages&quot;&gt;Advantages&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;🚀 &lt;strong&gt;Blazing fast&lt;&#x2F;strong&gt;: 10–100× faster than pip&lt;&#x2F;li&gt;
+&lt;li&gt;📦 &lt;strong&gt;Compatible&lt;&#x2F;strong&gt;: Fully compatible with pip and requirements.txt&lt;&#x2F;li&gt;
+&lt;li&gt;🔧 &lt;strong&gt;All-in-one&lt;&#x2F;strong&gt;: Combines venv, pip, and pip-tools functionality&lt;&#x2F;li&gt;
+&lt;li&gt;🦀 &lt;strong&gt;Rust&lt;&#x2F;strong&gt;: Built with Rust — stable and reliable&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Replacing FGM with Mise: A Practical Guide</title>
+          <pubDate>Fri, 13 Dec 2024 21:15:54 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/</link>
+          <guid>https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/">&lt;p&gt;Mise fully covers FGM’s features and use cases, and goes far beyond Golang toolchain management — it can manage toolchains for Node.js, Neovim, Java, and more. You can even replace direnv with Mise to handle environment variable loading and unloading when entering and leaving directories.&lt;&#x2F;p&gt;
+&lt;p&gt;Here’s my experience using Mise across three aspects:&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;1-installing-mise&quot;&gt;1. Installing Mise&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Option 1&lt;&#x2F;strong&gt;: Install via a package manager&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# Requires cargo-binstall and the Rust toolchain
+cargo binstall mise
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Option 2&lt;&#x2F;strong&gt;: Download a prebuilt binary from the releases page, extract it, and place the &lt;code&gt;mise&lt;&#x2F;code&gt; executable in your PATH.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;jdx&#x2F;mise&#x2F;releases&quot;&gt;jdx&#x2F;mise Releases&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-configuring-mise&quot;&gt;2. Configuring Mise&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;2-1-shell-initialization&quot;&gt;2.1 Shell Initialization&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# For bash
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate bash)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.bashrc
+
+# For zsh
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate zsh)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.zshrc
+
+# For fish
+echo &amp;#x27;~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate fish | source&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.config&amp;#x2F;fish&amp;#x2F;config.fish
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-2-configuration-file&quot;&gt;2.2 Configuration File&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise’s config file is &lt;code&gt;.mise.toml&lt;&#x2F;code&gt;, placed in your project root or home directory.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# ~&amp;#x2F;.mise.toml
+[tools]
+go = &amp;quot;1.21&amp;quot;
+node = &amp;quot;20&amp;quot;
+python = &amp;quot;3.12&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;3-using-mise&quot;&gt;3. Using Mise&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# Install tools
+mise install go@1.21
+mise install node@20
+
+# Set global version
+mise use --global go@1.21
+
+# Set project-specific version (auto-creates .mise.toml)
+mise use go@1.21
+
+# List installed versions
+mise ls
+
+# Uninstall
+mise uninstall go@1.21
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;4-advanced-features&quot;&gt;4. Advanced Features&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;4-1-environment-variable-management&quot;&gt;4.1 Environment Variable Management&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[env]
+_.path = [&amp;quot;.&amp;#x2F;bin&amp;quot;, &amp;quot;{{config_root}}&amp;#x2F;scripts&amp;quot;]
+API_KEY = &amp;quot;secret&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-2-task-runner&quot;&gt;4.2 Task Runner&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[tasks.build]
+description = &amp;quot;Build the project&amp;quot;
+run = &amp;quot;make build&amp;quot;
+
+[tasks.test]
+description = &amp;quot;Run tests&amp;quot;
+run = &amp;quot;go test .&amp;#x2F;...&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-3-replacing-direnv&quot;&gt;4.3 Replacing direnv&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise supports &lt;code&gt;.envrc&lt;&#x2F;code&gt; files, fully replacing direnv:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;mise activate direnv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Then in &lt;code&gt;.envrc&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;use go
+use node
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;&#x2F;h2&gt;
+&lt;p&gt;Mise is a powerful toolchain manager with these advantages:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ Multi-language support (Go, Node.js, Python, Java, Rust, and more)&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Project-level and global configuration&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Environment variable management&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Built-in task runner&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Compatible with the asdf plugin ecosystem&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Great performance (written in Rust)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Adding Mermaid Diagrams to Your Zola Blog</title>
+          <pubDate>Mon, 01 Jan 2024 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/</link>
+          <guid>https://cncsmonster.github.io/en/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/">&lt;p&gt;How to add Mermaid diagram rendering to a Zola static blog.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-approach&quot;&gt;The Approach&lt;&#x2F;h2&gt;
+&lt;p&gt;Mermaid renders diagrams client-side in the browser — no backend required. The architecture:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Markdown → Zola build → Static HTML → Browser loads Mermaid.js → Renders diagrams
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;The core idea:&lt;&#x2F;strong&gt; load Mermaid.js on the page and have it automatically render &lt;code&gt;language-mermaid&lt;&#x2F;code&gt; code blocks.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;setup-steps&quot;&gt;Setup Steps&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;step-1-create-the-mermaid-script&quot;&gt;Step 1: Create the Mermaid Script&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;static&#x2F;js&#x2F;mermaid.js&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;document.addEventListener(&amp;#x27;DOMContentLoaded&amp;#x27;, function() {
+    const mermaidBlocks = document.querySelectorAll(&amp;#x27;pre code.language-mermaid&amp;#x27;);
+    if (mermaidBlocks.length === 0) return;
+    
+    const script = document.createElement(&amp;#x27;script&amp;#x27;);
+    script.src = &amp;#x27;https:&amp;#x2F;&amp;#x2F;cdn.jsdelivr.net&amp;#x2F;npm&amp;#x2F;mermaid@10&amp;#x2F;dist&amp;#x2F;mermaid.min.js&amp;#x27;;
+    
+    script.onload = function() {
+        mermaid.initialize({ startOnLoad: false, theme: &amp;#x27;default&amp;#x27; });
+        
+        mermaidBlocks.forEach((block, index) =&amp;gt; {
+            const pre = block.parentElement;
+            const code = block.textContent.trim();
+            const container = document.createElement(&amp;#x27;div&amp;#x27;);
+            container.className = &amp;#x27;mermaid-container&amp;#x27;;
+            container.id = `mermaid-${index}`;
+            
+            pre.parentElement.insertBefore(container, pre);
+            pre.remove();
+            
+            mermaid.render(`mermaid-${index}`, code).then(({ svg }) =&amp;gt; {
+                container.innerHTML = svg;
+            });
+        });
+    };
+    document.head.appendChild(script);
+});
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;step-2-load-the-script-in-the-template&quot;&gt;Step 2: Load the Script in the Template&lt;&#x2F;h3&gt;
+&lt;p&gt;Add a script tag in &lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt; before &lt;code&gt;&amp;lt;&#x2F;body&amp;gt;&lt;&#x2F;code&gt; to load &lt;code&gt;mermaid.js&lt;&#x2F;code&gt;, using Zola’s &lt;code&gt;get_url&lt;&#x2F;code&gt; function to generate the correct path.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;See &lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt; in this project for the actual implementation.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-3-add-styles&quot;&gt;Step 3: Add Styles&lt;&#x2F;h3&gt;
+&lt;p&gt;Add Mermaid container styles to &lt;code&gt;static&#x2F;sass&#x2F;main.scss&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;scss&quot; class=&quot;language-scss &quot;&gt;&lt;code class=&quot;language-scss&quot; data-lang=&quot;scss&quot;&gt;.mermaid-container {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    text-align: center;
+    overflow-x: auto;
+    
+    svg {
+        max-width: 100%;
+        height: auto;
+    }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;usage&quot;&gt;Usage&lt;&#x2F;h2&gt;
+&lt;p&gt;Use fenced &lt;code&gt;mermaid&lt;&#x2F;code&gt; code blocks in Markdown:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;mermaid&quot; class=&quot;language-mermaid &quot;&gt;&lt;code class=&quot;language-mermaid&quot; data-lang=&quot;mermaid&quot;&gt;graph TD
+    A[Start] --&amp;gt; B{Condition}
+    B --&amp;gt;|Yes| C[Run A]
+    B --&amp;gt;|No| D[Run B]
+    C --&amp;gt; E[End]
+    D --&amp;gt; E
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;key-file-reference&quot;&gt;Key File Reference&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;File&lt;&#x2F;th&gt;&lt;th&gt;Path&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Mermaid script&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;static&#x2F;js&#x2F;mermaid.js&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Template&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Stylesheet&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;static&#x2F;sass&#x2F;main.scss&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Example post&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;content&#x2F;posts&#x2F;mermaid 流程图使用指南.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Resource&lt;&#x2F;th&gt;&lt;th&gt;Link&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Mermaid docs&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;mermaid.js.org&#x2F;&quot;&gt;mermaid.js.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Live editor&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;mermaid.live&#x2F;&quot;&gt;mermaid.live&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Zola static files&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;content&#x2F;static-files&#x2F;&quot;&gt;getzola.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Zola templates&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;templates&#x2F;&quot;&gt;getzola.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;notes&quot;&gt;Notes&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Mermaid loads from CDN — requires internet access&lt;&#x2F;li&gt;
+&lt;li&gt;For offline use, download &lt;code&gt;mermaid.min.js&lt;&#x2F;code&gt; to &lt;code&gt;static&#x2F;js&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Supports flowcharts, sequence diagrams, class diagrams, state diagrams, pie charts, Gantt charts, and more&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>
