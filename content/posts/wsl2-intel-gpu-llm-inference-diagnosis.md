@@ -2,7 +2,8 @@
 title = "WSL2 + Intel 集显跑 LLM 推理：为什么不行？分层诊断全记录"
 date = 2026-06-01T00:00:00+08:00
 slug = "wsl2-intel-gpu-llm-inference-diagnosis"
-tags = ["WSL2", "Intel GPU", "LLM", "推理", "OpenCL", "DXG", "故障排查"]
+[taxonomies]
+    tags = ["WSL2", "Intel GPU", "LLM", "推理", "OpenCL", "DXG", "故障排查", "Inference", "Debugging"]
 +++
 
 在 [上一篇](/posts/shimmy-ollama-rust-alternative-wsl2-intel/) 中，Shimmy 在 WSL2 + Intel 集显环境下无法运行。本文深入拆解这个问题的根因——不是 Shimmy 的锅，也不是 llama.cpp 的锅，而是 **WSL2 的 DXG 内核模块与 Intel GPU 驱动在协议层就不兼容**。

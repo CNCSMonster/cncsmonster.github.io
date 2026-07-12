@@ -2,7 +2,8 @@
 title = "小米 MiMo Token Plan 会用我的数据训练模型吗？——协议条款调研"
 date = 2026-05-25T00:00:00+08:00
 slug = "xiaomi-mimo-token-plan-data-training-policy"
-tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan"]
+[taxonomies]
+    tags = ["小米", "MiMo", "API", "隐私", "数据训练", "调研", "Token Plan"]
 +++
 
 

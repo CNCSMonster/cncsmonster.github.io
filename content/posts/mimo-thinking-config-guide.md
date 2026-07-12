@@ -2,7 +2,8 @@
 title = "MiMo 模型配置避免降智：thinking 参数正确配置"
 date = 2026-05-28T00:00:00+08:00
 slug = "mimo-thinking-config-guide"
-tags = ["小米", "MiMo", "配置", "thinking", "reasoning", "API", "pi", "qwen-code"]
+[taxonomies]
+    tags = ["小米", "MiMo", "配置", "thinking", "reasoning", "API", "pi", "qwen-code"]
 +++
 
 > 创建日期：2026-05-27

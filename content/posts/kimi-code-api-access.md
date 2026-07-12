@@ -2,7 +2,8 @@
 title = "Kimi Code API 接入为什么会 403？"
 date = 2026-05-24T00:00:00+08:00
 slug = "kimi-code-api-access-403"
-tags = ["Kimi", "Kimi Code", "AI Code CLI", "API", "pi", "Qwen Code"]
+[taxonomies]
+    tags = ["Kimi", "Kimi Code", "AI Code CLI", "API", "pi", "Qwen Code"]
 +++
 
 我在把 Kimi Code 接入 pi 和 Qwen Code 时，遇到一个容易误判的问题：

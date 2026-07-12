@@ -1,7 +1,8 @@
 +++
 title = "Python Package Management with UV"
 date = 2025-01-03T00:22:09+08:00
-tags = ["Python", "UV", "Package Management", "Toolchain"]
+[taxonomies]
+    tags = ["Python", "UV", "Package Management", "Toolchain", "工具链", "包管理"]
 +++
 
 UV is a blazing-fast Python package and project manager written in Rust.

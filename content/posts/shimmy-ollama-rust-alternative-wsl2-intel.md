@@ -2,7 +2,8 @@
 title = "Shimmy：Ollama 的 Rust 替代方案实测（WSL2 + Intel 集显）"
 date = 2026-06-01T00:00:00+08:00
 slug = "shimmy-ollama-rust-alternative-wsl2-intel"
-tags = ["Shimmy", "Ollama", "LLM", "Rust", "WSL2", "本地推理"]
+[taxonomies]
+    tags = ["Shimmy", "Ollama", "LLM", "Rust", "WSL2", "本地推理", "Local Inference"]
 +++
 
 想找一个比 Ollama 更轻量的本地 LLM 推理服务器？**Shimmy** 用 Rust 写成，单二进制文件，100% OpenAI API 兼容，零配置启动。本文基于 WSL2 + Intel 集显环境的实测，记录了踩坑过程和问题根因。

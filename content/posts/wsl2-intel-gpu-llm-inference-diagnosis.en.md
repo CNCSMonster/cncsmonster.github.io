@@ -2,7 +2,8 @@
 title = "Why Intel GPU Can't Run LLM Inference in WSL2: A Layer-by-Layer Diagnosis"
 date = 2026-06-01T00:00:00+08:00
 slug = "wsl2-intel-gpu-llm-inference-diagnosis-en"
-tags = ["WSL2", "Intel GPU", "LLM", "Inference", "OpenCL", "DXG", "Debugging"]
+[taxonomies]
+    tags = ["WSL2", "Intel GPU", "LLM", "Inference", "OpenCL", "DXG", "Debugging", "故障排查", "推理"]
 +++
 
 In [the previous post](/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/), Shimmy failed to run on WSL2 with Intel integrated graphics. This post digs into why — it's not Shimmy's fault, not llama.cpp's fault, but a fundamental **incompatibility between WSL2's DXG kernel module and the Intel GPU driver at the protocol level**.

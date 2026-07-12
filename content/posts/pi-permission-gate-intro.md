@@ -2,7 +2,8 @@
 title = "给 Pi 编码代理加一道安全门：pi-permission-gate"
 date = 2026-05-30T00:00:00+08:00
 slug = "pi-permission-gate-security-extension"
-tags = ["Pi", "Extension", "Security", "Code Agent"]
+[taxonomies]
+    tags = ["Pi", "Extension", "Security", "Code Agent"]
 +++
 
 > 如果你用 Pi 写代码时担心误删文件、泄露密钥，试试 `pi-permission-gate` —— 一个基于规则的权限拦截扩展，敏感操作先确认，危险命令自动拒。

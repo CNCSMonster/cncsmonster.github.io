@@ -2,7 +2,8 @@
 title = "WSL2 + xrdp + XFCE 桌面方案踩坑记录"
 date = 2026-06-20T00:00:00+08:00
 slug = "wsl2-xrdp-xfce-desktop"
-tags = ["WSL2", "xrdp", "XFCE", "远程桌面", "Linux"]
+[taxonomies]
+    tags = ["WSL2", "xrdp", "XFCE", "远程桌面", "Linux", "Remote Desktop"]
 +++
 
 WSL2 能不能当一台带桌面的 Linux 服务器用？试了 xrdp + XFCE 这条路，结论是**走不通**。

@@ -2,7 +2,8 @@
 title = "WSL2 + xrdp + XFCE Desktop: A Post-Mortem"
 date = 2026-06-20T00:00:00+08:00
 slug = "wsl2-xrdp-xfce-desktop-en"
-tags = ["WSL2", "xrdp", "XFCE", "Remote Desktop", "Linux"]
+[taxonomies]
+    tags = ["WSL2", "xrdp", "XFCE", "Remote Desktop", "Linux", "远程桌面"]
 +++
 
 Can WSL2 serve as a full Linux desktop machine? I tried the xrdp + XFCE route, and the answer is **it doesn't work**.

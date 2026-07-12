@@ -1,7 +1,8 @@
 +++
 title = 'Zola 博客支持 Mermaid 流程图'
 date = 2024-01-01T00:00:00+08:00
-tags = ['Zola', 'Mermaid', '博客配置']
+[taxonomies]
+    tags = ["Zola", "Mermaid", "博客配置", "Blogging"]
 +++
 
 记录如何让 Zola 静态博客支持 Mermaid 图表渲染。

@@ -1,7 +1,8 @@
 +++
 title = 'WSL 忘记密码重置方法'
 date = 2026-05-08T00:00:00+08:00
-tags = ['WSL', '密码重置', 'Ubuntu']
+[taxonomies]
+    tags = ["WSL", "密码重置", "Ubuntu", "Password Reset"]
 +++
 
 > 适用：默认 WSL 用户是普通用户，忘记密码无法 sudo。

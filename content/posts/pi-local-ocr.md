@@ -2,7 +2,8 @@
 title = "Pi 模型看不到图？用 pi-local-ocr 给它一双“读文字的眼睛”"
 date = 2026-05-24T22:00:00+08:00
 slug = "pi-local-ocr"
-tags = ["Pi", "OCR", "AI Coding Agent", "Vision", "EasyOCR", "本地工具"]
+[taxonomies]
+    tags = ["Pi", "OCR", "AI Coding Agent", "Vision", "EasyOCR", "本地工具"]
 +++
 
 如果你在 Pi 里使用的模型不支持 vision，但又经常需要让 agent 读取截图、报错弹窗、表格截图或扫描件文字，`pi-local-ocr` 就是为这个场景准备的本地 OCR 扩展。

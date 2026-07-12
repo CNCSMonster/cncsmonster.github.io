@@ -1,7 +1,8 @@
 +++
 title = "How to Reset a Forgotten Password in WSL"
 date = 2026-05-08T00:00:00+08:00
-tags = ["WSL", "Password Reset", "Ubuntu"]
+[taxonomies]
+    tags = ["WSL", "Password Reset", "Ubuntu", "密码重置"]
 +++
 
 > **Applies to:** Default WSL user is a regular user and you've forgotten the password (can't sudo).

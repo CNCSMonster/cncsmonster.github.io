@@ -2,7 +2,8 @@
 title = "Does DeepSeek Train on API Data? A Policy Investigation"
 date = 2026-05-19T00:00:00+08:00
 slug = "deepseek-api-data-training-policy"
-tags = ["DeepSeek", "API", "Privacy", "Data Training", "Research"]
+[taxonomies]
+    tags = ["DeepSeek", "API", "Privacy", "Data Training", "Research", "数据训练", "隐私", "调研"]
 +++
 
 ## The Question

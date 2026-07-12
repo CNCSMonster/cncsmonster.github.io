@@ -2,7 +2,8 @@
 title = "工程规范 Skill 对比：已有 Addy Osmani，还要装 Matt Pocock 吗？"
 date = 2026-05-25T00:00:00+08:00
 slug = "matt-pocock-vs-addy-osmani-skills"
-tags = ["AI Coding Agent", "Agent Skills", "工程规范", "Matt Pocock", "Addy Osmani", "工具对比"]
+[taxonomies]
+    tags = ["AI Coding Agent", "Agent Skills", "工程规范", "Matt Pocock", "Addy Osmani", "工具对比", "Tool Comparison", "Engineering Practices"]
 +++
 
 ## 这篇解决什么问题

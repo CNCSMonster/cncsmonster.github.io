@@ -2,7 +2,8 @@
 title = "Fixing Claude Code WebFetch: Bypassing preflight to Rescue Failed Site Fetching"
 date = 2026-05-07T00:00:00+08:00
 slug = "claude-code-fix-webfetch-preflight"
-tags = ["Claude Code", "WebFetch", "Troubleshooting"]
+[taxonomies]
+    tags = ["Claude Code", "WebFetch", "Troubleshooting", "排查"]
 +++
 
 ## Background

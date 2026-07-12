@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{ trans(key='tag_prefix', lang=lang) }}: {{ term }} | {{ config.title }}{% endblock %}
+{% block title %}{{ trans(key='tag_prefix', lang=lang) }}: {{ term.name }} | {{ config.title }}{% endblock %}
 
 {% block content %}
 <section class="section-page">
-    <h1>{{ trans(key='tag_prefix', lang=lang) }}: #{{ term }}</h1>
+    <h1>{{ trans(key='tag_prefix', lang=lang) }}: #{{ term.name }}</h1>
     <p>{{ trans(key='showing_posts_before', lang=lang) }}{{ term.pages | length }}{{ trans(key='showing_posts_after', lang=lang) }}</p>
 
     <div class="posts-list">

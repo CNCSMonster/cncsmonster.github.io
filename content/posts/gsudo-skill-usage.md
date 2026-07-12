@@ -2,7 +2,8 @@
 title = "gsudo：给你的 AI Coding Agent 装个图形化 sudo"
 date = 2026-05-11T00:00:00+08:00
 slug = "gsudo-ai-agent-gui-sudo"
-tags = ["AI Code CLI", "Agent Skill", "开源项目", "工具"]
+[taxonomies]
+    tags = ["AI Code CLI", "Agent Skill", "开源项目", "工具", "Open Source", "Tools"]
 +++
 
 **AI 在终端里写代码时突然要 sudo 权限——然后它就卡住了。而你正在前台干别的事，根本没看见。**

@@ -1,7 +1,8 @@
 +++
 title = "gsudo 信任窗口撤销复盘"
 date = 2026-05-24T00:00:00+08:00
-tags = ["AI Code CLI", "Agent Skill", "设计复盘", "工具"]
+[taxonomies]
+    tags = ["AI Code CLI", "Agent Skill", "设计复盘", "工具"]
 +++
 
 gsudo v1.1 尝试做了一个"信任窗口"功能：用户勾选"信任 5 分钟"后自动放行。但发布前撤掉了。这里记下为什么撤销，以及正确的方向是什么。

@@ -2,7 +2,8 @@
 title = "Getting Qwen Code to Work with Tavily Search"
 date = 2026-05-05T00:00:00+08:00
 slug = "qwen-code-tavily-mcp-setup"
-tags = ["Qwen Code", "MCP", "Tavily"]
+[taxonomies]
+    tags = ["Qwen Code", "MCP", "Tavily"]
 +++
 
 ## 1. Get an API Key

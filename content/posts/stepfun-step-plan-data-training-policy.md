@@ -2,7 +2,8 @@
 title = "StepFun Step Plan 会用我的数据训练模型吗？——条款调研"
 date = 2026-06-13T00:00:00+08:00
 slug = "stepfun-step-plan-data-training-policy"
-tags = ["StepFun", "Step Plan", "隐私", "数据训练", "调研", "API"]
+[taxonomies]
+    tags = ["StepFun", "Step Plan", "隐私", "数据训练", "调研", "API", "Research", "Privacy", "Data Training"]
 +++
 
 ## 问题

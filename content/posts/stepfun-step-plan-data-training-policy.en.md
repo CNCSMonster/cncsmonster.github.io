@@ -2,7 +2,8 @@
 title = "Does StepFun Train on API Data? A Policy Investigation"
 date = 2026-06-13T00:00:00+08:00
 slug = "stepfun-step-plan-data-training-policy"
-tags = ["StepFun", "Step Plan", "Privacy", "Data Training", "Research"]
+[taxonomies]
+    tags = ["StepFun", "Step Plan", "Privacy", "Data Training", "Research", "数据训练", "隐私", "调研"]
 +++
 
 ## The Question

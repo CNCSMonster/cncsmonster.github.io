@@ -2,7 +2,8 @@
 title = "Enhancing AI Code CLI Capabilities Should Use MCP Protocol, Not Built-in Tool Source Code"
 date = 2026-05-05T00:00:00+08:00
 slug = "ai-code-cli-mcp-protocol-not-internal-tools"
-tags = ["AI Code CLI", "MCP", "Qwen Code", "Lessons Learned"]
+[taxonomies]
+    tags = ["AI Code CLI", "MCP", "Qwen Code", "Lessons Learned", "经验教训"]
 +++
 
 **Don't build on code that's about to be deleted.**

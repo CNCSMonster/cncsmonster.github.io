@@ -2,7 +2,8 @@
 title = "Claude Code WebFetch 修复：跳过 preflight 解决站点抓取失败"
 date = 2026-05-07T00:00:00+08:00
 slug = "claude-code-fix-webfetch-preflight"
-tags = ["Claude Code", "WebFetch", "踩坑记录"]
+[taxonomies]
+    tags = ["Claude Code", "WebFetch", "踩坑记录", "Troubleshooting"]
 +++
 
 ## 背景

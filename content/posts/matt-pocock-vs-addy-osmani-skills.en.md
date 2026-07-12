@@ -2,7 +2,8 @@
 title = "Engineering Discipline Skills Compared: Addy Osmani vs Matt Pocock"
 date = 2026-05-25T00:00:00+08:00
 slug = "matt-pocock-vs-addy-osmani-skills"
-tags = ["AI Coding Agent", "Agent Skills", "Engineering Practices", "Matt Pocock", "Addy Osmani", "Tool Comparison"]
+[taxonomies]
+    tags = ["AI Coding Agent", "Agent Skills", "Engineering Practices", "Matt Pocock", "Addy Osmani", "Tool Comparison", "工程规范", "工具对比"]
 +++
 
 ## What This Solves

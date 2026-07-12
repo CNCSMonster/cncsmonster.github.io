@@ -1,7 +1,8 @@
 +++
 title = '使用 Mise 替换 FGM'
 date = 2024-12-13T21:15:54+08:00
-tags = ['Mise', '工具链', 'Rust', 'DevTools']
+[taxonomies]
+    tags = ["Mise", "工具链", "Rust", "DevTools", "Toolchain"]
 +++
 
 Mise 能够完全覆盖 FGM 的功能和使用场景，而且不仅仅能够用来管理 Golang 工具链，还能够用来管理其他语言的工具链，比如 Node.js、Neovim、Java 等等。

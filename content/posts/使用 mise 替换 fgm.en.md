@@ -1,7 +1,8 @@
 +++
 title = "Replacing FGM with Mise: A Practical Guide"
 date = 2024-12-13T21:15:54+08:00
-tags = ["Mise", "Toolchain", "Rust", "DevTools"]
+[taxonomies]
+    tags = ["Mise", "Toolchain", "Rust", "DevTools", "工具链"]
 +++
 
 Mise fully covers FGM's features and use cases, and goes far beyond Golang toolchain management — it can manage toolchains for Node.js, Neovim, Java, and more. You can even replace direnv with Mise to handle environment variable loading and unloading when entering and leaving directories.

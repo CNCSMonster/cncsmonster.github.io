@@ -1,7 +1,8 @@
 +++
 title = '使用 UV 管理 Python 包'
 date = 2025-01-03T00:22:09+08:00
-tags = ['Python', 'UV', '包管理', '工具链']
+[taxonomies]
+    tags = ["Python", "UV", "包管理", "工具链", "Toolchain", "Package Management"]
 +++
 
 UV 是一个用 Rust 编写的极速 Python 包管理器和项目管理器。

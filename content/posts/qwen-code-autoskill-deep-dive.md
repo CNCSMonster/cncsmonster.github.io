@@ -2,7 +2,8 @@
 title = "Qwen Code 如何自动学习你的编程习惯？AutoSkill 机制深度解析"
 date = 2026-06-01T00:00:00+08:00
 slug = "qwen-code-autoskill-deep-dive"
-tags = ["Qwen Code", "AI Agent", "AutoSkill", "编程助手"]
+[taxonomies]
+    tags = ["Qwen Code", "AI Agent", "AutoSkill", "编程助手", "Coding Assistant"]
 +++
 
 在使用 Qwen Code 一段时间后，你可能注意到 `.qwen/skills/` 目录下凭空多出了几个 skill——`skill-review`、`skill-testing`——它们的 frontmatter 里标记着 `source: auto-skill`。这些不是你写的，也没人手动创建过。

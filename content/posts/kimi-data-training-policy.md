@@ -2,7 +2,8 @@
 title = "Kimi 会用我的数据训练模型吗？中文、英文和 API 协议不一样"
 date = 2026-05-24T00:00:00+08:00
 slug = "kimi-data-training-policy"
-tags = ["Kimi", "API", "隐私", "数据训练", "调研"]
+[taxonomies]
+    tags = ["Kimi", "API", "隐私", "数据训练", "调研"]
 +++
 
 我想确认一个很具体的问题：

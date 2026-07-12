@@ -2,7 +2,8 @@
 title = "MiniMax 模型服务会用我的数据训练吗？"
 date = 2026-06-19T00:00:00+08:00
 slug = "minimax-api-data-training-policy"
-tags = ["MiniMax", "API", "隐私", "数据训练", "调研"]
+[taxonomies]
+    tags = ["MiniMax", "API", "隐私", "数据训练", "调研"]
 +++
 
 如果你正在考虑用 MiniMax API 处理代码、文档或个人内容，又担心输入/输出被拿去训练模型，这篇直接给你答案和依据。

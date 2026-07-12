@@ -1,7 +1,8 @@
 +++
 title = "pi-local-ocr 扩展的设计过程"
 date = 2026-05-24
-tags = ["AI Code CLI", "扩展开发", "设计笔记", "OCR"]
+[taxonomies]
+    tags = ["AI Code CLI", "扩展开发", "设计笔记", "OCR"]
 +++
 
 为没有 vision 能力的模型做了一个本地 OCR 扩展，让模型通过 EasyOCR 读取图片中的文字和表格。

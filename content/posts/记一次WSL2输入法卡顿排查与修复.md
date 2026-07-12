@@ -1,7 +1,8 @@
 +++
 title = "记一次 WSL2 输入法卡顿排查与修复"
 date = 2026-05-15T00:00:00+08:00
-tags = ["WSL2", "输入法", "卡顿", "排查", "swap", "swappiness"]
+[taxonomies]
+    tags = ["WSL2", "输入法", "卡顿", "排查", "故障排查", "swap", "swappiness", "Troubleshooting", "Debugging"]
 +++
 
 

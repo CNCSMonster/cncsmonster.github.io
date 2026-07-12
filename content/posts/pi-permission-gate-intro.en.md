@@ -2,7 +2,8 @@
 title = "Add a Security Gate to Your Pi Coding Agent: pi-permission-gate"
 date = 2026-05-30T00:00:00+08:00
 slug = "pi-permission-gate-security-extension"
-tags = ["Pi", "Extension", "Security", "Code Agent"]
+[taxonomies]
+    tags = ["Pi", "Extension", "Security", "Code Agent"]
 +++
 
 > Worried about accidentally deleting files or leaking API keys while using Pi? Try `pi-permission-gate` — a rule-based permission interceptor that asks before sensitive operations and blocks dangerous commands automatically.

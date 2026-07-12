@@ -1,7 +1,8 @@
 +++
 title = "Adding Mermaid Diagrams to Your Zola Blog"
 date = 2024-01-01T00:00:00+08:00
-tags = ["Zola", "Mermaid", "Blogging"]
+[taxonomies]
+    tags = ["Zola", "Mermaid", "Blogging", "博客配置"]
 +++
 
 How to add Mermaid diagram rendering to a Zola static blog.

@@ -2,7 +2,8 @@
 title = "AI Code CLI 能力增强应基于 MCP 协议，而非内置工具源码"
 date = 2026-05-05T00:00:00+08:00
 slug = "ai-code-cli-mcp-protocol-not-internal-tools"
-tags = ["AI Code CLI", "MCP", "Qwen Code", "经验教训"]
+[taxonomies]
+    tags = ["AI Code CLI", "MCP", "Qwen Code", "经验教训", "Lessons Learned"]
 +++
 
 **不要在会被删除的代码上盖房子。**

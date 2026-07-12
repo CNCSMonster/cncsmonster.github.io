@@ -2,7 +2,8 @@
 title = "Shimmy: An Ollama Alternative in Rust — Tested on WSL2 + Intel GPU"
 date = 2026-06-01T00:00:00+08:00
 slug = "shimmy-ollama-rust-alternative-wsl2-intel-en"
-tags = ["Shimmy", "Ollama", "LLM", "Rust", "WSL2", "Local Inference"]
+[taxonomies]
+    tags = ["Shimmy", "Ollama", "LLM", "Rust", "WSL2", "Local Inference", "本地推理"]
 +++
 
 Looking for a lighter local LLM inference server than Ollama? **Shimmy** is written in Rust, ships as a single binary, offers 100% OpenAI API compatibility, and runs with zero configuration. This post covers what it is, how it compares to Ollama, and what happened when I tested it on WSL2 with Intel integrated graphics.

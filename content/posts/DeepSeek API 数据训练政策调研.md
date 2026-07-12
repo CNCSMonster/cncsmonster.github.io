@@ -2,7 +2,8 @@
 title = "DeepSeek API 会用我的数据训练模型吗？——条款调研"
 date = 2026-05-19T00:00:00+08:00
 slug = "deepseek-api-data-training-policy"
-tags = ["DeepSeek", "API", "隐私", "数据训练", "调研"]
+[taxonomies]
+    tags = ["DeepSeek", "API", "隐私", "数据训练", "调研", "Research", "Privacy", "Data Training"]
 +++
 
 ## 问题
