@@ -46,9 +46,6 @@ giscus_repo_id = "R_kgDOJcCqHg"
 giscus_category = "General"
 giscus_category_id = "DIC_kwDOJcCqHs4C6Jj6"
 
-# Blog Analytics (GoatCounter)
-visitor_counter_enabled = true
-
 # ═══════════════════════════════════════════
 # Language-specific configuration
 # ═══════════════════════════════════════════

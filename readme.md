@@ -14,7 +14,6 @@ A personal homepage built with [Zola](https://www.getzola.org/), featuring:
 - 🔍 **Built-in search with Chinese support** (中文搜索)
 - 📊 **Mermaid diagrams** (流程图、序列图、类图等)
 - 💬 Comment support via Giscus
-- 📊 Visitor counter
 - 🔄 Auto-deployment via GitHub Actions
 
 ## Prerequisites
@@ -176,7 +175,6 @@ Edit `config.toml` to customize:
 - Author information
 - GitHub username
 - Comment system (Giscus)
-- Visitor counter
 
 ### Enable Comments (Giscus)
 
