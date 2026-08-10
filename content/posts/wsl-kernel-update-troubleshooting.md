@@ -232,8 +232,9 @@ msiexec /a "C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystem
   /qb TARGETDIR="$env:TEMP\wsl_msi_extract"
 
 # 提取出的关键文件：
-# - PFiles64\WSL\system.vhd      (374MB, 包含 Linux 内核)
-# - PFiles64\WSL\tools\kernel    (17MB, 内核引导文件)
+# - PFiles64\WSL\system.vhd          (374MB, Linux 内核镜像)
+# - PFiles64\WSL\tools\kernel        (17MB, 内核引导文件)
+# - PFiles64\WSL\tools\modules.vhd   (167MB, 内核驱动模块包)
 ```
 
 ### 步骤 4：替换内核文件
@@ -245,6 +246,7 @@ $targetDir = "C:\Program Files\WSL"
 
 Copy-Item "$extractDir\system.vhd" "$targetDir\system.vhd" -Force
 Copy-Item "$extractDir\tools\kernel" "$targetDir\tools\kernel" -Force
+Copy-Item "$extractDir\tools\modules.vhd" "$targetDir\tools\modules.vhd" -Force
 ```
 
 ### 步骤 5：验证
@@ -273,7 +275,7 @@ PRETTY_NAME="Ubuntu 24.04.4 LTS"  ✅
 │  ext4.vhdx — 你的所有文件和数据          │
 ├─────────────────────────────────────────┤
 │  内核层 (Linux 内核)                     │
-│  system.vhd + tools/kernel              │
+│  system.vhd + tools/kernel + modules.vhd│
 ├─────────────────────────────────────────┤
 │  管理层 (Windows 服务)                   │
 │  wslservice.exe / wsl.exe               │
@@ -282,12 +284,15 @@ PRETTY_NAME="Ubuntu 24.04.4 LTS"  ✅
 
 **数据与内核完全分离**：更新内核不影响任何用户数据。
 
-### 内核更新只需替换两个文件
+### 内核更新需替换三个文件
 
 | 文件 | 位置 | 作用 |
 |---|---|---|
-| `system.vhd` | `C:\Program Files\WSL\` | 包含 Linux 内核 + 驱动模块 |
+| `system.vhd` | `C:\Program Files\WSL\` | 包含 Linux 内核镜像 |
 | `tools/kernel` | `C:\Program Files\WSL\tools\` | 内核引导文件 |
+| `tools/modules.vhd` | `C:\Program Files\WSL\tools\` | 内核驱动模块包（tun.ko 等） |
+
+**重要**：三个文件必须版本一致，否则会出现 vermagic 不匹配导致模块加载失败。
 
 不需要改注册表、不需要改服务配置、不需要卸载重装。
 
