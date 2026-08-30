@@ -21,7 +21,7 @@ Search determinism is dictated by the architectural design of the search engine:
 
 | Search Engine | Working Mechanism | Key Advantages | Trade-offs & Boundaries |
 | :--- | :--- | :--- | :--- |
-| **Lunr.js**<br>*(Legacy default, e.g. MkDocs)* | Pure JS client-side execution, full single-file index download | Broad legacy ecosystem | Stemming easily conflicts with instant search wildcard hacks (Typeahead); lacks paragraph-level precision. |
+| **Lunr.js**<br>*(Legacy default, e.g. MkDocs)* | Pure JS client-side execution, full single-file index download | Broad legacy ecosystem, lightweight | Stemming easily conflicts with instant search wildcard hacks (Typeahead); lacks paragraph-level precision. |
 | **MiniSearch**<br>*(VitePress default)* | Pure TypeScript, native prefix & Levenshtein fuzzy matching | 7KB tiny bundle, native prefix search avoiding wildcard bugs, sub-millisecond query response for small-to-medium vaults | Full index JSON downloaded upfront; memory and initial bandwidth grow on huge repositories (>3000 docs). |
 | **Pagefind**<br>*(Starlight / Modern standard)* | Rust-powered, post-build static indexer with chunked loading | Strict symmetric indexing, paragraph-level targeting, minimal bandwidth on large sites | Relies on static build artifacts on disk; does not automatically reindex on in-memory dev servers. |
 
