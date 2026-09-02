@@ -6,9 +6,9 @@ slug = "pyo3-usage-and-pitfalls"
     tags = ["Rust", "Python", "PyO3", "跨语言绑定"]
 +++
 
-PyO3 用来连接 Rust 与 Python。它可以把 Rust 函数、结构体和模块暴露给 Python，也可以让 Rust 保存 Python 对象；遇到复杂对象时，还可以把 Python 创建的对象转换为 Rust 类型，继续使用已有的 Rust 业务逻辑。
+PyO3 用来连接 Rust 与 Python。常见做法不是只有一种：可以把 Rust 函数、结构体和模块暴露给 Python，也可以让 Rust 持有 Python 对象；还可以把 Python 创建的对象转换为 Rust 类型，继续使用已有的 Rust 业务逻辑。
 
-本文从常见用法开始，再介绍 `Py<T>`、`Bound<'py, T>` 等类型和实际开发中容易遇到的坑。
+---
 
 ## 一、把 Rust 函数暴露给 Python
 
@@ -75,7 +75,7 @@ assert counter.value == 1
 
 这种方式适合需要在多次 Python 调用之间保留 Rust 状态的对象。
 
-## 三、在两端传递数据
+## 三、将 Python 数据转换为 Rust 类型
 
 PyO3 可以自动转换许多常见类型。例如，可以把 Python 字典提取为 Rust 的 `HashMap<String, f64>`：
 
@@ -136,19 +136,100 @@ fn read_data(data: &Bound<'_, PyDict>) -> usize {
 }
 ```
 
-## 五、复用 Rust Trait：表达式树示例
+## 五、让 Python 提供 Rust Trait 所需的业务逻辑
 
-Python 对象不能直接变成 Rust 的 `Box<dyn Evaluatable>`。当 Python 负责组合对象，而 Rust 已有一套 trait 业务逻辑时，可以让 PyO3 包装类型作为 Python 接口，再把 Python 对象转换成 Rust 类型。
+Rust 可以定义 Trait 和业务流程，但让 Python 对象提供具体实现。此时，Rust wrapper 保存 Python 对象的引用，并实现 Rust 所需的 Trait；Trait 方法被调用时，wrapper 再把调用转发给 Python 对象的方法。
 
-基本关系是：
+下面的例子中，Rust 定义 `Model` Trait 和泛型函数 `solve()`，Python 定义 `UserModel` 并实现具体的 `compute()` 逻辑。
+
+```python
+class UserModel:
+    def compute(self, value):
+        return value * 2
+
+model = UserModel()
+assert calc.solve(model, 10.0) == 20.0
+```
+
+Python 调用 `calc.solve()` 时，传入的 `model` 是一个 `UserModel` 实例。Rust 对外暴露的函数接收这个对象，并将它保存到 wrapper 中：
+
+```rust
+use pyo3::prelude::*;
+
+trait Model {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult<f64>;
+}
+
+struct UserModelWrapper {
+    model: Py<PyAny>,
+}
+
+impl Model for UserModelWrapper {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult<f64> {
+        self.model
+            .bind(py)
+            .call_method1("compute", (value,))?
+            .extract()
+    }
+}
+
+fn solve_model<M: Model>(py: Python<'_>, model: &M, value: f64) -> PyResult<f64> {
+    model.compute(py, value)
+}
+
+#[pyfunction(name = "solve")]
+fn solve_wrapper(py: Python<'_>, model: Py<PyAny>, value: f64) -> PyResult<f64> {
+    let wrapper = UserModelWrapper { model };
+    solve_model(py, &wrapper, value)
+}
+
+#[pymodule]
+fn calc(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(solve_wrapper, m)?)?;
+    Ok(())
+}
+```
+
+完整调用链是：
 
 ```text
-Python 构造对象树
-    → PyO3 接收对象
-    → extract() 递归转换
-    → Rust trait 方法执行
+Python 创建 UserModel 实例
+    → Python 调用 calc.solve(model, 10.0)
+    → PyO3 将 model 接收到 solve_wrapper 的 Py<PyAny> 参数
+    → Rust 创建 UserModelWrapper，并保存 Python 对象的引用
+    → solve_model() 按 Model Trait 调用 wrapper.compute()
+    → wrapper.bind(py) 获得当前调用中的 Bound<'py, PyAny>
+    → call_method1("compute", (10.0,)) 调用 Python 的 model.compute(10.0)
+    → Python 返回 20.0
+    → extract() 将返回值转换为 Rust 的 f64
+    → solve_wrapper 返回 PyResult<f64>
+    → Python 得到 20.0
+```
+
+这里没有把 `UserModel` 转换为等价的 Rust 结构体。`UserModelWrapper` 只是一个代理：Rust 通过它满足自己的 Trait 约束，但具体的 `compute()` 逻辑仍由 Python 执行。
+
+## 六、将 Python 对象结构转换为 Rust 类型，使用已有的 Rust Trait 实现
+
+Python 对象不能直接变成 Rust 的 `Box<dyn Evaluatable>`。当 Python 负责组合对象，而 Rust 已有一套 trait 业务逻辑时，可以使用三层结构：
+
+- **Rust 原生类型**：实现 Trait，负责业务逻辑；
+- **PyO3 包装类型**：注册为 Python 类，负责让 Python 构造对象结构；
+- **转换函数**：遍历 Python 对象树，重建 Rust trait object 树。
+
+调用链如下：
+
+```text
+Python 构造 PyAdd、PyVar、PyConst 对象树
+    → Python 调用表达式对象的 evaluate()
+    → Rust 接收 Python 对象树
+    → to_evaluatable() 按具体类型递归读取对象
+    → PyAdd、PyVar、PyConst 转换为 AddExpr、VarExpr、ConstExpr
+    → 形成 Rust 原生表达式树
+    → 调用已有的 Evaluatable::evaluate()
     → 结果返回 Python
 ```
+
+这里同时出现两个不同层次的转换操作：`vars.extract()` 是 PyO3 提供的对象方法；`to_evaluatable(py, obj)` 是本文定义的普通函数，负责按表达式树规则递归转换对象。
 
 ### 1. Rust Trait 与原生类型
 
@@ -192,6 +273,8 @@ impl Evaluatable for AddExpr {
     }
 }
 ```
+
+> **示例说明**：这里的 `Send + Sync` 是 `Evaluatable` 这个业务 trait 自己声明的并发约束，不是 PyO3 的通用要求。只有当这些表达式对象需要在线程之间安全传递或共享时，才需要保留它。
 
 ### 2. PyO3 包装类型与转换桥
 
@@ -248,15 +331,15 @@ impl PyAdd {
     fn evaluate(&self, py: Python<'_>, vars: &Bound<'_, PyDict>) -> PyResult<f64> {
         let vars: HashMap<String, f64> = vars.extract()?;
         AddExpr {
-            left: extract(py, &self.left)?,
-            right: extract(py, &self.right)?,
+            left: to_evaluatable(py, &self.left)?,
+            right: to_evaluatable(py, &self.right)?,
         }
         .evaluate(&vars)
         .map_err(PyRuntimeError::new_err)
     }
 }
 
-fn extract(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<Box<dyn Evaluatable>> {
+fn to_evaluatable(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<Box<dyn Evaluatable>> {
     let obj = obj.bind(py);
 
     if let Ok(value) = obj.downcast::<PyConst>() {
@@ -274,8 +357,8 @@ fn extract(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<Box<dyn Evaluatable>> {
     if let Ok(value) = obj.downcast::<PyAdd>() {
         let value = value.borrow();
         return Ok(Box::new(AddExpr {
-            left: extract(py, &value.left)?,
-            right: extract(py, &value.right)?,
+            left: to_evaluatable(py, &value.left)?,
+            right: to_evaluatable(py, &value.right)?,
         }));
     }
 
@@ -299,48 +382,29 @@ assert expr.evaluate({"x": 10.0, "y": 5.0}) == 18.14
 
 PyO3 官方 Trait Bounds 教程解决的是另一类问题：让一个持有 Python 对象的 Rust wrapper 实现既有 Rust trait，再把这个 wrapper 传给带 trait bound 的泛型函数。它不讨论本文这种递归重建 `Box<dyn Trait>` 对象树的方案。
 
-## 六、常见坑点
+## 七、常见坑点
 
-### 1. 先确认 PyO3 版本
-
-PyO3 API 会随版本变化。本文示例使用 PyO3 0.23.5；复制其他版本的示例时，应先核对对应版本文档。
-
-### 2. 不要混淆 `Py<T>` 与 `Bound<'py, T>`
+### 1. 不要混淆 `Py<T>` 与 `Bound<'py, T>`
 
 - 需要让 Rust 保存一个 Python 对象，供以后再次读取或调用时，使用 `Py<T>`；
 - 已经处于 Python 上下文、只需当前访问时使用 `Bound<'py, T>`；
 - 从 `Py<T>` 访问对象时，先通过 `bind(py)` 获得 `Bound<'py, T>`。
 
-### 3. `extract()` 不只是类型检查
+混淆这两种类型时，常见后果是：试图把带有临时生命周期的 `Bound<'py, T>` 保存到长期存在的 Rust 结构体，或者忘记先调用 `bind(py)` 就直接访问 `Py<T>`。
 
-把 Python `dict` 提取成 `HashMap`，或把 Python 对象树重建为 Rust trait object 树，都会创建 Rust 拥有的数据。是否值得转换，要看后续是否需要脱离 Python 生命周期、长时间计算或传给纯 Rust 代码。
+### 2. Python 异常需要映射
 
-### 4. Python 异常需要映射
+Rust 业务层若返回 `Result<T, String>`，不能直接成为理想的 Python 异常。应在边界处把错误映射为 `PyValueError`、`PyTypeError`、`PyRuntimeError` 等具体异常。
 
-Rust 业务层若返回 `Result<T, String>`，应在边界处把错误映射为 `PyValueError`、`PyTypeError`、`PyRuntimeError` 等具体异常。
+### 3. 根据实际类型选择转换逻辑
 
-### 5. 按具体类型分发，不要按类名分发
+当 Rust 收到的参数类型是 `Py<PyAny>` 时，需要在运行时判断它具体是哪一种 Python 对象。不要通过读取 `__class__.__name__` 等类名字符串来判断，因为普通 Python 类也可能使用相同的名字。
 
-类名可能冲突，也不能可靠表示对象的实际类型。若只接受已知的 `#[pyclass]`，应依次尝试 `downcast::<PyConst>()`、`downcast::<PyVar>()` 等具体类型，并在全部失败后返回 `PyTypeError`。
+如果只接受已知的 `#[pyclass]` 类型，应使用 `downcast::<PyConst>()`、`downcast::<PyVar>()` 等方式检查对象的实际 PyO3 类型，并为每种类型执行对应的转换逻辑。所有检查都失败时，再返回 `PyTypeError`。
 
-### 6. `Send + Sync` 不是 PyO3 自动要求
-
-示例中的 `Evaluatable: Send + Sync` 是业务 trait 自己的并发约束，不是所有 PyO3 trait 或 `#[pyclass]` 都必须这样定义。是否添加取决于对象会不会跨线程共享。
-
-### 7. 绑定代码与打包是两件事
+### 4. 绑定代码与打包是两件事
 
 PyO3 负责 Rust/Python 绑定；要把扩展模块构建成 Python 可安装的软件包，通常还需要 `maturin` 等构建工具。模块名、Cargo 配置和 Python 包布局必须保持一致。
-
-## 如何选择
-
-| 需求 | 建议用法 |
-|------|----------|
-| Python 调用无状态 Rust 计算 | `#[pyfunction]` |
-| Python 操作有状态 Rust 对象 | `#[pyclass]` + `#[pymethods]` |
-| 把 Python 容器交给纯 Rust 逻辑 | `extract()` 为 Rust 类型 |
-| 当前调用内直接读取 Python 对象 | `Bound<'py, T>` |
-| Rust 结构体长期持有 Python 对象 | `Py<T>` |
-| Python 组合对象，Rust 复用既有 trait | 包装类型 + 显式转换层 |
 
 ## 参考链接
 

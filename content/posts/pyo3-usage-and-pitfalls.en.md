@@ -6,9 +6,9 @@ slug = "pyo3-usage-and-pitfalls-en"
     tags = ["Rust", "Python", "PyO3", "Language Bindings"]
 +++
 
-PyO3 connects Rust and Python. It can expose Rust functions, structs, and modules to Python, let Rust retain Python objects, and convert Python-created objects into Rust types so existing Rust business logic can be reused.
+PyO3 connects Rust and Python. It supports several patterns: exposing Rust functions, structs, and modules to Python; retaining Python objects in Rust; and converting Python-created objects into Rust types so existing Rust business logic can be reused.
 
-This article starts with common usage patterns, then explains types such as `Py<T>` and `Bound<'py, T>` and the pitfalls that commonly appear in real projects.
+---
 
 ## 1. Expose a Rust Function to Python
 
@@ -136,19 +136,100 @@ fn read_data(data: &Bound<'_, PyDict>) -> usize {
 }
 ```
 
-## 5. Reuse a Rust Trait: An Expression-Tree Example
+## 5. Let Python Provide the Business Logic Required by a Rust Trait
 
-A Python object cannot directly become a Rust `Box<dyn Evaluatable>`. If Python builds the object structure while Rust already has trait-based business logic, PyO3 wrapper types can serve as the Python interface and a conversion function can rebuild Rust objects.
+Rust can define a trait and the surrounding business flow while letting a Python object provide the concrete implementation. A Rust wrapper stores a reference to the Python object and implements the Rust trait; when the trait method is called, the wrapper forwards the call to the Python object's method.
 
-The relationship is:
+In this example, Rust defines the `Model` trait and the generic `solve_model()` function. Python defines `UserModel` and provides its `compute()` logic.
+
+```python
+class UserModel:
+    def compute(self, value):
+        return value * 2
+
+model = UserModel()
+assert calc.solve(model, 10.0) == 20.0
+```
+
+When Python calls `calc.solve()`, `model` is a `UserModel` instance. The Rust function exposed to Python receives that object and stores it in a wrapper:
+
+```rust
+use pyo3::prelude::*;
+
+trait Model {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult<f64>;
+}
+
+struct UserModelWrapper {
+    model: Py<PyAny>,
+}
+
+impl Model for UserModelWrapper {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult<f64> {
+        self.model
+            .bind(py)
+            .call_method1("compute", (value,))?
+            .extract()
+    }
+}
+
+fn solve_model<M: Model>(py: Python<'_>, model: &M, value: f64) -> PyResult<f64> {
+    model.compute(py, value)
+}
+
+#[pyfunction(name = "solve")]
+fn solve_wrapper(py: Python<'_>, model: Py<PyAny>, value: f64) -> PyResult<f64> {
+    let wrapper = UserModelWrapper { model };
+    solve_model(py, &wrapper, value)
+}
+
+#[pymodule]
+fn calc(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(solve_wrapper, m)?)?;
+    Ok(())
+}
+```
+
+The complete call chain is:
 
 ```text
-Python builds an object tree
-    → PyO3 receives the objects
-    → extract() recursively converts them
-    → Rust trait methods execute
+Python creates a UserModel instance
+    → Python calls calc.solve(model, 10.0)
+    → PyO3 receives model as solve_wrapper's Py<PyAny> parameter
+    → Rust creates UserModelWrapper and stores the Python object reference
+    → solve_model() calls wrapper.compute() through the Model trait
+    → wrapper.bind(py) obtains a Bound<'py, PyAny> for the current context
+    → call_method1("compute", (10.0,)) calls Python's model.compute(10.0)
+    → Python returns 20.0
+    → extract() converts the result to Rust f64
+    → solve_wrapper returns PyResult<f64>
+    → Python receives 20.0
+```
+
+`UserModel` is not converted into an equivalent Rust struct. `UserModelWrapper` is only an adapter: it satisfies Rust's trait constraint, while the concrete `compute()` logic remains in Python.
+
+## 6. Convert a Python Object Structure into Rust Types and Use Existing Rust Trait Implementations
+
+Python objects cannot directly become a Rust `Box<dyn Evaluatable>`. When Python constructs the object structure while Rust already has the trait-based business logic, use three layers:
+
+- **Native Rust types**: implement the trait and contain the business logic;
+- **PyO3 wrapper types**: register Python classes so Python can construct the object structure;
+- **Conversion function**: recursively traverse the Python object tree and rebuild the Rust trait-object tree.
+
+The call chain is:
+
+```text
+Python constructs a PyAdd, PyVar, and PyConst object tree
+    → Python calls the expression object's evaluate()
+    → Rust receives the Python object tree
+    → to_evaluatable() checks concrete types and recursively reads objects
+    → PyAdd, PyVar, and PyConst become AddExpr, VarExpr, and ConstExpr
+    → a native Rust expression tree is formed
+    → the existing Evaluatable::evaluate() implementation runs
     → the result is returned to Python
 ```
+
+Two different conversion operations appear here: `vars.extract()` is a PyO3-provided object method; `to_evaluatable(py, obj)` is an ordinary function defined in this example that recursively converts the expression tree.
 
 ### 1. Rust Trait and Native Types
 
@@ -192,6 +273,8 @@ impl Evaluatable for AddExpr {
     }
 }
 ```
+
+> **Example note**: `Send + Sync` here is a concurrency constraint declared by the `Evaluatable` business trait itself. It is not a general PyO3 requirement. Keep it only if these expression objects must be safely sent between or shared across threads.
 
 ### 2. PyO3 Wrapper Types and the Conversion Bridge
 
@@ -248,15 +331,15 @@ impl PyAdd {
     fn evaluate(&self, py: Python<'_>, vars: &Bound<'_, PyDict>) -> PyResult<f64> {
         let vars: HashMap<String, f64> = vars.extract()?;
         AddExpr {
-            left: extract(py, &self.left)?,
-            right: extract(py, &self.right)?,
+            left: to_evaluatable(py, &self.left)?,
+            right: to_evaluatable(py, &self.right)?,
         }
         .evaluate(&vars)
         .map_err(PyRuntimeError::new_err)
     }
 }
 
-fn extract(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<Box<dyn Evaluatable>> {
+fn to_evaluatable(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<Box<dyn Evaluatable>> {
     let obj = obj.bind(py);
 
     if let Ok(value) = obj.downcast::<PyConst>() {
@@ -274,8 +357,8 @@ fn extract(py: Python<'_>, obj: &Py<PyAny>) -> PyResult<Box<dyn Evaluatable>> {
     if let Ok(value) = obj.downcast::<PyAdd>() {
         let value = value.borrow();
         return Ok(Box::new(AddExpr {
-            left: extract(py, &value.left)?,
-            right: extract(py, &value.right)?,
+            left: to_evaluatable(py, &value.left)?,
+            right: to_evaluatable(py, &value.right)?,
         }));
     }
 
@@ -299,48 +382,29 @@ This does not expose the Rust trait directly to Python. Instead, Python wrapper 
 
 The official PyO3 Trait Bounds tutorial addresses a different problem: a Rust wrapper holding a Python object implements an existing Rust trait, and that wrapper is passed to a generic function with a trait bound. It does not discuss recursively rebuilding a `Box<dyn Trait>` object tree as in this example.
 
-## 6. Common Pitfalls
+## 7. Common Pitfalls
 
-### 1. Check the PyO3 Version First
-
-The PyO3 API changes across versions. This article uses PyO3 0.23.5. When copying examples from elsewhere, check the documentation for the version used by the project.
-
-### 2. Do Not Confuse `Py<T>` with `Bound<'py, T>`
+### 1. Do Not Confuse `Py<T>` with `Bound<'py, T>`
 
 - Use `Py<T>` when Rust must retain a Python object for later reads or calls;
 - Use `Bound<'py, T>` when the object is accessed only within the current Python context;
 - When accessing a `Py<T>`, call `bind(py)` first to obtain `Bound<'py, T>`.
 
-### 3. `extract()` Does More Than Type Checking
+Confusing these types can lead to attempts to store a temporary `Bound<'py, T>` in a long-lived Rust struct, or to access `Py<T>` without first calling `bind(py)`.
 
-Extracting a Python `dict` into a `HashMap`, or rebuilding a Python object tree as Rust trait objects, creates Rust-owned data. Whether that cost is worthwhile depends on whether the data must outlive the Python context, support long-running computation, or be passed to pure Rust code.
-
-### 4. Map Rust Errors to Python Exceptions
+### 2. Map Python Exceptions at the Boundary
 
 If the Rust business layer returns `Result<T, String>`, map the error at the boundary to a specific Python exception such as `PyValueError`, `PyTypeError`, or `PyRuntimeError`.
 
-### 5. Dispatch by Concrete Type, Not by Class Name
+### 3. Choose Conversion Logic by Actual Type
 
-Class names can collide and do not reliably identify an object's actual type. If only known `#[pyclass]` types are accepted, try `downcast::<PyConst>()`, `downcast::<PyVar>()`, and other concrete types in sequence, then return `PyTypeError` if all checks fail.
+When Rust receives a parameter of type `Py<PyAny>`, it must determine at runtime which kind of Python object it is. Do not inspect strings such as `__class__.__name__`: an ordinary Python class can use the same name.
 
-### 6. `Send + Sync` Is Not Automatically Required by PyO3
+If only known `#[pyclass]` types are accepted, use `downcast::<PyConst>()`, `downcast::<PyVar>()`, and similar checks to inspect the object's actual PyO3 type and apply the corresponding conversion logic. Return `PyTypeError` only after all supported type checks fail.
 
-`Evaluatable: Send + Sync` in this example is a concurrency constraint defined by the business trait. It is not a universal requirement for PyO3 traits or `#[pyclass]`. Add it only when the object must be shared across threads.
-
-### 7. Binding and Packaging Are Separate Concerns
+### 4. Binding and Packaging Are Separate Concerns
 
 PyO3 provides the Rust/Python bindings. Building the extension as an installable Python package usually also requires a packaging tool such as `maturin`. The module name, Cargo configuration, and Python package layout must agree.
-
-## Choosing an Approach
-
-| Requirement | Suggested approach |
-|-------------|--------------------|
-| Python calls stateless Rust computation | `#[pyfunction]` |
-| Python operates on a stateful Rust object | `#[pyclass]` + `#[pymethods]` |
-| Pass a Python container to pure Rust logic | Extract it into a Rust type |
-| Read a Python object during the current call | `Bound<'py, T>` |
-| Store a Python object in a Rust struct | `Py<T>` |
-| Python composes objects while Rust reuses a trait | Wrapper types + an explicit conversion layer |
 
 ## References
 
