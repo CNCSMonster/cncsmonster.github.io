@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Coding Assistant</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/coding-assistant/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Wed, 29 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Qwen Code Auto Mode Classifier: Two-Stage LLM Approval Mechanism</title>
+          <pubDate>Wed, 29 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/">&lt;blockquote&gt;
+&lt;p&gt;This article is based on reverse-engineered source code from Qwen Code &lt;code&gt;0.20.1-preview.7215&lt;&#x2F;code&gt;. Preview version internals may change across releases.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Qwen Code offers five approval modes: &lt;code&gt;plan&lt;&#x2F;code&gt;, &lt;code&gt;default&lt;&#x2F;code&gt;, &lt;code&gt;auto-edit&lt;&#x2F;code&gt;, &lt;code&gt;auto&lt;&#x2F;code&gt;, and &lt;code&gt;yolo&lt;&#x2F;code&gt;. In this version, &lt;strong&gt;new installations default to auto mode&lt;&#x2F;strong&gt; — tool calls are automatically approved through a multi-layer filtering system rather than requiring manual confirmation for each one. I also recommend auto mode for daily use; it strikes a good balance between efficiency and safety. This article dissects the mechanism and its configuration.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;architecture-overview&quot;&gt;Architecture Overview&lt;&#x2F;h2&gt;
+&lt;p&gt;Auto mode’s approval mechanism consists of four parts:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Rule layer&lt;&#x2F;strong&gt;: Deterministic rules (tool default permissions, user-defined rules, allowlists, regex blocking) that quickly filter clearly safe or clearly dangerous operations&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;LLM judgment layer&lt;&#x2F;strong&gt;: Two-stage Classifier that handles ambiguous cases the rules can’t cover&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fail-closed&lt;&#x2F;strong&gt;: When the classifier fails (timeout, API error, malformed response), it defaults to blocking — better safe than sorry&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Safety net&lt;&#x2F;strong&gt;: Denial Tracking detects deadlocks between the LLM and classifier, falling back to manual confirmation when thresholds are reached&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;Complete lifecycle of a tool call:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;LLM returns [A, B, C]
+  → Each independently goes through the approval flow:
+    ①-⑤ Rule layer → ⑥ LLM judgment layer
+    → A approved → executes → returns result
+    → B blocked → skipped
+    → C approved → executes → returns result
+  → All results sent back to the LLM together
+  → LLM sees the full picture and decides what to do next
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;rule-layer&quot;&gt;Rule Layer: ①-⑤&lt;&#x2F;h2&gt;
+&lt;p&gt;Before Qwen Code executes a tool call (reading files, running commands, editing code, etc.), it passes through these checkpoints:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Tool call
+  → ① Tool&amp;#x27;s default permission (e.g., read_file is safe by default, shell commands need approval)
+  → ② PermissionManager (user-defined rules)
+  → ③ acceptEdits fast-path (if in acceptEdits mode, workspace edits auto-approved)
+  → ④ Safe-tool allowlist (read_file, grep, glob, etc. auto-approved)
+  → ⑤ Guard (regex blocks dangerous command patterns like git clean, rm -rf — no LLM)
+  → ⑥ LLM Classifier (two-stage LLM judgment, see below)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;② is a user-configurable rules engine with four outcomes:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow&lt;&#x2F;code&gt; → approved immediately (skips ③-⑥)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;deny&lt;&#x2F;code&gt; → blocked immediately&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;ask&lt;&#x2F;code&gt; → prompts the user for manual confirmation&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;&#x2F;code&gt; (no matching rule) → continue to ③-⑥&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;two-stage-classifier&quot;&gt;Two-Stage Classifier&lt;&#x2F;h2&gt;
+&lt;p&gt;The first five checkpoints are deterministic rules — fast and free, but they can’t cover every case. The remaining tool calls are handed to an LLM. The classifier receives the tool name, parameters, and current conversation context, then runs in two stages:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;stage-1-fast-judgment&quot;&gt;Stage 1: Fast Judgment&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: fastModel (falls back to main model if not configured)&lt;&#x2F;li&gt;
+&lt;li&gt;Output: &lt;code&gt;{shouldBlock: boolean}&lt;&#x2F;code&gt; only&lt;&#x2F;li&gt;
+&lt;li&gt;Timeout: 10 seconds&lt;&#x2F;li&gt;
+&lt;li&gt;Behavior: allow → approve immediately; block → proceed to Stage 2&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;stage-2-review&quot;&gt;Stage 2: Review&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: same as Stage 1&lt;&#x2F;li&gt;
+&lt;li&gt;Output: &lt;code&gt;{thinking, shouldBlock, reason}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Timeout: 30 seconds&lt;&#x2F;li&gt;
+&lt;li&gt;Behavior: allow → approve; block → reject&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The &lt;code&gt;thinking&lt;&#x2F;code&gt; field in Stage 2’s output is a plain-text explanation written by the model (e.g., “user is only reading a file, safe”), helping developers understand why the classifier made its decision.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fail-closed-better-safe-than-sorry&quot;&gt;Fail-Closed: Better Safe Than Sorry&lt;&#x2F;h3&gt;
+&lt;p&gt;Any non-abort failure (API error, timeout, malformed response) returns &lt;code&gt;shouldBlock: true&lt;&#x2F;code&gt;. This means &lt;strong&gt;when the classifier is down, all approval-required tools are blocked&lt;&#x2F;strong&gt;. This is not a bug — it’s a deliberate security design.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;model-priority&quot;&gt;Model Priority&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;override → config.getFastModel() → config.getModel() → DEFAULT_QWEN_MODEL
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The classifier uses fastModel. Without it, it falls back to the main model — which is typically slower, adding a few hundred milliseconds to a few seconds per Stage 1 judgment, which adds up over a session.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;denial-tracking-preventing-infinite-loops&quot;&gt;Denial Tracking: Preventing Infinite Loops&lt;&#x2F;h2&gt;
+&lt;p&gt;If the classifier persistently blocks (LLM stuck in a dead end), the system won’t loop forever:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Counter&lt;&#x2F;th&gt;&lt;th&gt;Threshold&lt;&#x2F;th&gt;&lt;th&gt;Effect&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Consecutive blocks&lt;&#x2F;td&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Next call skips classifier, goes straight to manual confirmation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Consecutive unavailable&lt;&#x2F;td&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Total denials&lt;&#x2F;td&gt;&lt;td&gt;20&lt;&#x2F;td&gt;&lt;td&gt;Session-wide cap triggered&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;These thresholds are hardcoded and not configurable. All counters reset when switching approval modes.&lt;&#x2F;p&gt;
+&lt;p&gt;Key details:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Counted per tool call&lt;&#x2F;strong&gt;, not per batch — 2 blocked calls in one batch increments by 2&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fallback happens before the classifier&lt;&#x2F;strong&gt; — after 3 consecutive blocks, the 4th call skips the LLM call entirely and asks the user directly&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Counters reset on user approval&lt;&#x2F;strong&gt;, resuming auto mode; rejection keeps them, so the next call also goes to manual&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Accumulates across turns&lt;&#x2F;strong&gt; — the LLM sees each rejection, tries a different approach, gets blocked again, and after 3 consecutive blocks the system falls back to manual confirmation&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;configuration-recommendations&quot;&gt;Configuration Recommendations&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;fastModel&amp;quot;: &amp;quot;qwen3-coder-plus&amp;quot;,
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;autoMode&amp;quot;: {
+      &amp;quot;classifier&amp;quot;: {
+        &amp;quot;timeouts&amp;quot;: { &amp;quot;stage1Ms&amp;quot;: 10000, &amp;quot;stage2Ms&amp;quot;: 30000 },
+        &amp;quot;thinking&amp;quot;: { &amp;quot;stage2Enabled&amp;quot;: false }
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Key setting&lt;&#x2F;strong&gt;: &lt;code&gt;fastModel&lt;&#x2F;code&gt; is the classifier’s core dependency. Without it, the classifier falls back to the main model — which is typically slower, meaning every auto-mode tool call that requires classifier judgment will wait longer.&lt;&#x2F;p&gt;
+&lt;p&gt;For model selection, pick a &lt;strong&gt;fast&lt;&#x2F;strong&gt; model. The classifier only needs to output a boolean or a short text — no deep reasoning required. Non-thinking models (like &lt;code&gt;qwen3-coder-plus&lt;&#x2F;code&gt;) are a natural fit; thinking-capable models (like &lt;code&gt;deepseek-v4-flash&lt;&#x2F;code&gt;) work too — the classifier disables API thinking mode in both stages by default, so the model won’t do extra internal reasoning and stays fast. If you have sufficient local resources, a small local model as fastModel works too — zero API cost and fast response.&lt;&#x2F;p&gt;
+&lt;p&gt;The only models to avoid: those that &lt;strong&gt;force thinking on&lt;&#x2F;strong&gt; (can’t be disabled via parameters) — every judgment would waste time and tokens on unnecessary reasoning. Also, since the classifier sees conversation context and tool parameters, the fastModel’s service provider should be at least as trustworthy as your main model’s.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;stage2Enabled&lt;&#x2F;code&gt; controls whether Stage 2 uses API-level deep reasoning mode (slower, more tokens). The default &lt;code&gt;false&lt;&#x2F;code&gt; is fine — it doesn’t affect the &lt;code&gt;thinking&lt;&#x2F;code&gt; output field, which is just a plain-text explanation the model writes regardless.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code’s auto mode isn’t a simple “execute everything automatically” switch. It’s a carefully designed safety valve: the rule layer filters first, the LLM classifier handles ambiguous cases, fail-closed ensures errors don’t allow dangerous actions, and denial tracking prevents infinite loops. The cost is an extra LLM call (and tokens) for every tool invocation requiring judgment.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Qwen Code WebFetch&#x27;s SPA Blind Spot: The html-to-text Empty Content Problem</title>
+          <pubDate>Wed, 29 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-webfetch-spa-blind-spot-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-webfetch-spa-blind-spot-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-webfetch-spa-blind-spot-en/">&lt;p&gt;When using Qwen Code’s &lt;code&gt;web_fetch&lt;&#x2F;code&gt; tool to scrape SPA (Single Page Application) pages, it frequently returns empty content. This isn’t a network issue — it’s a design gap: &lt;code&gt;html-to-text&lt;&#x2F;code&gt; returns an empty string for pages with empty bodies, and Qwen Code has no fallback mechanism.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;&#x2F;h2&gt;
+&lt;p&gt;SPA pages typically have only a mount point in their body:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;html&quot; class=&quot;language-html &quot;&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&amp;lt;body&amp;gt;
+  &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;div&amp;gt;
+  &amp;lt;script src=&amp;quot;app.js&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;script&amp;gt;
+&amp;lt;&amp;#x2F;body&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;html-to-text&lt;&#x2F;code&gt; parses this HTML and returns an empty string. But &lt;code&gt;curl&lt;&#x2F;code&gt; can retrieve the &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; and &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; — this information lives in &lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt;, not in the body.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;reproduction&quot;&gt;Reproduction&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;URL: https:&amp;#x2F;&amp;#x2F;www.stepfun.com
+web_fetch returns: (empty)
+curl returns: &amp;lt;title&amp;gt;StepFun&amp;lt;&amp;#x2F;title&amp;gt; + &amp;lt;meta description=&amp;quot;...&amp;quot;&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;solutions&quot;&gt;Solutions&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;recommended-use-tavily-extract-instead&quot;&gt;Recommended: Use &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; Instead&lt;&#x2F;h3&gt;
+&lt;p&gt;If you already have Tavily MCP configured (see &lt;a href=&quot;&#x2F;posts&#x2F;qwen-code-tavily-mcp-setup&#x2F;&quot;&gt;Getting Qwen Code to Work with Tavily Search&lt;&#x2F;a&gt;), use the &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; tool instead of &lt;code&gt;web_fetch&lt;&#x2F;code&gt;. Tavily renders JavaScript server-side and handles SPA pages correctly.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;alternative-disable-web-fetch-and-use-other-mcp-fetch-tools&quot;&gt;Alternative: Disable &lt;code&gt;web_fetch&lt;&#x2F;code&gt; and Use Other MCP Fetch Tools&lt;&#x2F;h3&gt;
+&lt;p&gt;Disable the built-in &lt;code&gt;web_fetch&lt;&#x2F;code&gt; in &lt;code&gt;settings.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;disabled&amp;quot;: [&amp;quot;web_fetch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP fetch tools come in several types:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Headless browser-based&lt;&#x2F;strong&gt;: Render pages with Playwright&#x2F;Puppeteer, handles SPA&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;API-based&lt;&#x2F;strong&gt;: Like Tavily Extract, server-side rendering returns structured content&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;CLI-based&lt;&#x2F;strong&gt;: Wrappers around curl&#x2F;wget, simple but no JS rendering&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;source-code-facts&quot;&gt;Source Code Facts&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; packages&amp;#x2F;core&amp;#x2F;src&amp;#x2F;tools&amp;#x2F;web-fetch.ts (v0.20.1-preview.7215)
+const textContent = convert(html, {
+  wordwrap: false,
+  selectors: [
+    { selector: &amp;#x27;a&amp;#x27;, options: { ignoreHref: true } },
+    { selector: &amp;#x27;img&amp;#x27;, format: &amp;#x27;skip&amp;#x27; },
+  ],
+}).substring(0, MAX_CONTENT_LENGTH);
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;No fallback logic. &lt;code&gt;html-to-text&lt;&#x2F;code&gt; returns empty → empty string sent directly to the LLM → LLM receives empty content → returns empty or hallucinated output.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;comparison-with-claude-code&quot;&gt;Comparison with Claude Code&lt;&#x2F;h2&gt;
+&lt;p&gt;Claude Code’s WebFetch similarly lacks SPA fallback. Both tools have blind spots in SPA scenarios.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;for-contributors-fix-directions&quot;&gt;For Contributors: Fix Directions&lt;&#x2F;h2&gt;
+&lt;p&gt;If you’re interested in fixing this, here are several approaches (ordered by cost, lowest first):&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; fallback&lt;&#x2F;strong&gt;: When &lt;code&gt;html-to-text&lt;&#x2F;code&gt; returns empty, extract &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; + &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; as a fallback. Minimal change — just add a fallback branch when &lt;code&gt;convert()&lt;&#x2F;code&gt; returns empty.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;SPA detection&lt;&#x2F;strong&gt;: Identify SPA characteristics like &lt;code&gt;&amp;lt;div id=&quot;root&quot;&amp;gt;&lt;&#x2F;code&gt; and alert the user that the page requires JS rendering, suggesting MCP tools instead.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Headless browser integration&lt;&#x2F;strong&gt;: For detected SPA pages, render with a headless browser before extracting content. Best results but heaviest dependencies.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+      <item>
+          <title>How Qwen Code Learns Your Coding Habits: AutoSkill Mechanism Deep Dive</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/">&lt;p&gt;After using Qwen Code for a while, you might notice unfamiliar skills appearing in &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — &lt;code&gt;skill-review&lt;&#x2F;code&gt;, &lt;code&gt;skill-testing&lt;&#x2F;code&gt; — each tagged with &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; in their frontmatter. You didn’t create them. Nobody did manually.&lt;&#x2F;p&gt;
+&lt;p&gt;This is Qwen Code’s &lt;strong&gt;AutoSkill mechanism&lt;&#x2F;strong&gt;: an automatic distillation system for procedural knowledge. This article reverse-engineers the mechanism from source code and design documents, covering its architecture, security model, and academic origins.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-is-autoskill&quot;&gt;What is AutoSkill&lt;&#x2F;h2&gt;
+&lt;p&gt;In one sentence: &lt;strong&gt;after a session ends, Qwen Code automatically evaluates whether your workflow is worth reusing, and if so, saves it as a project-level skill.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;It differs from Auto Memory in focus:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Auto Memory&lt;&#x2F;th&gt;&lt;th&gt;AutoSkill&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Knowledge type&lt;&#x2F;td&gt;&lt;td&gt;Declarative (who you are, project context)&lt;&#x2F;td&gt;&lt;td&gt;Procedural (how you do things)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;Every session end&lt;&#x2F;td&gt;&lt;td&gt;Sessions with ≥ 20 tool calls&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write target&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;memory&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Content&lt;&#x2F;td&gt;&lt;td&gt;User preferences, project context&lt;&#x2F;td&gt;&lt;td&gt;Reusable workflows, best practices&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Memory remembers &lt;em&gt;who you are&lt;&#x2F;em&gt;. AutoSkill remembers &lt;em&gt;how you work&lt;&#x2F;em&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;trigger-conditions&quot;&gt;Trigger Conditions&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Session ends
+  ├─ toolCallCount ≥ 20 ?        &amp;#x2F;&amp;#x2F; Too few calls → skip
+  ├─ skillsModifiedInSession ?   &amp;#x2F;&amp;#x2F; User edited skills this round → skip
+  └─ Both pass → scheduleSkillReview()
+               └─ Fork standalone agent (8-turn limit, 2-min timeout)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The threshold ensures only sessions with substantial tool usage trigger review — avoiding low-quality skills from simple Q&amp;amp;A sessions. The review runs in an independent agent (not a continuation of your conversation), capped at 8 turns and 2 minutes.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;permission-sandbox-the-core-security-design&quot;&gt;Permission Sandbox: The Core Security Design&lt;&#x2F;h2&gt;
+&lt;p&gt;The most elegant part of AutoSkill is its security model. The review agent is locked in a strict sandbox:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Tool&lt;&#x2F;th&gt;&lt;th&gt;Permission&lt;&#x2F;th&gt;&lt;th&gt;Security Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;read_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Prevents reading &lt;code&gt;~&#x2F;.aws&#x2F;credentials&lt;&#x2F;code&gt; and injecting into SKILL.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;ls&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;write_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&amp;lt;name&amp;gt;&#x2F;SKILL.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Can only create &lt;strong&gt;non-existent&lt;&#x2F;strong&gt; files (prevents overwriting)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;edit&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; + target must contain &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Cannot modify user-authored skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Core principle: &lt;strong&gt;auto-skill can only touch what it created — never user-authored skills.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-source-auto-skill-protection&quot;&gt;The &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; Protection&lt;&#x2F;h3&gt;
+&lt;p&gt;Two layers of defense:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Hard constraint (permission manager)&lt;&#x2F;strong&gt;: &lt;code&gt;edit&lt;&#x2F;code&gt; reads frontmatter first; no &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; → rejected&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Soft constraint (system prompt)&lt;&#x2F;strong&gt;: “You may ONLY modify skill files that contain ‘source: auto-skill’”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;If you add &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; to your own skill, you’re opting in to automatic updates by the review agent.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;preventing-name-collision-overwrites&quot;&gt;Preventing Name Collision Overwrites&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; write_file only allows creating new files
+try {
+  await fs.stat(ctx.filePath);
+  return &amp;#x27;deny&amp;#x27;;  &amp;#x2F;&amp;#x2F; File exists → reject
+} catch (err) {
+  if (err.code === &amp;#x27;ENOENT&amp;#x27;) return &amp;#x27;allow&amp;#x27;;  &amp;#x2F;&amp;#x2F; Doesn&amp;#x27;t exist → allow creation
+  return &amp;#x27;deny&amp;#x27;;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Creating a new skill → &lt;code&gt;write_file&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Updating an existing auto-skill → must use &lt;code&gt;edit&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Overwriting any existing file → rejected ❌&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anti-symlink-traversal&quot;&gt;Anti-symlink Traversal&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;assertRealProjectSkillPath()&lt;&#x2F;code&gt; uses &lt;code&gt;fs.realpath()&lt;&#x2F;code&gt; to resolve the actual path, confirming it stays within &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — preventing writes to arbitrary locations via symlinks.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;academic-origins&quot;&gt;Academic Origins&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Trace2Skill paper (arXiv: 2603.25158)
+    ↓
+Hermes Agent (Nous Research, open-source) — original prompt source
+    ↓ Qwen Code design doc: &amp;quot;ported from Hermes _SKILL_REVIEW_PROMPT, minimal adaptation&amp;quot;
+Qwen Code AutoSkill
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The Qwen Code design document explicitly states:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The review agent’s prompt is directly ported from Hermes &lt;code&gt;_SKILL_REVIEW_PROMPT&lt;&#x2F;code&gt; with minimal adaptation.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Hermes’s original prompt is far more detailed — including CLASS-LEVEL skill organization, preference embedding, protected skills, and Do NOT capture lists. Qwen’s version is significantly streamlined, focusing on “non-trivial approaches” and “trial-and-error processes.”&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;hermes-vs-qwen-code&quot;&gt;Hermes vs Qwen Code&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Hermes&lt;&#x2F;th&gt;&lt;th&gt;Qwen Code&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;In-session agent call + post-session review&lt;&#x2F;td&gt;&lt;td&gt;Post-session background fork only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Protection&lt;&#x2F;td&gt;&lt;td&gt;ContextVar tracking + tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; frontmatter + file-level permission manager&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write scope&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.hermes&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (global)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (project-level)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Prompt complexity&lt;&#x2F;td&gt;&lt;td&gt;Detailed (skill organization, preference embedding, etc.)&lt;&#x2F;td&gt;&lt;td&gt;Streamlined (focused on reusable workflows)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;comparison-with-other-agents&quot;&gt;Comparison with Other Agents&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Agent&lt;&#x2F;th&gt;&lt;th&gt;Auto-distills procedural skills&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hermes Agent&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (in-session + post-session)&lt;&#x2F;td&gt;&lt;td&gt;First open-source implementation, with tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Qwen Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (post-session)&lt;&#x2F;td&gt;&lt;td&gt;Ported Hermes prompt + file-level permission sandbox&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Claude Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Auto Memory records declarative knowledge only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Cursor&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills are entirely manual&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills entirely manual, Memory managed manually&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Codex CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Built-in skills + AGENTS.md extension, no auto-distillation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Gemini CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Manual SKILL.md creation, Memory reads GEMINI.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Currently only Hermes and Qwen Code implement automatic procedural skill distillation. All other major AI coding agents remain in manual-management territory.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;blob&#x2F;main&#x2F;docs&#x2F;design&#x2F;skill-nudge&#x2F;skill-nudge.md&quot;&gt;Design doc&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Source: &lt;code&gt;packages&#x2F;core&#x2F;src&#x2F;memory&#x2F;skillReviewAgentPlanner.ts&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;First commit: 2026-05-09 (&lt;code&gt;#3673&lt;&#x2F;code&gt;), enabled by default: 2026-05-27 (&lt;code&gt;#4547&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2603.25158&quot;&gt;Trace2Skill paper&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

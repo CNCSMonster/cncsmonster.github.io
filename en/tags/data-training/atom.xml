@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Data Training</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/data-training/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-06-13T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/data-training/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Does StepFun Train on API Data? A Policy Investigation</title>
+        <published>2026-06-13T00:00:00+08:00</published>
+        <updated>2026-06-13T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/">&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I use Step Plan or StepFun API. Will my code&#x2F;conversation data be used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;It doesn’t explicitly exclude training, nor does it explicitly commit to it.&lt;&#x2F;strong&gt; None of the three core documents (Privacy Policy, User Agreement, Paid Service Agreement) contain phrases like “will not use for training” or “training exclusion”. The English TOS retains the broad authorization of “improve the Services”.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;I use&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Will it train?&lt;&#x2F;th&gt;&lt;th&gt;Clause basis&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Step Plan (subscription)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ No commitment to exclude&lt;&#x2F;td&gt;&lt;td&gt;Paid agreement has no training clause, refers to platform privacy policy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API pay-as-you-go&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ No commitment to exclude&lt;&#x2F;td&gt;&lt;td&gt;User Agreement §6.5: “provide, diagnose, improve, optimize, upgrade” purposes&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Enterprise&#x2F;private deployment&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Not disclosed&lt;&#x2F;td&gt;&lt;td&gt;Requires business negotiation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;evidence-1-privacy-policy-has-no-training-related-statements&quot;&gt;Evidence 1: Privacy Policy has no training-related statements&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun Open Platform Privacy Policy&lt;&#x2F;a&gt; (2026-04-23)&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 review: The policy still &lt;strong&gt;does not contain any statements about “model training” or “will not use for training”&lt;&#x2F;strong&gt;. Data usage purposes are limited to “providing intelligent conversation and content generation services” and “anonymized operational statistics”.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Key clause&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We will collect information you actively input… as well as service output information. We will analyze and calculate the above information in order to better understand your needs and context…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;“Analysis and calculation” can be understood as context processing required for real-time inference, but may also include offline analysis.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-2-english-tos-retains-improve-the-services&quot;&gt;Evidence 2: English TOS retains “improve the Services”&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;StepFun Terms of Service&lt;&#x2F;a&gt; (Section 4.1.4)&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We may use Content to provide, maintain, develop, and &lt;strong&gt;improve the Services&lt;&#x2F;strong&gt;…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Among them, “develop, and improve the Services” can cover model training, fine-tuning, evaluation and other purposes.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Comparison&lt;&#x2F;strong&gt;: OpenAI and Anthropic’s API terms explicitly exclude training purposes. StepFun lags significantly in this regard.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-3-step-plan-paid-agreement-has-no-training-clause&quot;&gt;Evidence 3: Step Plan Paid Agreement has no training clause&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan Paid Service Agreement&lt;&#x2F;a&gt; (2026-05-25)&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 review: The agreement &lt;strong&gt;does not contain clauses specifically targeting data usage, model training, or data retention&lt;&#x2F;strong&gt;, nor does it make any new commitments excluding data training or data retention. Clauses involving data liability are limited to users bearing responsibility for data breaches caused by third-party tools.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-4-data-retention-period-preliminary-but-insufficient&quot;&gt;Evidence 4: Data retention period — preliminary but insufficient&lt;&#x2F;h3&gt;
+&lt;p&gt;New explanation in privacy policy (first explicitly extracted in this review):&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We will only retain your personal information for the period necessary for the purpose of providing the platform’s related services… After you cancel your account, actively delete personal information, or exceed the necessary period, we will delete or anonymize your personal information.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Exceptions&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Compliance with legal requirements for information retention&lt;&#x2F;li&gt;
+&lt;li&gt;Reasonable extension for financial, audit, dispute resolution purposes&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Gap&lt;&#x2F;strong&gt;: How long is the “necessary period”, what are the criteria for “exceeding the necessary period”, and whether there is an audit mechanism are not explained.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;industry-comparison&quot;&gt;Industry Comparison&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th&gt;Service&lt;&#x2F;th&gt;&lt;th&gt;Data training policy&lt;&#x2F;th&gt;&lt;th&gt;Transparency&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly does not train&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly does not train&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Xiaomi MiMo&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;✅ Privacy policy literally promises “will not use for training”&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Alibaba Cloud Bailian&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Does not train (general clause)&lt;&#x2F;td&gt;&lt;td&gt;Medium&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Alibaba Cloud Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Subscription&lt;&#x2F;td&gt;&lt;td&gt;⚠️ General clause says no training, but subscription clause 5.2.2 specifically authorizes training&lt;&#x2F;td&gt;&lt;td&gt;Low&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;❌ Silent, no commitment&lt;&#x2F;td&gt;&lt;td&gt;Low&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;No commitment, retains “improve the Services”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Low&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ StepFun is in the same tier as DeepSeek, significantly behind OpenAI, Anthropic, and Xiaomi MiMo.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What Should I Do&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;normal-use&quot;&gt;Normal Use&lt;&#x2F;h3&gt;
+&lt;p&gt;The agreement does not confirm no training, but StepFun has not explicitly stated that it will train. If you can accept this ambiguous state, you can continue to use it, but you need to follow these habits:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Desensitize submissions&lt;&#x2F;strong&gt;: Avoid including company names, personal names, specific numbers, and internal project code names in prompts&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Segmented processing&lt;&#x2F;strong&gt;: Core algorithms&#x2F;sensitive logic are processed locally, only generic&#x2F;abstract parts are submitted to the API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Balance monitoring&lt;&#x2F;strong&gt;: Pay-as-you-go users set balance alerts to avoid data deletion clauses triggered by arrears&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;sensitive-data-scenarios&quot;&gt;Sensitive Data Scenarios&lt;&#x2F;h3&gt;
+&lt;p&gt;If the following data is involved, &lt;strong&gt;public APIs are not recommended&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;User personal information (PII)&lt;&#x2F;li&gt;
+&lt;li&gt;Financial, medical, and government data&lt;&#x2F;li&gt;
+&lt;li&gt;Undisclosed core intellectual property (technical solutions before patent application)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Alternatives&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Switch to vendors that explicitly commit to no training&lt;&#x2F;strong&gt;: Such as Xiaomi MiMo (privacy policy literal commitment), Alibaba Cloud Bailian API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Local deployment&lt;&#x2F;strong&gt;: StepFun partially open-sources models (Step-3.5-Flash, etc.), can run locally, data does not leave the machine at all&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise isolation&lt;&#x2F;strong&gt;: Contact &lt;code&gt;platform@stepfun.com&lt;&#x2F;code&gt; to confirm private deployment or exclusive instance options&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;questions-to-ask-before-enterprise-contracting&quot;&gt;Questions to Ask Before Enterprise Contracting&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Can we explicitly agree in the contract that “enterprise data will not be used for any model training”&lt;&#x2F;li&gt;
+&lt;li&gt;Data retention period and deletion timeline after contract termination&lt;&#x2F;li&gt;
+&lt;li&gt;Whether VPC&#x2F;exclusive instance&#x2F;private deployment is provided&lt;&#x2F;li&gt;
+&lt;li&gt;SLA commitments and compensation for data breaches&lt;&#x2F;li&gt;
+&lt;li&gt;What constraints are there on data flow through third-party tools&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun Open Platform Privacy Policy&lt;&#x2F;a&gt; (2026-04-23, reviewed 2026-06-13)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;user-agreement.html&quot;&gt;StepFun Open Platform User Agreement&lt;&#x2F;a&gt; (2026-04-08)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan Paid Service Agreement&lt;&#x2F;a&gt; (2026-05-25, reviewed 2026-06-13)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;English Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Does DeepSeek Train on API Data? A Policy Investigation</title>
+        <published>2026-05-19T00:00:00+08:00</published>
+        <updated>2026-05-19T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/">&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I use the DeepSeek API. Will my data be used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;The Open Platform Terms are silent — they don’t say yes, and they don’t say no.&lt;&#x2F;strong&gt; Unlike OpenAI or Anthropic, which explicitly commit to not training on API data.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;User Type&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Trains by default?&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Can opt out?&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Web&#x2F;App chat&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Yes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Turn off “Improve the model for everyone”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;⚠️ Unclear&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No toggle&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What Should I Do&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Assume it does train&lt;&#x2F;strong&gt; — if the terms don’t say they won’t, don’t assume they don’t&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Don’t send sensitive data via API&lt;&#x2F;strong&gt; — especially user privacy or trade secrets&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Use local deployment instead&lt;&#x2F;strong&gt; — DeepSeek open-sources model weights (MIT License); run locally to eliminate the risk&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Ask DeepSeek to clarify&lt;&#x2F;strong&gt; — &lt;a href=&quot;mailto:privacy@deepseek.com&quot;&gt;privacy@deepseek.com&lt;&#x2F;a&gt; &#x2F; &lt;a href=&quot;mailto:api-service@deepseek.com&quot;&gt;api-service@deepseek.com&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-general-terms-allow-training-with-opt-out-web-app&quot;&gt;1: General Terms allow training, with opt-out (Web&#x2F;App)&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-terms-of-use.html&quot;&gt;DeepSeek Terms of Use — Section 4.3&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“Under the premise of secure encryption technology processing, strict de-identification rendering, and irreversibility to identify specific individuals, we may, to a minimal extent, use Inputs and Outputs to provide, maintain, operate, develop or improve the Services or the underlying technologies supporting the Services.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“If you refuse to allow us to process the data in the manner described above, you can opt out by turning off ‘Improve the model for everyone’.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ Web&#x2F;App users: data used for training by default, but you can opt out.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-privacy-policy-explicitly-mentions-training&quot;&gt;2: Privacy Policy explicitly mentions training&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-privacy-policy.html&quot;&gt;DeepSeek Privacy Policy&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“To improve and develop the Services and to train and improve our technology, such as our machine learning models and algorithms.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;User right: &lt;em&gt;“the right to opt-out of using your Personal Data for training our models or optimizing our technologies.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ Training use is documented in writing, and opt-out rights are granted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-api-terms-lack-equivalent-commitment-key-finding&quot;&gt;3: API terms lack equivalent commitment (key finding)&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;DeepSeek Open Platform Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;Full-text comparison with the general Terms:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Clause&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;General Terms (Web&#x2F;App)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Open Platform Terms (API)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;States Input&#x2F;Output may be used for training&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Provides opt-out toggle&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ “Improve the model for everyone”&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Developer retains Input ownership&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.2&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;References Privacy Policy&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 5.5&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ The API terms neither confirm nor deny data use for training. No commitment = untrustworthy.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-industry-comparison-competitors-commit&quot;&gt;4: Industry comparison — competitors commit&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Paid API commits to no training?&lt;&#x2F;th&gt;&lt;th&gt;Source&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit (since March 2023)&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;your-data&quot;&gt;developers.openai.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;privacy.claude.com&#x2F;en&#x2F;articles&#x2F;7996868-is-my-data-used-for-model-training&quot;&gt;privacy.claude.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google Cloud Gemini&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.cloud.google.com&#x2F;gemini&#x2F;docs&#x2F;discover&#x2F;data-governance&quot;&gt;docs.cloud.google.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ Not committed&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;Open Platform Terms&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ DeepSeek’s silence is not industry standard — it lags behind competitors.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

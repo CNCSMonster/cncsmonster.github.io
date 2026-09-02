@@ -1,0 +1,245 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>PyO3 用法与踩坑 | CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Read in English" class=lang-link href=https://cncsmonster.github.io/en/posts/pyo3-usage-and-pitfalls-en/>EN</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>PyO3 用法与踩坑</h1><div class=post-meta><time datetime=2026-08-31T00:00:00+08:00>2026-08-31</time><div class=post-tags><a class=tag href=https://cncsmonster.github.io/tags/rust/>#Rust</a><a class=tag href=https://cncsmonster.github.io/tags/python/>#Python</a><a class=tag href=https://cncsmonster.github.io/tags/pyo3/>#PyO3</a><a class=tag href=https://cncsmonster.github.io/tags/kua-yu-yan-bang-ding/>#跨语言绑定</a></div></div></header><div class=post-layout><div class=post-content><p>PyO3 用来连接 Rust 与 Python。常见做法不是只有一种：可以把 Rust 函数、结构体和模块暴露给 Python，也可以让 Rust 持有 Python 对象；还可以把 Python 创建的对象转换为 Rust 类型，继续使用已有的 Rust 业务逻辑。<hr><h2 id=yi-ba-rust-han-shu-bao-lu-gei-python>一、把 Rust 函数暴露给 Python</h2><p>最简单的用法是通过 <code>#[pyfunction]</code> 导出普通函数，再在 <code>#[pymodule]</code> 中注册。<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::prelude::*;
+
+#[pyfunction]
+fn add(left: i64, right: i64) -> i64 {
+    left + right
+}
+
+#[pymodule]
+fn calc(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(add, m)?)?;
+    Ok(())
+}
+</code></pre><p>Python 侧可以直接调用：<pre class=language-python data-lang=python><code class=language-python data-lang=python>import calc
+
+assert calc.add(2, 3) == 5
+</code></pre><p>这种方式适合计算函数、工具函数和性能热点。<h2 id=er-ba-rust-jie-gou-ti-bao-lu-wei-python-lei>二、把 Rust 结构体暴露为 Python 类</h2><p><code>#[pyclass]</code> 定义 Python 可见的类，<code>#[pymethods]</code> 暴露构造函数、方法和属性。<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::prelude::*;
+
+#[pyclass]
+struct Counter {
+    #[pyo3(get)]
+    value: i64,
+}
+
+#[pymethods]
+impl Counter {
+    #[new]
+    fn new() -> Self {
+        Self { value: 0 }
+    }
+
+    fn increment(&mut self) {
+        self.value += 1;
+    }
+}
+</code></pre><p>Python 侧：<pre class=language-python data-lang=python><code class=language-python data-lang=python>counter = calc.Counter()
+counter.increment()
+assert counter.value == 1
+</code></pre><p>这种方式适合需要在多次 Python 调用之间保留 Rust 状态的对象。<h2 id=san-jiang-python-shu-ju-zhuan-huan-wei-rust-lei-xing>三、将 Python 数据转换为 Rust 类型</h2><p>PyO3 可以自动转换许多常见类型。例如，可以把 Python 字典提取为 Rust 的 <code>HashMap&LTString, f64></code>：<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use std::collections::HashMap;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+#[pyfunction]
+fn sum_values(values: &Bound<'_, PyDict>) -> PyResult&LTf64> {
+    let values: HashMap&LTString, f64> = values.extract()?;
+    Ok(values.values().sum())
+}
+</code></pre><p><code>extract()</code> 会创建 Rust 拥有的数据。如果只需要在当前调用中读取 Python 对象，可以直接使用 <code>Bound<'py, T></code>，不必先把整个对象转换成 Rust 容器。<p>简单判断：<ul><li>需要脱离 Python 生命周期保存或处理数据时，提取为 Rust 类型；<li>只在当前调用中读取对象时，优先借用 <code>Bound<'py, T></code>。</ul><h2 id=si-zai-rust-zhong-bao-cun-python-dui-xiang>四、在 Rust 中保存 Python 对象</h2><p>下面三个类型容易混淆：<table><thead><tr><th>类型<th>含义<th>典型用途<tbody><tr><td><code>Python<'py></code><td>当前线程可以访问 Python 解释器的凭证<td>调用 Python API、绑定 <code>Py&LTT></code><tr><td><code>Bound<'py, T></code><td>绑定到当前 Python 上下文的对象引用<td>当前调用中读取或调用 Python 对象<tr><td><code>Py&LTT></code><td>持有 Python 对象引用、但不绑定当前 <code>'py</code> 生命周期的智能指针<td>在 Rust 结构体中保存 Python 对象，供以后使用</table><p>例如，Rust 结构体需要保存 Python 回调，等以后发生事件时再调用：<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>#[pyclass]
+struct Worker {
+    callback: Py&LTPyAny>,
+}
+</code></pre><p>调用时再绑定到当前 Python 上下文：<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>fn call(&self, py: Python<'_>) -> PyResult<()> {
+    self.callback.bind(py).call0()?;
+    Ok(())
+}
+</code></pre><p>这里的 <code>Py&LTT></code> 不是 Python 解释器本身，也不是 Rust 获得了 Python 对象数据的所有权，而是 Rust 持有一个由 Python 解释器管理的对象引用。<p>如果只需要当前调用中的临时访问，则使用：<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>fn read_data(data: &Bound<'_, PyDict>) -> usize {
+    data.len()
+}
+</code></pre><h2 id=wu-rang-python-ti-gong-rust-trait-suo-xu-de-ye-wu-luo-ji>五、让 Python 提供 Rust Trait 所需的业务逻辑</h2><p>Rust 可以定义 Trait 和业务流程，但让 Python 对象提供具体实现。此时，Rust wrapper 保存 Python 对象的引用，并实现 Rust 所需的 Trait；Trait 方法被调用时，wrapper 再把调用转发给 Python 对象的方法。<p>下面的例子中，Rust 定义 <code>Model</code> Trait 和泛型函数 <code>solve()</code>，Python 定义 <code>UserModel</code> 并实现具体的 <code>compute()</code> 逻辑。<pre class=language-python data-lang=python><code class=language-python data-lang=python>class UserModel:
+    def compute(self, value):
+        return value * 2
+
+model = UserModel()
+assert calc.solve(model, 10.0) == 20.0
+</code></pre><p>Python 调用 <code>calc.solve()</code> 时，传入的 <code>model</code> 是一个 <code>UserModel</code> 实例。Rust 对外暴露的函数接收这个对象，并将它保存到 wrapper 中：<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::prelude::*;
+
+trait Model {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult&LTf64>;
+}
+
+struct UserModelWrapper {
+    model: Py&LTPyAny>,
+}
+
+impl Model for UserModelWrapper {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult&LTf64> {
+        self.model
+            .bind(py)
+            .call_method1("compute", (value,))?
+            .extract()
+    }
+}
+
+fn solve_model&LTM: Model>(py: Python<'_>, model: &M, value: f64) -> PyResult&LTf64> {
+    model.compute(py, value)
+}
+
+#[pyfunction(name = "solve")]
+fn solve_wrapper(py: Python<'_>, model: Py&LTPyAny>, value: f64) -> PyResult&LTf64> {
+    let wrapper = UserModelWrapper { model };
+    solve_model(py, &wrapper, value)
+}
+
+#[pymodule]
+fn calc(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(solve_wrapper, m)?)?;
+    Ok(())
+}
+</code></pre><p>完整调用链是：<pre class=language-text data-lang=text><code class=language-text data-lang=text>Python 创建 UserModel 实例
+    → Python 调用 calc.solve(model, 10.0)
+    → PyO3 将 model 接收到 solve_wrapper 的 Py&LTPyAny> 参数
+    → Rust 创建 UserModelWrapper，并保存 Python 对象的引用
+    → solve_model() 按 Model Trait 调用 wrapper.compute()
+    → wrapper.bind(py) 获得当前调用中的 Bound<'py, PyAny>
+    → call_method1("compute", (10.0,)) 调用 Python 的 model.compute(10.0)
+    → Python 返回 20.0
+    → extract() 将返回值转换为 Rust 的 f64
+    → solve_wrapper 返回 PyResult&LTf64>
+    → Python 得到 20.0
+</code></pre><p>这里没有把 <code>UserModel</code> 转换为等价的 Rust 结构体。<code>UserModelWrapper</code> 只是一个代理：Rust 通过它满足自己的 Trait 约束，但具体的 <code>compute()</code> 逻辑仍由 Python 执行。<h2 id=liu-jiang-python-dui-xiang-jie-gou-zhuan-huan-wei-rust-lei-xing-shi-yong-yi-you-de-rust-trait-shi-xian>六、将 Python 对象结构转换为 Rust 类型，使用已有的 Rust Trait 实现</h2><p>Python 对象不能直接变成 Rust 的 <code>Box&LTdyn Evaluatable></code>。当 Python 负责组合对象，而 Rust 已有一套 trait 业务逻辑时，可以使用三层结构：<ul><li><strong>Rust 原生类型</strong>：实现 Trait，负责业务逻辑；<li><strong>PyO3 包装类型</strong>：注册为 Python 类，负责让 Python 构造对象结构；<li><strong>转换函数</strong>：遍历 Python 对象树，重建 Rust trait object 树。</ul><p>调用链如下：<pre class=language-text data-lang=text><code class=language-text data-lang=text>Python 构造 PyAdd、PyVar、PyConst 对象树
+    → Python 调用表达式对象的 evaluate()
+    → Rust 接收 Python 对象树
+    → to_evaluatable() 按具体类型递归读取对象
+    → PyAdd、PyVar、PyConst 转换为 AddExpr、VarExpr、ConstExpr
+    → 形成 Rust 原生表达式树
+    → 调用已有的 Evaluatable::evaluate()
+    → 结果返回 Python
+</code></pre><p>这里同时出现两个不同层次的转换操作：<code>vars.extract()</code> 是 PyO3 提供的对象方法；<code>to_evaluatable(py, obj)</code> 是本文定义的普通函数，负责按表达式树规则递归转换对象。<h3 id=1-rust-trait-yu-yuan-sheng-lei-xing>1. Rust Trait 与原生类型</h3><pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use std::collections::HashMap;
+
+pub trait Evaluatable: Send + Sync {
+    fn evaluate(&self, vars: &HashMap&LTString, f64>) -> Result&LTf64, String>;
+}
+
+pub struct ConstExpr {
+    pub value: f64,
+}
+
+pub struct VarExpr {
+    pub name: String,
+}
+
+pub struct AddExpr {
+    pub left: Box&LTdyn Evaluatable>,
+    pub right: Box&LTdyn Evaluatable>,
+}
+
+impl Evaluatable for ConstExpr {
+    fn evaluate(&self, _: &HashMap&LTString, f64>) -> Result&LTf64, String> {
+        Ok(self.value)
+    }
+}
+
+impl Evaluatable for VarExpr {
+    fn evaluate(&self, vars: &HashMap&LTString, f64>) -> Result&LTf64, String> {
+        vars.get(&self.name)
+            .copied()
+            .ok_or_else(|| format!("Undefined: {}", self.name))
+    }
+}
+
+impl Evaluatable for AddExpr {
+    fn evaluate(&self, vars: &HashMap&LTString, f64>) -> Result&LTf64, String> {
+        Ok(self.left.evaluate(vars)? + self.right.evaluate(vars)?)
+    }
+}
+</code></pre><blockquote><p><strong>示例说明</strong>：这里的 <code>Send + Sync</code> 是 <code>Evaluatable</code> 这个业务 trait 自己声明的并发约束，不是 PyO3 的通用要求。只有当这些表达式对象需要在线程之间安全传递或共享时，才需要保留它。</blockquote><h3 id=2-pyo3-bao-zhuang-lei-xing-yu-zhuan-huan-qiao>2. PyO3 包装类型与转换桥</h3><p>包装类型注册为 Python 类，转换函数则按具体类型检查对象并递归构建 Rust 对象树：<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::exceptions::{PyRuntimeError, PyTypeError};
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+#[pyclass(name = "Const")]
+pub struct PyConst {
+    #[pyo3(get)]
+    pub value: f64,
+}
+
+#[pymethods]
+impl PyConst {
+    #[new]
+    fn new(value: f64) -> Self {
+        Self { value }
+    }
+}
+
+#[pyclass(name = "Var")]
+pub struct PyVar {
+    #[pyo3(get)]
+    pub name: String,
+}
+
+#[pymethods]
+impl PyVar {
+    #[new]
+    fn new(name: &str) -> Self {
+        Self { name: name.into() }
+    }
+}
+
+#[pyclass(name = "Add")]
+pub struct PyAdd {
+    #[pyo3(get)]
+    pub left: Py&LTPyAny>,
+    #[pyo3(get)]
+    pub right: Py&LTPyAny>,
+}
+
+#[pymethods]
+impl PyAdd {
+    #[new]
+    fn new(left: Py&LTPyAny>, right: Py&LTPyAny>) -> Self {
+        Self { left, right }
+    }
+
+    fn evaluate(&self, py: Python<'_>, vars: &Bound<'_, PyDict>) -> PyResult&LTf64> {
+        let vars: HashMap&LTString, f64> = vars.extract()?;
+        AddExpr {
+            left: to_evaluatable(py, &self.left)?,
+            right: to_evaluatable(py, &self.right)?,
+        }
+        .evaluate(&vars)
+        .map_err(PyRuntimeError::new_err)
+    }
+}
+
+fn to_evaluatable(py: Python<'_>, obj: &Py&LTPyAny>) -> PyResult&LTBox&LTdyn Evaluatable>> {
+    let obj = obj.bind(py);
+
+    if let Ok(value) = obj.downcast::&LTPyConst>() {
+        return Ok(Box::new(ConstExpr {
+            value: value.borrow().value,
+        }));
+    }
+
+    if let Ok(value) = obj.downcast::&LTPyVar>() {
+        return Ok(Box::new(VarExpr {
+            name: value.borrow().name.clone(),
+        }));
+    }
+
+    if let Ok(value) = obj.downcast::&LTPyAdd>() {
+        let value = value.borrow();
+        return Ok(Box::new(AddExpr {
+            left: to_evaluatable(py, &value.left)?,
+            right: to_evaluatable(py, &value.right)?,
+        }));
+    }
+
+    Err(PyTypeError::new_err("Expected Const, Var, or Add"))
+}
+</code></pre><p>Python 侧构造表达式并求值：<pre class=language-python data-lang=python><code class=language-python data-lang=python>import calc
+
+x = calc.Var("x")
+y = calc.Var("y")
+expr = calc.Add(calc.Add(x, calc.Const(3.14)), y)
+
+assert expr.evaluate({"x": 10.0, "y": 5.0}) == 18.14
+</code></pre><p>这不是把 Rust trait 直接暴露给 Python，而是让 Python 包装类型充当接口，再转换成实现该 trait 的 Rust 对象。<p>PyO3 官方 Trait Bounds 教程解决的是另一类问题：让一个持有 Python 对象的 Rust wrapper 实现既有 Rust trait，再把这个 wrapper 传给带 trait bound 的泛型函数。它不讨论本文这种递归重建 <code>Box&LTdyn Trait></code> 对象树的方案。<h2 id=qi-chang-jian-keng-dian>七、常见坑点</h2><h3 id=1-bu-yao-hun-yao-py-t-yu-bound-py-t>1. 不要混淆 <code>Py&LTT></code> 与 <code>Bound<'py, T></code></h3><ul><li>需要让 Rust 保存一个 Python 对象，供以后再次读取或调用时，使用 <code>Py&LTT></code>；<li>已经处于 Python 上下文、只需当前访问时使用 <code>Bound<'py, T></code>；<li>从 <code>Py&LTT></code> 访问对象时，先通过 <code>bind(py)</code> 获得 <code>Bound<'py, T></code>。</ul><p>混淆这两种类型时，常见后果是：试图把带有临时生命周期的 <code>Bound<'py, T></code> 保存到长期存在的 Rust 结构体，或者忘记先调用 <code>bind(py)</code> 就直接访问 <code>Py&LTT></code>。<h3 id=2-python-yi-chang-xu-yao-ying-she>2. Python 异常需要映射</h3><p>Rust 业务层若返回 <code>Result&LTT, String></code>，不能直接成为理想的 Python 异常。应在边界处把错误映射为 <code>PyValueError</code>、<code>PyTypeError</code>、<code>PyRuntimeError</code> 等具体异常。<h3 id=3-gen-ju-shi-ji-lei-xing-xuan-ze-zhuan-huan-luo-ji>3. 根据实际类型选择转换逻辑</h3><p>当 Rust 收到的参数类型是 <code>Py&LTPyAny></code> 时，需要在运行时判断它具体是哪一种 Python 对象。不要通过读取 <code>__class__.__name__</code> 等类名字符串来判断，因为普通 Python 类也可能使用相同的名字。<p>如果只接受已知的 <code>#[pyclass]</code> 类型，应使用 <code>downcast::&LTPyConst>()</code>、<code>downcast::&LTPyVar>()</code> 等方式检查对象的实际 PyO3 类型，并为每种类型执行对应的转换逻辑。所有检查都失败时，再返回 <code>PyTypeError</code>。<h3 id=4-bang-ding-dai-ma-yu-da-bao-shi-liang-jian-shi>4. 绑定代码与打包是两件事</h3><p>PyO3 负责 Rust/Python 绑定；要把扩展模块构建成 Python 可安装的软件包，通常还需要 <code>maturin</code> 等构建工具。模块名、Cargo 配置和 Python 包布局必须保持一致。<h2 id=can-kao-lian-jie>参考链接</h2><ul><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs target=_blank>PyO3 官方文档</a><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs/v0.23.5/ target=_blank>PyO3 用户指南</a><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs/main/doc/pyo3/struct.Bound target=_blank>PyO3 Bound API</a><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs/v0.23.5/trait-bounds target=_blank>PyO3 Trait Bounds 教程</a><li><a rel="noopener nofollow noreferrer" href=https://docs.rs/pyo3/0.23.5/pyo3/ target=_blank>PyO3 docs.rs</a><li><a rel="noopener nofollow noreferrer" href=https://www.maturin.rs/ target=_blank>maturin 官方文档</a><li><a rel="noopener nofollow noreferrer" href=https://doc.rust-lang.org/reference/types/trait-object.html target=_blank>Rust Trait Object</a></ul></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#yi-ba-rust-han-shu-bao-lu-gei-python>一、把 Rust 函数暴露给 Python</a><li><a href=#er-ba-rust-jie-gou-ti-bao-lu-wei-python-lei>二、把 Rust 结构体暴露为 Python 类</a><li><a href=#san-jiang-python-shu-ju-zhuan-huan-wei-rust-lei-xing>三、将 Python 数据转换为 Rust 类型</a><li><a href=#si-zai-rust-zhong-bao-cun-python-dui-xiang>四、在 Rust 中保存 Python 对象</a><li><a href=#wu-rang-python-ti-gong-rust-trait-suo-xu-de-ye-wu-luo-ji>五、让 Python 提供 Rust Trait 所需的业务逻辑</a><li><a href=#liu-jiang-python-dui-xiang-jie-gou-zhuan-huan-wei-rust-lei-xing-shi-yong-yi-you-de-rust-trait-shi-xian>六、将 Python 对象结构转换为 Rust 类型，使用已有的 Rust Trait 实现</a> <ul><li><a href=#1-rust-trait-yu-yuan-sheng-lei-xing>1. Rust Trait 与原生类型</a><li><a href=#2-pyo3-bao-zhuang-lei-xing-yu-zhuan-huan-qiao>2. PyO3 包装类型与转换桥</a></ul><li><a href=#qi-chang-jian-keng-dian>七、常见坑点</a> <ul><li><a href=#1-bu-yao-hun-yao-py-t-yu-bound-py-t>1. 不要混淆 Py&LTT> 与 Bound<'py, T></a><li><a href=#2-python-yi-chang-xu-yao-ying-she>2. Python 异常需要映射</a><li><a href=#3-gen-ju-shi-ji-lei-xing-xuan-ze-zhuan-huan-luo-ji>3. 根据实际类型选择转换逻辑</a><li><a href=#4-bang-ding-dai-ma-yu-da-bao-shi-liang-jian-shi>4. 绑定代码与打包是两件事</a></ul><li><a href=#can-kao-lian-jie>参考链接</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>版权声明：</strong> 本文采用 <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh rel=noopener target=_blank>CC BY-NC-SA 4.0</a> 协议进行许可。转载请注明出处！</div></footer><section class=comments id=comments><h2>评论</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=zh-CN data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=next href=https://cncsmonster.github.io/posts/ppt-master-skill-internals/>PPT Master Skill 深度调研：从 SVG 中转、网页可视化批注到原生可编辑 PPTX →</a></nav></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(()=>{let j=1,m=`block`,k=``,l=`none`,i=0,h=null;var e=((a,b)=>{if(!a)return k;const c=new RegExp(`(`+ f(b)+ `)`,`gi`);return a.replace(c,`<mark>\$1</mark>`)});var g=(()=>{c();d()});var f=(a=>a.replace(/[.*+?^${}()|[\]\\]/g,`\\\\\$&`));var d=(()=>{const b=document.getElementById(`search-input`);const d=document.getElementById(`search-results`);if(!b||!d)return;let f=h;b.addEventListener(`input`,function(){const b=this.value.trim();if(b.length===i){d.innerHTML=k;d.style.display=l;return};clearTimeout(f);f=setTimeout(()=>{if(!a&&!c()){d.innerHTML=`<li class="no-results">搜索加载中...</li>`;d.style.display=m;return};const f=a.search(b);const g=10;if(f.length===i){d.innerHTML=`<li class="no-results">未找到相关结果</li>`}else{d.innerHTML=f.slice(i,g).map(a=>{const c=a.item;const d=e(c.title,b);const f=c.description?e(c.description,b):k;return `<li class="search-result"><a href="`+ c.path+ `"><h4>`+ d+ `</h4>`+ (f?`<p>`+ f+ `</p>`:k)+ `</a></li>`}).join(k)};d.style.display=m},150)});document.addEventListener(`click`,(a=>{if(!a.target.closest(`.search-container`)){d.style.display=l}}))});var c=(()=>{if(a)return !0;if(!b||b.length===i){console.warn(`搜索索引为空`);return !1};try{const c={includeScore:!1,includeMatches:!0,ignoreLocation:!0,threshold:0.15,minMatchCharLength:j,keys:[{name:`title`,weight:3},{name:`description`,weight:2},{name:`body`,weight:j},{name:`path`,weight:0.5}]};a=new Fuse(b,c);console.log(`搜索初始化成功，条目数:`,b.length);return !0}catch(a){console.error(`Fuse 初始化失败:`,a);return !1}});let a=h;const b=window.searchIndex||[];if(document.readyState===`loading`){document.addEventListener(`DOMContentLoaded`,g)}else{g()}})()</script>

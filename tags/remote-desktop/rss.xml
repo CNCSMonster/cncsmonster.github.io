@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Remote Desktop</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/remote-desktop/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sat, 20 Jun 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>WSL2 + xrdp + XFCE 桌面方案踩坑记录</title>
+          <pubDate>Sat, 20 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/wsl2-xrdp-xfce-desktop/</link>
+          <guid>https://cncsmonster.github.io/posts/wsl2-xrdp-xfce-desktop/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/wsl2-xrdp-xfce-desktop/">&lt;p&gt;WSL2 能不能当一台带桌面的 Linux 服务器用？试了 xrdp + XFCE 这条路，结论是&lt;strong&gt;走不通&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 不是为完整桌面设计的&lt;&#x2F;strong&gt; — 微软设计 WSLg 是为了运行单个 GUI 应用，不是给你一台桌面服务器&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;xrdp 假设真实 Linux 服务器环境&lt;&#x2F;strong&gt; — WSL2 没有真实显示硬件、VT、固定网络&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;下面是完整的踩坑记录。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;cai-keng-shi-jian-xian&quot;&gt;踩坑时间线&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;cha-qu-xrdp-bang-ding-di-zhi-pei-cuo-liao&quot;&gt;插曲：xrdp 绑定地址配错了&lt;&#x2F;h3&gt;
+&lt;p&gt;直觉地写了 &lt;code&gt;address=127.0.0.1&lt;&#x2F;code&gt;，但这个版本的 xrdp 通过 &lt;code&gt;port=&lt;&#x2F;code&gt; 控制绑定地址，&lt;code&gt;address=&lt;&#x2F;code&gt; 不生效。改成 &lt;code&gt;port=tcp:&#x2F;&#x2F;.:3389&lt;&#x2F;code&gt; 解决。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;keng-1-lian-jie-hou-hei-ping-huo-hui-hua-li-ji-tui-chu&quot;&gt;坑 1：连接后黑屏或会话立即退出&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;原因&lt;&#x2F;strong&gt;：WSLg 设置了 &lt;code&gt;WAYLAND_DISPLAY=wayland-0&lt;&#x2F;code&gt;，XFCE&#x2F;GTK 组件优先尝试 Wayland，但 xrdp 只提供 X11。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：在 &lt;code&gt;&#x2F;etc&#x2F;xrdp&#x2F;startwm.sh&lt;&#x2F;code&gt; 中清除 Wayland 变量：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;unset WAYLAND_DISPLAY
+export GDK_BACKEND=x11
+export QT_QPA_PLATFORM=xcb
+export SDL_VIDEODRIVER=x11
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;&#x2F;etc&#x2F;xrdp&#x2F;startwm.sh&lt;&#x2F;code&gt; 是 xrdp 安装后自带的会话启动脚本，用户通过 RDP 连接时由 xrdp 调用，相当于 xrdp 版的 &lt;code&gt;.xinitrc&lt;&#x2F;code&gt;。在普通 Linux 服务器上不需要修改，这里是为了清除 WSLg 注入的 Wayland 变量。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;keng-2-gao-fen-ping-xia-zhuo-mian-yuan-su-tai-xiao&quot;&gt;坑 2：高分屏下桌面元素太小&lt;&#x2F;h3&gt;
+&lt;p&gt;测试环境：2880x1800 屏幕，Windows 缩放 200%。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;尝试过的路&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;mstsc 分辨率降到 1440x900 → 桌面缩小，周围有黑边&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GDK_SCALE=2&lt;&#x2F;code&gt; 全局缩放 → XFCE 直接崩溃&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;最终妥协&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;GDK_DPI_SCALE=1.5&lt;&#x2F;code&gt; 只放大字体（&lt;code&gt;GDK_SCALE&lt;&#x2F;code&gt; 会改变窗口大小，XFCE 承受不住）&lt;&#x2F;li&gt;
+&lt;li&gt;面板 &lt;code&gt;icon-size&lt;&#x2F;code&gt; 从默认 16 改为 48&lt;&#x2F;li&gt;
+&lt;li&gt;面板高度调到 64&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;keng-3-home-wen-jian-jia-da-bu-kai&quot;&gt;坑 3：HOME 文件夹打不开&lt;&#x2F;h3&gt;
+&lt;p&gt;报错：&lt;code&gt;获取文件信息时出错 &quot;&#x2F;home&#x2F;...&#x2F;thinclient_drives&quot;：传输端点未连接。&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;原因&lt;&#x2F;strong&gt;：xrdp 的驱动器重定向功能在 home 目录下创建 FUSE 挂载点 &lt;code&gt;thinclient_drives&lt;&#x2F;code&gt;，断开连接后没有自动卸载。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo umount -l &amp;#x2F;home&amp;#x2F;&amp;lt;username&amp;gt;&amp;#x2F;thinclient_drives
+sudo rm -rf &amp;#x2F;home&amp;#x2F;&amp;lt;username&amp;gt;&amp;#x2F;thinclient_drives
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;xue-dao-de-dong-xi&quot;&gt;学到的东西&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;WSLg 的 &lt;code&gt;WAYLAND_DISPLAY&lt;&#x2F;code&gt; 会污染 X11 会话，远程桌面必须手动清除&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GDK_SCALE&lt;&#x2F;code&gt; 和 &lt;code&gt;GDK_DPI_SCALE&lt;&#x2F;code&gt; 有本质区别：前者改变窗口大小，后者只放大字体&lt;&#x2F;li&gt;
+&lt;li&gt;XFCE 面板图标大小由 &lt;code&gt;icon-size&lt;&#x2F;code&gt; 单独控制，和面板高度无关&lt;&#x2F;li&gt;
+&lt;li&gt;xrdp 的 &lt;code&gt;thinclient_drives&lt;&#x2F;code&gt; 在 WSL 下容易残留&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

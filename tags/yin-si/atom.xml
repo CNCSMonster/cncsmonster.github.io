@@ -1,0 +1,890 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 隐私</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/yin-si/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-17T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/yin-si/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Google Antigravity 会用我的代码训练模型吗？条款分析</title>
+        <published>2026-07-17T00:00:00+08:00</published>
+        <updated>2026-07-17T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/google-antigravity-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/google-antigravity-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/google-antigravity-data-training-policy/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;一句话：个人用户（含 AI Pro 订阅）默认按“可能用于训练“处理。条款明确写了用于机器学习技术，Telemetry 开关的法律效力有争议。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我通过 Google Antigravity CLI（命令 &lt;code&gt;agy&lt;&#x2F;code&gt;）或 Antigravity IDE 使用 Gemini 模型写代码，我的代码、提示词和交互数据会不会被用于训练模型？&lt;&#x2F;p&gt;
+&lt;p&gt;这是 2026 年 5 月新发布的工具，替代了之前的 Gemini CLI。它走的是消费者管道（Google 账号 OAuth 登录），不是 Gemini API 管道——所以之前“开 Cloud Billing 就不训练“的结论&lt;strong&gt;不适用&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xian-kan-jie-lun&quot;&gt;先看结论&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;用户身份&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;数据会被收集吗？&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;会被用于训练吗？&lt;&#x2F;th&gt;&lt;th&gt;Opt-out 机制&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;个人 Google 账户（免费&#x2F;AI Pro）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 默认收集&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 可能用于训练&lt;&#x2F;td&gt;&lt;td&gt;无明确机制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;个人 Google 账户 + Telemetry 关闭&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 声称停止收集&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 声称不会&lt;&#x2F;td&gt;&lt;td&gt;设置面板关闭（有争议）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Workspace（标准付费）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 收集（安全监控）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 明确承诺不训练&lt;&#x2F;td&gt;&lt;td&gt;无需操作&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Workspace AI Ultra for Business&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 收集（安全监控）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 明确不训练&lt;&#x2F;td&gt;&lt;td&gt;无需操作&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;实用建议：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;个人用户：按“会训练“处理。&lt;&#x2F;strong&gt; 条款明确写了用于机器学习技术，Telemetry 开关的法律效力有争议。敏感代码不要输入。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业用户：走 Workspace。&lt;&#x2F;strong&gt; 标准付费即可享受“不训练“承诺。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;需要 API 调用：用 Gemini API + Cloud Billing。&lt;&#x2F;strong&gt; 条款明确不用于改进产品。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;tiao-kuan-zen-me-shuo&quot;&gt;条款怎么说&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;antigravity-fu-jia-tiao-kuan-ming-que-xie-liao-yong-yu-ml&quot;&gt;Antigravity 附加条款：明确写了用于 ML&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;antigravity.google&#x2F;terms&quot;&gt;Google Antigravity Additional Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“When you use the Service, we record and store your user data, interaction data pertaining to your usage of the Service, related metadata connected to the Service, and any feedback you provide (‘Interactions’).”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We use Interactions to evaluate, develop, and improve Google and Alphabet research, products, services and &lt;strong&gt;machine learning technologies&lt;&#x2F;strong&gt;.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;条款明确说了用于“机器学习技术“。“Interactions“包括提示词、代码、代码库上下文、元数据。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;telemetry-kai-guan-wei-yi-de-opt-out-ji-zhi-dan-you-zheng-yi&quot;&gt;Telemetry 开关：唯一的 opt-out 机制，但有争议&lt;&#x2F;h3&gt;
+&lt;p&gt;条款页面的 opt-out 表述：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“If you don’t want your Interactions used in this way, &lt;strong&gt;navigate to settings&lt;&#x2F;strong&gt; to change your preference on how such data is used.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;注意：条款原文只说了“navigate to settings“，没有提到“Enable Telemetry“这个具体名称。有论坛用户在&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;urgent-data-deletion-opt-out-request-ignored-missing-privacy-settings&#x2F;121602&quot;&gt;讨论帖&lt;&#x2F;a&gt;中引用了 Abhijit Pramanik 的回复：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“The primary mechanism for managing usage data collection is the ‘Enable telemetry’ setting. When this option is disabled, it stops the collection of interactions data…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;（注：Abhijit Pramanik 是论坛活跃用户，其回复不代表 Google 官方立场。）&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;但社区质疑这个逻辑：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;条款说的是“开启时会收集“（When toggled on, collects…），但&lt;strong&gt;没有明确说&lt;&#x2F;strong&gt;“关闭时不收集”。“开启时做 X” 不等于 “关闭时不做 X”——这是一个法律效力的缺口。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;antigravity-data-training-opt-out&#x2F;125236&quot;&gt;Google Antigravity 论坛 - Telemetry opt-out 讨论&lt;&#x2F;a&gt;、&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;how-can-i-completely-opt-out-of-the-use-of-my-data-for-model-training&#x2F;168429&quot;&gt;完全 opt-out 讨论&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;workspace-yong-hu-ming-que-bu-xun-lian&quot;&gt;Workspace 用户：明确不训练&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;knowledge.workspace.google.com&#x2F;admin&#x2F;gemini&#x2F;generative-ai-in-google-workspace-privacy-hub&quot;&gt;Generative AI in Google Workspace Privacy Hub&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“No. User prompts are considered customer data under the Cloud Data Processing Addendum. Workspace does not use customer data to train models without prior customer permission or direction.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Workspace 标准付费版就有这个保护，不需要额外的 Ultra 订阅。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yu-gemini-api-de-guan-dao-dui-bi&quot;&gt;与 Gemini API 的管道对比&lt;&#x2F;h2&gt;
+&lt;p&gt;Antigravity CLI 走的是&lt;strong&gt;消费者管道&lt;&#x2F;strong&gt;（Google 账号 OAuth 登录），不是 Gemini API 管道。这意味着它&lt;strong&gt;不适用&lt;&#x2F;strong&gt; Gemini API 的 Paid&#x2F;Unpaid 二分法。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;管道&lt;&#x2F;th&gt;&lt;th&gt;适用条款&lt;&#x2F;th&gt;&lt;th&gt;数据训练&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API + Cloud Billing&lt;&#x2F;td&gt;&lt;td&gt;Gemini API Paid Services 条款&lt;&#x2F;td&gt;&lt;td&gt;❌ 不用于改进产品&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API 免费 Key&lt;&#x2F;td&gt;&lt;td&gt;Gemini API Unpaid Services 条款&lt;&#x2F;td&gt;&lt;td&gt;✅ 用于改进产品&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Antigravity CLI&#x2F;IDE（consumer）&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Antigravity 附加条款&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;⚠️ 可能用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini App（网页&#x2F;手机）&lt;&#x2F;td&gt;&lt;td&gt;Google 普通隐私政策 + Gemini Apps Activity&lt;&#x2F;td&gt;&lt;td&gt;取决于 Keep Activity 开关&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;anthropic-ce-de-e-wai-bao-hu&quot;&gt;Anthropic 侧的额外保护&lt;&#x2F;h2&gt;
+&lt;p&gt;Antigravity 后端也使用 Claude 模型（Claude Sonnet 4.6、Claude Opus 4.6）。Anthropic 的商业条款提供额外保护层：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“Anthropic may not train models on Customer Content from Services.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“Customer Content is Customer’s Confidential Information.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;这意味着当 Antigravity 路由到 Claude 模型时，Anthropic 侧承诺不训练。但 Google 侧的数据收集仍受 Antigravity 条款管辖。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;tou-ming-du-que-kou&quot;&gt;透明度缺口&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;问题&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;严重程度&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Telemetry 开关的法律效力不明确&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🔴 高&lt;&#x2F;td&gt;&lt;td&gt;“开启时收集” ≠ “关闭时不收集”，Google 未明确修正&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;“Interactions” 是否包含本地代码库&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 中&lt;&#x2F;td&gt;&lt;td&gt;社区要求澄清，Google 未正面回答&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;数据留存期限&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 中&lt;&#x2F;td&gt;&lt;td&gt;条款说“可以删除“，但未说自动保留多久&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;安装时强制同意&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 中&lt;&#x2F;td&gt;&lt;td&gt;安装 Antigravity 2.0 时必须同意数据收集才能继续&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;默认按“会训练“处理&lt;&#x2F;strong&gt; — 条款明确写了用于机器学习技术，Telemetry 开关的法律效力有争议。在未确认 opt-out 生效前，不要假设数据是安全的&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;敏感代码：不要输入&lt;&#x2F;strong&gt; — 涉及商业机密&#x2F;私有仓库的代码不要通过 Antigravity consumer 入口处理&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;关闭 Telemetry（聊胜于无）&lt;&#x2F;strong&gt; — 设置面板 → Account → Enable Telemetry → 关闭。法律效力有争议，但可能是账号级 opt-out 的触发入口&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业用户：走 Workspace&lt;&#x2F;strong&gt; — Workspace 账户有明确的“不训练“承诺（标准付费即可）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;替代方案：Gemini API + Cloud Billing&lt;&#x2F;strong&gt; — 如果只需要 API 调用，在 Google Cloud 开 Billing 后用 Gemini API，条款明确不用于改进产品&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;antigravity.google&#x2F;terms&quot;&gt;Google Antigravity Additional Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;policies.google.com&#x2F;terms&quot;&gt;Google Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;policies.google.com&#x2F;privacy&quot;&gt;Google Privacy Policy&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;ai.google.dev&#x2F;gemini-api&#x2F;terms&quot;&gt;Gemini API Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;knowledge.workspace.google.com&#x2F;admin&#x2F;gemini&#x2F;generative-ai-in-google-workspace-privacy-hub&quot;&gt;Generative AI in Google Workspace Privacy Hub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;workspace.google.com&#x2F;blog&#x2F;product-announcements&#x2F;google-ai-ultra-for-business&quot;&gt;Google Workspace Blog - AI Ultra for Business 公告&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.anthropic.com&#x2F;legal&#x2F;commercial-terms&quot;&gt;Anthropic Commercial Terms&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;antigravity-data-training-opt-out&#x2F;125236&quot;&gt;Google Antigravity 论坛 - Telemetry opt-out 讨论&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;&lt;em&gt;本文是 &lt;a href=&quot;..&#x2F;google-model-service-data-privacy&quot;&gt;Google 模型服务数据隐私调研&lt;&#x2F;a&gt; 的补充，聚焦 Antigravity CLI&#x2F;IDE 这个新管道。&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>LLM Provider 数据训练政策横向对比</title>
+        <published>2026-07-02T00:00:00+08:00</published>
+        <updated>2026-07-02T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/llm-data-policy-comparison/"/>
+        <id>https://cncsmonster.github.io/posts/llm-data-policy-comparison/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/llm-data-policy-comparison/">&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;已调研的 7 家厂商中，&lt;strong&gt;小米最透明&lt;&#x2F;strong&gt;（隐私政策逐字承诺不训练），&lt;strong&gt;智谱团队版和企业合同次之&lt;&#x2F;strong&gt;，&lt;strong&gt;StepFun 和 DeepSeek 最模糊&lt;&#x2F;strong&gt;（条款沉默）。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;quan-mao-yi-lan&quot;&gt;全貌一览&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;API 服务&lt;&#x2F;th&gt;&lt;th&gt;数据训练政策&lt;&#x2F;th&gt;&lt;th&gt;Opt-out&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;可信度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiMo API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;隐私政策逐字承诺 “will not use for training”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;明确承诺不用于训练&lt;&#x2F;strong&gt;（专用条款）&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;个人版 Coding Plan&lt;&#x2F;td&gt;&lt;td&gt;🟡 通用条款允许脱敏后训练&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;按量付费 API&lt;&#x2F;td&gt;&lt;td&gt;🟡 通用条款允许脱敏后训练&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;C 端订阅 &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;🔶 &lt;strong&gt;中文版默认训练&lt;&#x2F;strong&gt;，英文版可邮件 opt-out&lt;&#x2F;td&gt;&lt;td&gt;🌐 英文可&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API（国际）&lt;&#x2F;td&gt;&lt;td&gt;🟡 &lt;strong&gt;ToS 授权改进服务&lt;&#x2F;strong&gt;，未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API（国内）&lt;&#x2F;td&gt;&lt;td&gt;🟡 未明确声明用于训练，但未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;条款沉默&lt;&#x2F;strong&gt;，没说会也没说不会&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Step Plan &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;条款沉默&lt;&#x2F;strong&gt;，保留 “improve the Services”&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Gemini API（Cloud 付费）&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Gemini API（免费&#x2F;消费者）&lt;&#x2F;td&gt;&lt;td&gt;🔶 &lt;strong&gt;默认训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;an-ti-dui-fen-zu&quot;&gt;按梯队分组&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;green-circle-ke-xin-lai-ming-que-cheng-nuo-bu-xun-lian&quot;&gt;🟢 可信赖（明确承诺不训练）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;承诺形式&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;小米 MiMo&lt;&#x2F;td&gt;&lt;td&gt;隐私政策逐字承诺&lt;&#x2F;td&gt;&lt;td&gt;国内版：“未经您的事先同意不会用于训练”；国际版：“will not use for training or any other purposes”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;智谱 团队版&lt;&#x2F;td&gt;&lt;td&gt;套餐购买协议专用条款&lt;&#x2F;td&gt;&lt;td&gt;“数据默认不用于模型训练”，具有合同法律效力&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Cloud 管道&lt;&#x2F;td&gt;&lt;td&gt;企业条款&lt;&#x2F;td&gt;&lt;td&gt;开了 Cloud Billing 的 API &#x2F; Vertex AI 不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;yellow-circle-mo-hu-di-dai-wei-ming-que-pai-chu&quot;&gt;🟡 模糊地带（未明确排除）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;风险点&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;智谱 个人版&#x2F;按量付费&lt;&#x2F;td&gt;&lt;td&gt;通用协议授权“永久不可撤销“数据使用权 + 脱敏后可用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiniMax&lt;&#x2F;td&gt;&lt;td&gt;国际版 ToS 保留 “improve the Services”；国内版条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 英文版&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练，但可邮件 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;red-circle-gao-feng-xian-mo-ren-xun-lian-huo-chen-mo&quot;&gt;🔴 高风险（默认训练或沉默）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;风险点&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 中文版&lt;&#x2F;td&gt;&lt;td&gt;C 端和 API 都默认用于训练，无 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek API&lt;&#x2F;td&gt;&lt;td&gt;条款完全沉默，未承诺不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;StepFun API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;英文 ToS 保留 “improve the Services”，国内条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google 免费&#x2F;消费者管道&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;guan-jian-chai-yi-wei-du&quot;&gt;关键差异维度&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;opt-out-neng-li&quot;&gt;Opt-out 能力&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ 可 opt-out&lt;&#x2F;th&gt;&lt;th&gt;❌ 无 opt-out&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 英文版（邮件）&lt;&#x2F;td&gt;&lt;td&gt;智谱（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek Web&#x2F;App（开关）&lt;&#x2F;td&gt;&lt;td&gt;Kimi 中文版（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiniMax（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;StepFun（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;guo-ji-ban-vs-guo-nei-ban-chai-yi&quot;&gt;国际版 vs 国内版差异&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;差异&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;国际版 z.ai 对 API 客户声称不存储（DPA），国内版授权永久使用权&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;英文版可邮件 opt-out，中文版无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;国际版 ToS 明确授权训练，国内版条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;两版措辞类似，国际版覆盖更广（“content” 含多模态）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;fang-fa-lun-shuo-ming&quot;&gt;方法论说明&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;所有结论基于各厂商的&lt;strong&gt;公开协议原文&lt;&#x2F;strong&gt;，不是营销文案或客服口径&lt;&#x2F;li&gt;
+&lt;li&gt;效力层级：专用合同 &amp;gt; 服务专用条款 &amp;gt; 通用用户协议 &amp;gt; 隐私政策&lt;&#x2F;li&gt;
+&lt;li&gt;“条款沉默” = 协议中找不到明确排除训练的表述&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;ge-han-shang-xiang-xi-diao-yan&quot;&gt;各厂商详细调研&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;完整调研&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;小米 MiMo&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;xiaomi-mimo-token-plan-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;智谱 GLM&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;zhipu-glm-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;google-model-service-data-privacy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;deepseek-api-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;StepFun&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;stepfun-step-plan-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiniMax&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;minimax-api-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Kimi&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;kimi-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>智谱AI GLM 全线产品数据策略调研</title>
+        <published>2026-07-01T00:00:00+08:00</published>
+        <updated>2026-07-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/zhipu-glm-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/zhipu-glm-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/zhipu-glm-data-training-policy/">&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;智谱 GLM 的数据政策&lt;strong&gt;不能笼统概括&lt;&#x2F;strong&gt;，按产品分档区别对待：&lt;strong&gt;团队版明确承诺“数据不用于训练“&lt;&#x2F;strong&gt;；个人版和按量付费走通用条款，允许&lt;strong&gt;脱敏后&lt;&#x2F;strong&gt;用于模型训练，且无 opt-out。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-san-chong-chan-pin-shi-shen-me&quot;&gt;一、三种产品是什么&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;产品&lt;&#x2F;th&gt;&lt;th&gt;场景定义&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;个人版 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;个人开发者用 AI 编码工具写代码&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;团队版 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;团队协作编码，企业场景&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;按量付费 API&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;自建应用、SaaS、网站、机器人等任何场景&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;📎 计费&#x2F;额度&#x2F;使用限制详见：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;bigmodel.cn&#x2F;pricing&quot;&gt;产品价格页&lt;&#x2F;a&gt; &#x2F; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;overview&quot;&gt;套餐概览&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-san-chong-chan-pin-shu-ju-zheng-ce-dui-bi&quot;&gt;二、三种产品数据政策对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;政策维度&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;团队版 Coding Plan&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;个人版 Coding Plan&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;按量付费 API&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;“不用于训练” 明确承诺&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 有&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;通用协议“优化产品服务“&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 被专用条款覆盖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;通用协议“永久不可撤销授权“&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 被专用条款覆盖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;隐私政策“脱敏数据训练“&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 被专用条款覆盖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;数据隔离&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 有资源隔离承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;无明确承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;无明确承诺&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;效力层级&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;专用条款优先&lt;&#x2F;strong&gt;：团队版《团队套餐购买协议》明确将“数据默认不用于模型训练“列为套餐内容，且协议声明“官方公布的各项业务规范与正文具备相同的约束力“，因此该承诺&lt;strong&gt;具有法律效力&lt;&#x2F;strong&gt;，优先于通用用户协议&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;通用条款兜底&lt;&#x2F;strong&gt;：个人版和按量付费没有专用条款，完全受通用用户协议和隐私政策约束&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;合同最优先&lt;&#x2F;strong&gt;：企业可签署独立合同，在合同中约定数据使用条款（最高法律效力）&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;&lt;strong&gt;注意事项&lt;&#x2F;strong&gt;：团队版措辞是“&lt;strong&gt;默认&lt;&#x2F;strong&gt;不用于“，暗示可能存在例外情形（如用户主动授权）。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-guan-jian-zheng-ju&quot;&gt;三、关键证据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;3-1-tuan-dui-ban-quan-yi-ye-tuan-dui-ban-zhuan-yong&quot;&gt;3.1 团队版权益页（团队版专用）&lt;&#x2F;h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;“数据默认不用于模型训练 — 提交的代码、提示词、对话内容等不会用于模型训练，保护企业核心研发资产。”&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;team&quot;&gt;团队套餐权益页&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;这是智谱目前&lt;strong&gt;唯一&lt;&#x2F;strong&gt;明确承诺“不用于训练“的产品线。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-2-tong-yong-yong-hu-xie-yi-ge-ren-ban-an-liang-fu-fei-gong-xiang&quot;&gt;3.2 通用用户协议（个人版&#x2F;按量付费共享）&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;user-agreement&quot;&gt;用户协议&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“除执行您的服务要求外，不会进行任何未获授权的使用及披露。”&lt;&#x2F;em&gt; ✅&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“可能利用您使用…过程中产生的数据，&lt;strong&gt;定位、维护和优化我们的产品和服务&lt;&#x2F;strong&gt;。”&lt;&#x2F;em&gt; ⚠️&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“您同意授予我方在全世界范围内&lt;strong&gt;免费的、不可撤销的、永久有效的&lt;&#x2F;strong&gt;使用、复制、修改、发行和展示该等数据的权利。”&lt;&#x2F;em&gt; 🔴&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;解读&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Prompt 输入和模型调用数据可用于“优化产品和服务“（包括模型训练）&lt;&#x2F;li&gt;
+&lt;li&gt;用户授予了&lt;strong&gt;永久、不可撤销&lt;&#x2F;strong&gt;的数据使用权&lt;&#x2F;li&gt;
+&lt;li&gt;仅有“&lt;strong&gt;另有约定&lt;&#x2F;strong&gt;“（如企业合同）可豁免&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-3-tong-yong-yin-si-zheng-ce-ge-ren-ban-an-liang-fu-fei-gong-xiang&quot;&gt;3.3 通用隐私政策（个人版&#x2F;按量付费共享）&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;privacy-policy&quot;&gt;隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“平台可能会对获取的信息开展脱敏研究以优化业务，这明确包含了&lt;strong&gt;使用匿名数据进行机器学习或模型算法训练&lt;&#x2F;strong&gt;。”&lt;&#x2F;em&gt; 🔴&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;解读&lt;&#x2F;strong&gt;：通用条款采用的是**“脱敏后可用”**立场 — 不是直接拿原始数据训练，但脱敏&#x2F;匿名化处理后，平台保留用于模型训练的权利。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-4-z-ai-guo-ji-ban-yin-si-zheng-ce&quot;&gt;3.4 Z.ai 国际版隐私政策&lt;&#x2F;h3&gt;
+&lt;p&gt;⚠️ Z.ai 国际版&lt;strong&gt;区分用户类型&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;API 客户（企业&#x2F;开发者）&lt;&#x2F;strong&gt;：明确声称“&lt;strong&gt;不存储&lt;&#x2F;strong&gt;用户内容“——“processed in real-time… not saved on our servers”&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;普通用户&lt;&#x2F;strong&gt;：&lt;strong&gt;会存储&lt;&#x2F;strong&gt;——“We retain personal data for as long as it is needed… we retain it as long as you have an account”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;这与国内版（bigmodel.cn）用户协议授权“永久不可撤销使用权“形成对比，但两者都针对普通用户。详见 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.z.ai&#x2F;legal-agreement&#x2F;privacy-policy&quot;&gt;Z.ai 隐私政策&lt;&#x2F;a&gt;。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-5-zcode-yin-si-zheng-ce-zcode-z-ai&quot;&gt;3.5 ZCode 隐私政策（zcode.z.ai）&lt;&#x2F;h3&gt;
+&lt;p&gt;ZCode 是智谱提供的编码应用，其隐私政策提到会使用数据来 &lt;strong&gt;“train and improve our models”&lt;&#x2F;strong&gt;（训练和改善模型），与国内版立场一致。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-6-di-san-fang-diao-yan-bao-gao-2026-03&quot;&gt;3.6 第三方调研报告（2026-03）&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;yage.ai&#x2F;share&#x2F;ai-coding-data-policy-survey-20260309.html&quot;&gt;yage.ai 《AI 编程工具数据政策调研报告》&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;智谱 GLM &#x2F; CodeGeeX 标注：✅ 明确用于训练，基础套餐无 opt-out&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;是否用于训练&lt;&#x2F;th&gt;&lt;th&gt;能否 opt-out&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic Claude&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练（免费&#x2F;Pro）&lt;&#x2F;td&gt;&lt;td&gt;✅ 可 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GitHub Copilot&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;企业版不用于训练&lt;&#x2F;td&gt;&lt;td&gt;✅ 个人版可 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云百炼 Token Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;明确不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;百度千帆 Token Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;明确不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱 GLM&#x2F;CodeGeeX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 用于训练&lt;&#x2F;td&gt;&lt;td&gt;❌ 基础版无 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google Gemini (API)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 不用于训练&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ &lt;strong&gt;注意&lt;&#x2F;strong&gt;：该报告发布于 2026-03，当时可能未考虑团队版 Coding Plan 的专用条款。我们本次调研对智谱的结论已细化（见第二章），不能笼统说“用于训练“。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-xuan-yong-jian-yi&quot;&gt;四、选用建议&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;jue-ce-chang-jing&quot;&gt;决策场景&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;chang-jing-wo-zhi-xiang-di-jia-yong-glm-xie-dai-ma&quot;&gt;场景 ①：我只想低价用 GLM 写代码&lt;&#x2F;h4&gt;
+&lt;pre&gt;&lt;code&gt;我是否在意数据被用于训练？
+├── 不在意 → 个人版 Coding Plan（49元&amp;#x2F;月起，最便宜）
+└── 在意   → 团队版 Coding Plan（标准版，有数据承诺）
+              ⚠️ 但团队版 2席位起购，成本更高
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;chang-jing-wo-shi-tuan-dui-qi-ye-yao-xie-zuo-bian-ma&quot;&gt;场景 ②：我是团队&#x2F;企业，要协作编码&lt;&#x2F;h4&gt;
+&lt;pre&gt;&lt;code&gt;→ 团队版 Coding Plan（唯一选择）
+   ✅ 数据不用于训练 + 组织管理 + IP白名单 + 超额按量
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;chang-jing-wo-zai-zi-jian-ying-yong-li-ji-cheng-glm-api&quot;&gt;场景 ③：我在自建应用里集成 GLM API&lt;&#x2F;h4&gt;
+&lt;pre&gt;&lt;code&gt;我是否在意数据被用于训练？
+├── 不在意 → 按量付费 API（无工具限制，用多少付多少）
+└── 在意   → ⚠️ 困境：
+             按量付费 API 走通用条款，没有&amp;quot;不用于训练&amp;quot;承诺
+             ↓
+             可选方案：
+             1. 联系智谱商务签企业合同，约定数据不用于训练
+             2. 改用明确承诺不训练的其他厂商
+             3. 使用 GLM 开源模型本地部署
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;kuai-su-jue-ce-biao&quot;&gt;快速决策表&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;你的情况&lt;&#x2F;th&gt;&lt;th&gt;推荐产品&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;数据安全&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;月费参考&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;个人编码，不关心数据训练&lt;&#x2F;td&gt;&lt;td&gt;个人版 Coding Plan&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 默认可能训练&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;49元起&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;个人编码，在意数据训练&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan（最低配）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟢 明确承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;2席位起（较高）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;团队协作编码&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟢 明确承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;按席位&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;自建应用集成，不关心训练&lt;&#x2F;td&gt;&lt;td&gt;按量付费 API&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 脱敏后可能训练&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;按量&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;自建应用集成，在意训练&lt;&#x2F;td&gt;&lt;td&gt;签合同 &#x2F; 换别家&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟢 合同级保障&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;面议&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;横向对比详见：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;llm-data-policy-comparison&#x2F;&quot;&gt;LLM 数据政策横向对比&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wu-yin-si-feng-xian-zong-jie&quot;&gt;五、隐私风险总结&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;个人版和按量付费默认训练风险&lt;&#x2F;strong&gt;：通用用户协议授予智谱永久、不可撤销的数据使用权，隐私政策允许脱敏后用于训练&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;无 opt-out&lt;&#x2F;strong&gt;：个人版用户无法选择退出数据训练&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;条款模糊&lt;&#x2F;strong&gt;：“优化产品和服务“范围宽泛，无具体界定&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;国际版&#x2F;国内版差异&lt;&#x2F;strong&gt;：Z.ai 国际版对 API 客户声称不存储，但对普通用户会存储；国内版对所有用户授权永久使用权&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;user-agreement&quot;&gt;智谱开放平台用户协议&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;privacy-policy&quot;&gt;智谱隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;team&quot;&gt;GLM Coding Plan 团队套餐权益&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;overview&quot;&gt;GLM Coding Plan 套餐概览&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;subscription-agreement-team&quot;&gt;智谱团队套餐购买协议&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;bigmodel.cn&#x2F;pricing&quot;&gt;智谱产品价格页&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.z.ai&#x2F;legal-agreement&#x2F;privacy-policy&quot;&gt;Z.ai 隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.z.ai&#x2F;legal-agreement&#x2F;terms-of-use&quot;&gt;Z.ai 使用条款&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;zcode.z.ai&#x2F;en&#x2F;privacy&quot;&gt;ZCode 隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;yage.ai&#x2F;share&#x2F;ai-coding-data-policy-survey-20260309.html&quot;&gt;AI 编程工具数据政策调研报告（2026-03）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>MiniMax 模型服务会用我的数据训练吗？</title>
+        <published>2026-06-19T00:00:00+08:00</published>
+        <updated>2026-06-19T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/minimax-api-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/minimax-api-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/minimax-api-data-training-policy/">&lt;p&gt;如果你正在考虑用 MiniMax API 处理代码、文档或个人内容，又担心输入&#x2F;输出被拿去训练模型，这篇直接给你答案和依据。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;调研日期：2026-06-19。pricing 以 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;docs&#x2F;pricing&#x2F;overview&quot;&gt;MiniMax 官方定价页&lt;&#x2F;a&gt; 实时页面为准。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;yi-ju-hua-jie-lun&quot;&gt;一句话结论&lt;&#x2F;h2&gt;
+&lt;p&gt;MiniMax 的四类模型服务产品中，&lt;strong&gt;国际 API 平台的 ToS 明确授权使用输入&#x2F;输出改进服务；国内 API 平台政策未明说训练，但也未承诺排除&lt;&#x2F;strong&gt;。都没有“关闭训练”的开关。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;产品&lt;&#x2F;th&gt;&lt;th&gt;训练风险&lt;&#x2F;th&gt;&lt;th&gt;依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;国内 Token Plan&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 未明说训练，但未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;国内开放平台隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;国内 Pay as You Go&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 同左&lt;&#x2F;td&gt;&lt;td&gt;同左&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;国际 Token Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ 可能用于改进服务&lt;&#x2F;td&gt;&lt;td&gt;Terms of Service 明确授权&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;国际 Pay as You Go&lt;&#x2F;td&gt;&lt;td&gt;❌ 同左&lt;&#x2F;td&gt;&lt;td&gt;同左&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;da-an-bu-tong-chang-jing-neng-bu-neng-yong&quot;&gt;答案：不同场景能不能用？&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;国内 API&lt;&#x2F;th&gt;&lt;th&gt;国际 API&lt;&#x2F;th&gt;&lt;th&gt;理由&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;公开算法&#x2F;通用脚本&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;训练风险低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;学生作业&#x2F;个人原型&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;⚠️&lt;&#x2F;td&gt;&lt;td&gt;国际 ToS 已授权使用输入&#x2F;输出&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;个人日记&#x2F;简历&#x2F;身份信息&lt;&#x2F;td&gt;&lt;td&gt;⚠️&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;不建议输入敏感个人信息&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;公司代码&#x2F;商业逻辑&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;数据训练风险不可控&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;含密码&#x2F;API Key 的代码&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;严禁&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;核心原则&lt;&#x2F;strong&gt;：只要内容对你有保密价值，就别直接发给 MiniMax API。国际 API 平台在法律授权上最宽松，国内 API 平台政策文本最模糊。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-ju&quot;&gt;依据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-ju-1-guo-ji-api-ping-tai-ming-que-shou-quan-shi-yong-shu-ru-shu-chu&quot;&gt;依据 1：国际 API 平台明确授权使用输入&#x2F;输出&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;protocol&#x2F;terms-of-service&quot;&gt;MiniMax API Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;As between you and us, and to the extent permitted by applicable laws, you retain your ownership rights in Client input and generated content. We may use the input and generated content to provide, maintain, develop, and improve our Services…&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;说明&lt;&#x2F;strong&gt;：虽然 Privacy Policy 声明不将“个人数据”用于画像&#x2F;定向训练，但 Terms of Service 明确保留了使用用户输入和生成内容来 develop and improve Services 的权利。这通常包括模型优化。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-2-guo-nei-api-kai-fang-ping-tai-zheng-ce-wen-ben-mo-hu&quot;&gt;依据 2：国内 API 开放平台政策文本模糊&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimaxi.com&#x2F;protocol&#x2F;privacy-policy&quot;&gt;MiniMax 开放平台隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;调用 API：我们收集该次提交的处理数据… 用于后台计算，生成返回数据…&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;说明&lt;&#x2F;strong&gt;：政策没有写“模型训练”，但也&lt;strong&gt;没有承诺排除&lt;&#x2F;strong&gt;。不能作为国内 API “不训练”的安全依据。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-3-jun-wu-zhuan-men-opt-out&quot;&gt;依据 3：均无专门 opt-out&lt;&#x2F;h3&gt;
+&lt;p&gt;MiniMax 各模型服务产品都没有“关闭数据训练”的开关。个人用户如果不同意，只能选择停止使用，或尝试行使删除&#x2F;撤回同意等一般性权利。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办？&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;不要输入密码、API Key、身份证号、内部代码。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;不要把公司文档、客户数据、商业逻辑发上去。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;国际 API 用户尤其谨慎&lt;&#x2F;strong&gt;：ToS 明确授权使用输入&#x2F;输出改进服务。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;已经输入过敏感内容&lt;&#x2F;strong&gt;：可联系官方删除，但无法保证训练数据被彻底清除。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;对隐私高度敏感的内容&lt;&#x2F;strong&gt;：优先使用本地模型。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业用户&lt;&#x2F;strong&gt;：如需书面排除训练，需通过官方销售通道谈判，个人用户无此选项。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;protocol&#x2F;privacy-policy&quot;&gt;MiniMax API Privacy Policy（英文）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;protocol&#x2F;terms-of-service&quot;&gt;MiniMax API Terms of Service（英文）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimaxi.com&#x2F;protocol&#x2F;privacy-policy&quot;&gt;MiniMax 开放平台隐私政策（中文）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;docs&#x2F;pricing&#x2F;overview&quot;&gt;MiniMax 官方定价页&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;&lt;strong&gt;作者注&lt;&#x2F;strong&gt;：这是基于公开政策的分析，不构成法律建议。协议可能更新，关键决策前请复核官方原文。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>StepFun Step Plan 会用我的数据训练模型吗？——条款调研</title>
+        <published>2026-06-13T00:00:00+08:00</published>
+        <updated>2026-06-13T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/stepfun-step-plan-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/stepfun-step-plan-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/stepfun-step-plan-data-training-policy/">&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我使用 Step Plan 订阅或 StepFun API，我的代码&#x2F;对话数据会不会被拿去训练模型？&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;da-an&quot;&gt;答案&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;不会明确排除，也不会明确承诺。&lt;&#x2F;strong&gt; 三份核心文件（隐私政策、用户协议、付费服务协议）均未出现“不用于训练“或“training exclusion“等表述，英文 TOS 保留 “improve the Services” 的宽泛授权。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;我用的是&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;会被训练吗？&lt;&#x2F;th&gt;&lt;th&gt;条款依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Step Plan（订阅）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;付费协议无训练条款，引用平台隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API 按量付费&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;用户协议 §6.5：“改善、优化、升级“目的&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;企业版&#x2F;私有化&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;未公开&lt;&#x2F;td&gt;&lt;td&gt;需商务对接确认&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;zheng-ju&quot;&gt;证据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;zheng-ju-1-yin-si-zheng-ce-wu-xun-lian-xiang-guan-biao-shu&quot;&gt;证据 1：隐私政策无训练相关表述&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun 开放平台隐私政策&lt;&#x2F;a&gt;（2026-04-23）&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 复核：政策全文仍**未出现“模型训练“或“不用于训练“**等任何相关表述。数据使用目的限于“提供智能对话及内容生成服务“和“匿名化运营统计“。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;关键条款&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“我们会收集您主动输入的信息…以及服务的输出信息。我们会对上述信息进行分析与计算，以便于更好地理解您的需求和上下文语境…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;“分析与计算“可理解为实时推理所需的上下文处理，但也可能包含离线分析。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;zheng-ju-2-ying-wen-tos-bao-liu-improve-the-services&quot;&gt;证据 2：英文 TOS 保留 “improve the Services”&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;StepFun Terms of Service&lt;&#x2F;a&gt;（Section 4.1.4）&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We may use Content to provide, maintain, develop, and &lt;strong&gt;improve the Services&lt;&#x2F;strong&gt;…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;其中 “develop, and improve the Services” 可涵盖模型训练、微调、评估等用途。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;对比&lt;&#x2F;strong&gt;：OpenAI、Anthropic 的 API 条款均明确排除训练用途。StepFun 在此项显著落后。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;zheng-ju-3-step-plan-fu-fei-xie-yi-wu-xun-lian-tiao-kuan&quot;&gt;证据 3：Step Plan 付费协议无训练条款&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan 付费服务协议&lt;&#x2F;a&gt;（2026-05-25）&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 复核：协议正文&lt;strong&gt;无专门针对数据使用、模型训练、数据留存的条款&lt;&#x2F;strong&gt;，也未作出新增的数据训练排除或数据保留承诺。涉及数据责任的条款仅限第三方工具数据泄露由用户自行承担。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;zheng-ju-4-shu-ju-liu-cun-qi-xian-you-chu-bu-shuo-ming-dan-bu-gou-ju-ti&quot;&gt;证据 4：数据留存期限——有初步说明，但不够具体&lt;&#x2F;h3&gt;
+&lt;p&gt;隐私政策新增说明（本次复核首次明确提取）：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“仅在为提供本平台相关服务之目的所必需的期间内保留您的个人信息… 注销账户、主动删除个人信息或超出必要的期限后，将对个人信息进行删除或匿名化处理。”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;例外情况&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;遵从法律法规关于信息留存的要求&lt;&#x2F;li&gt;
+&lt;li&gt;出于财务、审计、争议解决等目的需要合理延长期限&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;缺口&lt;&#x2F;strong&gt;：“必需的期间“具体多长、“超出必要期限“的判断标准、是否有审计机制，均未说明。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;xing-ye-dui-bi&quot;&gt;行业对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;服务&lt;&#x2F;th&gt;&lt;th&gt;数据训练政策&lt;&#x2F;th&gt;&lt;th&gt;透明度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ 明确不训练&lt;&#x2F;td&gt;&lt;td&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ 明确不训练&lt;&#x2F;td&gt;&lt;td&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米 MiMo&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;✅ 隐私政策逐字承诺 “will not use for training”&lt;&#x2F;td&gt;&lt;td&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云百炼&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ 不训练（通用条款）&lt;&#x2F;td&gt;&lt;td&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;订阅&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 通用条款不训练，但订阅套餐 5.2.2 专门授权训练&lt;&#x2F;td&gt;&lt;td&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;❌ 沉默未承诺&lt;&#x2F;td&gt;&lt;td&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;未承诺，保留 “improve the Services”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;低&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ StepFun 与 DeepSeek 处于同一梯队，显著落后于 OpenAI、Anthropic、小米 MiMo。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;zheng-chang-shi-yong&quot;&gt;正常使用&lt;&#x2F;h3&gt;
+&lt;p&gt;协议层面未确认不训练，但 StepFun 也未明确声明会训练。如果你能接受这种模糊状态，可以继续使用，但需遵守以下习惯：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;脱敏提交&lt;&#x2F;strong&gt;：避免在 prompt 中包含公司名、人名、具体数字、内部项目代号&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;分段处理&lt;&#x2F;strong&gt;：核心算法&#x2F;敏感逻辑在本地处理，仅将通用&#x2F;抽象部分提交给 API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;余额监控&lt;&#x2F;strong&gt;：按量付费用户设置余额告警，避免欠费触发数据删除条款&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;min-gan-shu-ju-chang-jing&quot;&gt;敏感数据场景&lt;&#x2F;h3&gt;
+&lt;p&gt;如果涉及以下数据，&lt;strong&gt;不建议使用公共 API&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;用户个人信息（PII）&lt;&#x2F;li&gt;
+&lt;li&gt;金融、医疗、政务数据&lt;&#x2F;li&gt;
+&lt;li&gt;未公开的核心知识产权（专利申请前技术方案）&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;替代方案&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;改用明确承诺不训练的厂商&lt;&#x2F;strong&gt;：如小米 MiMo（隐私政策逐字承诺）、阿里云百炼 API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;本地部署&lt;&#x2F;strong&gt;：StepFun 部分模型开源（Step-3.5-Flash 等），可本地运行，数据完全不出机器&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业级隔离&lt;&#x2F;strong&gt;：联系 &lt;code&gt;platform@stepfun.com&lt;&#x2F;code&gt; 确认私有化部署或专属实例选项&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;qi-ye-qian-yue-qian-bi-wen&quot;&gt;企业签约前必问&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;能否在合同中明确约定“企业数据不用于任何模型训练“&lt;&#x2F;li&gt;
+&lt;li&gt;数据留存期限及合同终止后的删除时限&lt;&#x2F;li&gt;
+&lt;li&gt;是否提供 VPC&#x2F;专属实例&#x2F;私有化部署&lt;&#x2F;li&gt;
+&lt;li&gt;SLA 承诺及数据泄露赔偿责任&lt;&#x2F;li&gt;
+&lt;li&gt;对第三方工具的数据流转有何约束&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun 开放平台隐私政策&lt;&#x2F;a&gt;（2026-04-23，2026-06-13 复核）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;user-agreement.html&quot;&gt;StepFun 开放平台用户协议&lt;&#x2F;a&gt;（2026-04-08）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan 付费服务协议&lt;&#x2F;a&gt;（2026-05-25，2026-06-13 复核）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;英文 Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>小米 MiMo Token Plan 会用我的数据训练模型吗？——协议条款调研</title>
+        <published>2026-05-25T00:00:00+08:00</published>
+        <updated>2026-05-25T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/xiaomi-mimo-token-plan-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/xiaomi-mimo-token-plan-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/xiaomi-mimo-token-plan-data-training-policy/">&lt;blockquote&gt;
+&lt;p&gt;创建日期：2026-05-25
+状态：已完成&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我订阅小米 MiMo Token Plan 或者调用 MiMo API，我的数据会不会被拿去训练模型？&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;da-an&quot;&gt;答案&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;不会。&lt;&#x2F;strong&gt; 隐私政策明确承诺，且 Token Plan 条款没有像阿里云 Coding Plan 那样偷偷加“特别约定“来覆盖这个承诺。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;我用的是&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;会被训练吗？&lt;&#x2F;th&gt;&lt;th&gt;条款依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;MiMo API（按量付费）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 不会&lt;&#x2F;td&gt;&lt;td&gt;隐私政策 3.1 明确承诺&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiMo Token Plan（订阅）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 不会&lt;&#x2F;td&gt;&lt;td&gt;用户协议 3.13 无特别约定，适用隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;阿里云 Coding Plan（对比）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;⚠️ 会&lt;&#x2F;td&gt;&lt;td&gt;服务协议 5.2.2 专门授权&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;但有个提醒：&lt;strong&gt;这是基于公开协议的分析，不是法律意见。&lt;&#x2F;strong&gt; 如果涉及敏感数据，最稳妥的方案是本地方案（MiMo-V2.5 已 MIT 开源）。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yi-ju&quot;&gt;依据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-ju-1-yin-si-zheng-ce-zhu-zi-cheng-nuo-bu-xun-lian&quot;&gt;依据 1：隐私政策逐字承诺“不训练“&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;terms&#x2F;privacy-policy&quot;&gt;Xiaomi MiMo Open Platform Privacy Policy — Section 3.1&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“If you use the API services, we will collect your IP address and the content (text, audio, video, picture) you submit to analyze the relevant instructions based on the model you select and to generate the returned content. &lt;strong&gt;Xiaomi will not use the content you provide for model training or any other purposes.&lt;&#x2F;strong&gt;”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;这个承诺覆盖范围很广——不仅是“不训练“，而且是“不用于任何其他目的“。对比 DeepSeek API 条款对此保持沉默，小米的承诺是明确且有力的。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-2-token-plan-tiao-kuan-mei-you-xiang-a-li-yun-na-yang-de-xian-jing&quot;&gt;依据 2：Token Plan 条款没有像阿里云那样的陷阱&lt;&#x2F;h3&gt;
+&lt;p&gt;这是本次调研的核心发现。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;阿里云 Coding Plan&lt;&#x2F;strong&gt; 在通用条款之外加了专门的 5.2.2：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“您同意并授权我们和我们的关联公司存储并使用您使用 Coding Plan 期间因调用模型而输入以及模型生成的内容（‘Coding Plan 数据’）以用于&lt;strong&gt;服务改进与模型优化&lt;&#x2F;strong&gt;。”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;小米 Token Plan&lt;&#x2F;strong&gt; 的对应条款（用户协议 3.13）只有：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“Token Plan services are non-refundable and non-cancellable upon purchase. Xiaomi reserves the right to modify or adjust Token Plan based on operational needs…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;只讲退款，不讲数据。没有 5.2.2 那种“特别约定“。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;对比项&lt;&#x2F;th&gt;&lt;th&gt;阿里云 Coding Plan&lt;&#x2F;th&gt;&lt;th&gt;小米 Token Plan&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;通用条款&lt;&#x2F;td&gt;&lt;td&gt;“不会在未获授权时训练”（6.2.5）&lt;&#x2F;td&gt;&lt;td&gt;“will not use for training”（Privacy 3.1）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;订阅套餐条款位置&lt;&#x2F;td&gt;&lt;td&gt;专门章节 5.2&lt;&#x2F;td&gt;&lt;td&gt;普通条款 3.13&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;数据训练特别授权&lt;&#x2F;td&gt;&lt;td&gt;✅ 有（5.2.2）&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;数据训练结论&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 会训练&lt;&#x2F;td&gt;&lt;td&gt;✅ 不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;yi-ju-3-xie-yi-jie-gou-que-ren-yin-si-zheng-ce-gua-yong-yu-token-plan&quot;&gt;依据 3：协议结构确认隐私政策适用于 Token Plan&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;条款&lt;&#x2F;th&gt;&lt;th&gt;内容&lt;&#x2F;th&gt;&lt;th&gt;作用&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;用户协议 1.1&lt;&#x2F;td&gt;&lt;td&gt;适用范围：“products, programs and services”&lt;&#x2F;td&gt;&lt;td&gt;Token Plan 在协议覆盖范围内&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;用户协议 1.2&lt;&#x2F;td&gt;&lt;td&gt;MiMo 平台隐私政策列为补充协议，同等法律效力&lt;&#x2F;td&gt;&lt;td&gt;隐私政策承诺适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;用户协议 第4条&lt;&#x2F;td&gt;&lt;td&gt;“数据处理依据隐私政策”&lt;&#x2F;td&gt;&lt;td&gt;数据处理规则指向隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;用户协议 3.13&lt;&#x2F;td&gt;&lt;td&gt;Token Plan 条款：仅退款&#x2F;调整，无数据约定&lt;&#x2F;td&gt;&lt;td&gt;没有覆盖隐私政策的特别约定&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;结论：Token Plan 的数据处理应适用隐私政策的承诺——不训练。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-4-xing-ye-quan-jing-dui-bi&quot;&gt;依据 4：行业全景对比&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;服务类型&lt;&#x2F;th&gt;&lt;th&gt;数据训练政策&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;特别约定？&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米 MiMo&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Token Plan &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;✅ 不训练（Privacy 3.1）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无陷阱&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic Claude&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; 订阅&lt;&#x2F;td&gt;&lt;td&gt;✅ 默认不训练&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云百炼 API&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;按量付费&lt;&#x2F;td&gt;&lt;td&gt;✅ 不训练（6.2.5）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;订阅套餐&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 明确训练（5.2.2）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 有陷阱&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 沉默未承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 授权优化服务&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;正常使用没问题&lt;&#x2F;strong&gt; — 协议层面已经确认不训练，比 DeepSeek&#x2F;Kimi 的 API 条款都干净&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;敏感数据仍建议走本地部署&lt;&#x2F;strong&gt; — MiMo-V2.5 已 MIT 开源（&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;huggingface.co&#x2F;XiaomiMiMo&#x2F;MiMo-V2.5&quot;&gt;HuggingFace&lt;&#x2F;a&gt;），支持 SGLang&#x2F;vLLM，数据完全不出机器&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;定期回查协议&lt;&#x2F;strong&gt; — 用户协议 8.4 说小米有权修改协议，关注更新（官方联系：&lt;a href=&quot;mailto:support-mimo@xiaomi.com&quot;&gt;support-mimo@xiaomi.com&lt;&#x2F;a&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业合规场景&lt;&#x2F;strong&gt; — 直接联系官方确认，不依赖公开协议的分析&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;fu-lu-token-plan-ding-jia-can-kao&quot;&gt;附录：Token Plan 定价参考&lt;&#x2F;h2&gt;
+&lt;details&gt;
+&lt;summary&gt;展开查看&lt;&#x2F;summary&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;套餐&lt;&#x2F;th&gt;&lt;th&gt;月费（中国）&lt;&#x2F;th&gt;&lt;th&gt;月费（海外）&lt;&#x2F;th&gt;&lt;th&gt;Credits&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Lite&lt;&#x2F;td&gt;&lt;td&gt;¥39&lt;&#x2F;td&gt;&lt;td&gt;$6&lt;&#x2F;td&gt;&lt;td&gt;6000万&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Standard&lt;&#x2F;td&gt;&lt;td&gt;¥99&lt;&#x2F;td&gt;&lt;td&gt;$16&lt;&#x2F;td&gt;&lt;td&gt;2亿&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Pro&lt;&#x2F;td&gt;&lt;td&gt;¥329&lt;&#x2F;td&gt;&lt;td&gt;$50&lt;&#x2F;td&gt;&lt;td&gt;7亿&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Max&lt;&#x2F;td&gt;&lt;td&gt;¥659&lt;&#x2F;td&gt;&lt;td&gt;$100&lt;&#x2F;td&gt;&lt;td&gt;16亿&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;首次 88 折，夜间（0:00-8:00）0.8x 消耗。&lt;&#x2F;p&gt;
+&lt;p&gt;作为参考：Claude 同级模型 API 价格约为小米的 5 倍，且小米无 5 小时滚动限额。&lt;&#x2F;p&gt;
+&lt;&#x2F;details&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;terms&#x2F;user-agreement&quot;&gt;小米 MiMo API 平台用户协议&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;terms&#x2F;privacy-policy&quot;&gt;小米 MiMo API 平台隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;terms.alicdn.com&#x2F;legal-agreement&#x2F;terms&#x2F;common_platform_service&#x2F;20230728213935489&#x2F;20230728213935489.html&quot;&gt;阿里云百炼服务协议&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.v2ex.com&#x2F;t&#x2F;1190601&quot;&gt;V2EX：阿里云 Coding Plan 隐私警告&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Kimi 会用我的数据训练模型吗？中文、英文和 API 协议不一样</title>
+        <published>2026-05-24T00:00:00+08:00</published>
+        <updated>2026-05-24T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/kimi-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/kimi-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/kimi-data-training-policy/">&lt;p&gt;我想确认一个很具体的问题：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;用 Kimi 聊天、订阅 Kimi 会员，或者调用 Kimi API，我的数据会不会被用于模型训练或服务优化？能不能 opt out？&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;结论不是一句「会」或「不会」能说清楚。&lt;strong&gt;Kimi 中文 C 端、英文 C 端、API 平台对应的公开协议不一样，签约主体也不一样。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xian-kan-jie-lun&quot;&gt;先看结论&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;用户身份&lt;&#x2F;th&gt;&lt;th&gt;签约主体&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: right&quot;&gt;默认是否授权用于优化&#x2F;改进&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: right&quot;&gt;定向 opt-out&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;中文 C 端用户&lt;&#x2F;td&gt;&lt;td&gt;北京月之暗面科技有限公司&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: right&quot;&gt;✅ 是&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: right&quot;&gt;❌ 公开协议未提供&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;英文 C 端用户&lt;&#x2F;td&gt;&lt;td&gt;Moonshot AI PTE. LTD.（新加坡）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: right&quot;&gt;✅ 是&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: right&quot;&gt;✅ 邮件&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API 开发者&lt;&#x2F;td&gt;&lt;td&gt;北京月之暗面科技有限公司&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: right&quot;&gt;✅ 授权优化&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: right&quot;&gt;❌ 公开协议未提供&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;所以我的实用判断是：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;中文 Kimi 聊天&#x2F;会员：不要输入敏感数据。&lt;&#x2F;strong&gt; 公开协议里没有看到定向退出模型&#x2F;服务优化的机制。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;英文 Kimi：可以通过邮件 opt out。&lt;&#x2F;strong&gt; 协议写了 &lt;code&gt;membership@moonshot.ai&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Kimi API：不要默认当成 OpenAI&#x2F;Anthropic 那种「API 数据不训练」。&lt;&#x2F;strong&gt; 公开协议没有给出同等承诺。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;zhong-wen-c-duan-shou-quan-yong-yu-mo-xing-fu-wu-you-hua-dan-mei-you-zhao-dao-ding-xiang-opt-out&quot;&gt;中文 C 端：授权用于模型服务优化，但没有找到定向 opt-out&lt;&#x2F;h2&gt;
+&lt;p&gt;中文版《Kimi用户服务协议》第五节写道：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;为了提升您使用本服务的体验，您授予我们一项免费的使用权，以在法律允许的范围内将您输入输出之内容及反馈用于模型服务优化。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;我在协议里没有找到类似「退出训练」「opt out」「不参与模型优化」的定向退出路径。&lt;&#x2F;p&gt;
+&lt;p&gt;中文版隐私政策也把「对话信息」列入用于提供服务和优化模型的信息范围：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;您在使用我们的产品和服务过程中输入和输出的文本、语音&#x2F;音频、图片、视频等各类型内容。这些信息有助于我们为您提供服务、优化模型，并了解您的需求和偏好。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;这里的关键点不是它有没有写「训练」两个字，而是：&lt;strong&gt;它明确写了可以用于优化模型&#x2F;模型服务优化，并且没有提供像英文协议那样的定向 opt-out。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ying-wen-c-duan-you-you-jian-opt-out&quot;&gt;英文 C 端：有邮件 opt-out&lt;&#x2F;h2&gt;
+&lt;p&gt;英文版 Terms of Service 写得更明确，也给了退出方式：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;We may use your Content to operate, maintain, improve, and develop the Services…&lt;&#x2F;p&gt;
+&lt;p&gt;You may opt out of allowing your Content to be used for model improvement and research purposes by contacting us at membership@moonshot.ai.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;这里要注意两件事：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;英文版协议主体是 &lt;strong&gt;Moonshot AI PTE. LTD.&lt;&#x2F;strong&gt;，不是北京月之暗面科技有限公司。&lt;&#x2F;li&gt;
+&lt;li&gt;英文版有 opt-out，不代表中文用户自动拥有同样的合同权利。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;api-ping-tai-gong-kai-tiao-kuan-mei-you-api-shu-ju-bu-yong-yu-xun-lian-cheng-nuo&quot;&gt;API 平台：公开条款没有「API 数据不用于训练」承诺&lt;&#x2F;h2&gt;
+&lt;p&gt;API 开放平台协议也有授权优化服务的表述，例如：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;您输入的知识文档、数据、文本、文件、资料、链接等内容会在本协议约定范围（包括提供、优化服务等）内被使用……&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;以及：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;为了提升您使用本服务的体验，您授予我们一项免费的使用权，以在法律允许的范围内将您输入输出之内容及反馈用于模型服务优化。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;这和 OpenAI、Anthropic、Google Cloud Gemini 的 API 数据政策形成对比：后几者会明确写「默认不使用 API 输入输出训练模型」或类似承诺；Kimi API 公开协议里没有看到等价表述。&lt;&#x2F;p&gt;
+&lt;p&gt;所以对 API 开发者来说，保守做法是：&lt;strong&gt;条款没写不会，就不要假设不会。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fu-fei-bu-deng-yu-bu-xun-lian&quot;&gt;付费不等于不训练&lt;&#x2F;h2&gt;
+&lt;p&gt;这次调研里一个容易误解的点是：很多人会默认「我付费了，所以数据应该不会被训练」。但 Kimi 的公开条款不是这样写的。&lt;&#x2F;p&gt;
+&lt;p&gt;至少从公开协议看：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;中文 C 端免费和付费会员都没有明显的数据训练&#x2F;优化政策差异。&lt;&#x2F;li&gt;
+&lt;li&gt;API 平台是按量付费，但公开条款仍授权用于优化服务。&lt;&#x2F;li&gt;
+&lt;li&gt;企业级 API 可能可以单独签数据保护条款，但这不属于公开默认承诺。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;jian-yi-zen-me-zuo&quot;&gt;建议怎么做&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;普通聊天：避免输入隐私、商业文档、私密代码。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;英文 C 端用户：如需退出，按协议邮件联系 &lt;code&gt;membership@moonshot.ai&lt;&#x2F;code&gt;。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;API 开发者：敏感数据不要默认走 Kimi API。&lt;&#x2F;strong&gt; 除非你拿到合同级别的「不用于训练&#x2F;模型优化」承诺。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业场景：联系销售，把数据使用边界写进合同。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;最高确定性方案：自部署开源权重。&lt;&#x2F;strong&gt; 本地运行可以从根上避免数据外流。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;中文版用户协议：&lt;code&gt;https:&#x2F;&#x2F;www.kimi.com&#x2F;user&#x2F;agreement&#x2F;zh&#x2F;modelUse?version=v2&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;英文版 Terms of Service：&lt;code&gt;https:&#x2F;&#x2F;www.kimi.com&#x2F;user&#x2F;agreement&#x2F;en&#x2F;modelUse?version=v2&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;中文版隐私政策：&lt;code&gt;https:&#x2F;&#x2F;www.kimi.com&#x2F;user&#x2F;agreement&#x2F;userPrivacy?version=v2&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;英文版 Privacy Policy：&lt;code&gt;https:&#x2F;&#x2F;www.kimi.com&#x2F;user&#x2F;agreement&#x2F;en&#x2F;userPrivacy?version=v2&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;API 开放平台服务协议：&lt;code&gt;https:&#x2F;&#x2F;platform.moonshot.cn&#x2F;docs&#x2F;agreement&#x2F;modeluse&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;API 开放平台隐私政策：&lt;code&gt;https:&#x2F;&#x2F;platform.moonshot.cn&#x2F;docs&#x2F;agreement&#x2F;userprivacy&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;这篇文章只是基于公开条款的技术&#x2F;条款笔记，不构成法律意见。涉及公司代码、客户数据、隐私数据时，应以合同和法务审查为准。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Google 模型服务数据隐私调研</title>
+        <published>2026-05-21T00:00:00+08:00</published>
+        <updated>2026-05-21T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/google-model-service-data-privacy/"/>
+        <id>https://cncsmonster.github.io/posts/google-model-service-data-privacy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/google-model-service-data-privacy/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;一句话：数据是否被训练，不看你是不是会员&#x2F;订阅，只看走的哪条管道——Google Cloud 管道有隐私保护，消费者管道没有。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;hui-bei-xun-lian-vs-bu-hui-xun-lian&quot;&gt;会被训练 vs 不会训练&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;hui-bei-xun-lian&quot;&gt;会被训练&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;为什么&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Gemini App（网页&#x2F;手机）&lt;&#x2F;td&gt;&lt;td&gt;免费和 Pro&#x2F;Ultra 会员隐私条款相同，都允许训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google AI Studio（网页聊天）&lt;&#x2F;td&gt;&lt;td&gt;官方列在「非付费服务」下（未开 Billing 时）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API 免费 Key&lt;&#x2F;td&gt;&lt;td&gt;没开 Cloud Billing 的 Key 走「非付费服务」条款&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini CLI（Google 账号登录）&lt;&#x2F;td&gt;&lt;td&gt;走 Google 普通隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini Code Assist 个人免费&lt;&#x2F;td&gt;&lt;td&gt;IDE 插件免费版&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;bu-hui-xun-lian&quot;&gt;不会训练&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;为什么&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API + Cloud Billing&lt;&#x2F;td&gt;&lt;td&gt;开 Billing 后所有 API&#x2F;AI Studio 使用自动按付费处理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Vertex AI&lt;&#x2F;td&gt;&lt;td&gt;Google Cloud 企业平台，条款明确不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini Code Assist Standard&#x2F;Enterprise&lt;&#x2F;td&gt;&lt;td&gt;走 Google Cloud 企业条款&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Workspace Gemini（企业版）&lt;&#x2F;td&gt;&lt;td&gt;Gmail&#x2F;Docs 里的 AI&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;NotebookLM&lt;&#x2F;td&gt;&lt;td&gt;条款明确上传文档不用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;EEA&#x2F;UK&#x2F;CH 用户的 API&lt;&#x2F;td&gt;&lt;td&gt;地区法律强制，免费 API 也按付费标准&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-ge-guan-jian-fa-xian&quot;&gt;三个关键发现&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-hui-yuan-api-fu-fei&quot;&gt;1. “会员 ≠ API 付费”&lt;&#x2F;h3&gt;
+&lt;p&gt;Google AI Pro&#x2F;Ultra 会员（每月 $20-$100）是&lt;strong&gt;消费者订阅&lt;&#x2F;strong&gt;，不是 API 付费。数据保护不因此改变，只有开了 Cloud Billing 才算。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-api-key-mian-fei-jiu-neng-na&quot;&gt;2. API Key 免费就能拿&lt;&#x2F;h3&gt;
+&lt;p&gt;去 aistudio.google.com，无需绑卡即可创建。Pro 会员只是让免费配额变多，不改变隐私规则。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-cloud-billing-shi-wei-yi-kai-guan&quot;&gt;3. Cloud Billing 是唯一开关&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Google Cloud 绑一张信用卡，API 调用自动从「免费服务」切为「付费服务」——哪怕一分钱不花。免费配额（如 Flash 每天 1500 次）对个人开发完全够用。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;shi-jian-lu-jing&quot;&gt;实践路径&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;需要隐私保护？
+→ console.cloud.google.com 绑卡开 Billing
+→ aistudio.google.com 拿 Key（选已关联 Billing 的项目）
+→ 零成本，不再被训练
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;ai.google.dev&#x2F;gemini-api&#x2F;terms?hl=zh-cn&quot;&gt;Gemini API 附加服务条款&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;ai.google.dev&#x2F;gemini-api&#x2F;docs&#x2F;logs-policy?hl=zh-cn&quot;&gt;Gemini API 数据记录和共享&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;support.google.com&#x2F;gemini&#x2F;answer&#x2F;13594961?hl=zh-Hans&quot;&gt;Gemini 应用隐私信息中心&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;knowledge.workspace.google.com&#x2F;admin&#x2F;gemini&#x2F;generative-ai-in-google-workspace-privacy-hub&quot;&gt;Google Workspace Generative AI Privacy Hub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;blog.google&#x2F;innovation-and-ai&#x2F;technology&#x2F;developers-tools&#x2F;google-one-ai-studio&quot;&gt;Google AI Studio + Google One 订阅博客公告 (2026-04-20)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>DeepSeek API 会用我的数据训练模型吗？——条款调研</title>
+        <published>2026-05-19T00:00:00+08:00</published>
+        <updated>2026-05-19T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/deepseek-api-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/deepseek-api-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/deepseek-api-data-training-policy/">&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我用 DeepSeek API，我的数据会被拿去训练模型吗？&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;da-an&quot;&gt;答案&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Open Platform 条款对此保持沉默——没说会，也没说不会。&lt;&#x2F;strong&gt; 不像 OpenAI&#x2F;Anthropic 那样明确承诺「API 数据不用于训练」。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;我用的是&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;会被训练吗？&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;能关吗？&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Web&#x2F;App 聊天&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 默认会&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 关闭「Improve the model for everyone」&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;⚠️ 没说&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无开关&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;默认当它「会」处理&lt;&#x2F;strong&gt; — 条款没说不会，就不要假设不会&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;敏感数据不要走 API&lt;&#x2F;strong&gt; — 尤其是用户隐私、商业机密&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;用本地部署替代&lt;&#x2F;strong&gt; — DeepSeek 开源了模型权重（MIT License），本地跑完全规避&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;联系官方要求澄清&lt;&#x2F;strong&gt; — &lt;a href=&quot;mailto:privacy@deepseek.com&quot;&gt;privacy@deepseek.com&lt;&#x2F;a&gt; &#x2F; &lt;a href=&quot;mailto:api-service@deepseek.com&quot;&gt;api-service@deepseek.com&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;yi-ju&quot;&gt;依据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-ju-1-tong-yong-tiao-kuan-yun-xu-xun-lian-dan-ke-opt-out-web-app-duan&quot;&gt;依据 1：通用条款允许训练，但可 opt-out（Web&#x2F;App 端）&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-terms-of-use.html&quot;&gt;DeepSeek Terms of Use — Section 4.3&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“Under the premise of secure encryption technology processing, strict de-identification rendering, and irreversibility to identify specific individuals, we may, to a minimal extent, use Inputs and Outputs to provide, maintain, operate, develop or improve the Services or the underlying technologies supporting the Services.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“If you refuse to allow us to process the data in the manner described above, you can opt out by turning off ‘Improve the model for everyone’.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ 这说明：Web&#x2F;App 端默认会用数据训练，但你可以关。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-2-yin-si-zheng-ce-ming-que-xie-liao-xun-lian-yong-tu&quot;&gt;依据 2：隐私政策明确写了训练用途&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-privacy-policy.html&quot;&gt;DeepSeek Privacy Policy&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“To improve and develop the Services and to train and improve our technology, such as our machine learning models and algorithms.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;用户权利: &lt;em&gt;“the right to opt-out of using your Personal Data for training our models or optimizing our technologies.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ 这说明：训练用途是书面的，opt-out 权利也是书面的。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-3-api-tiao-kuan-que-shao-deng-jia-cheng-nuo-guan-jian&quot;&gt;依据 3：API 条款缺少等价承诺（关键）&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;DeepSeek Open Platform Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;通读全文，与通用条款对比：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;条款&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;通用 Terms（Web&#x2F;App）&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Open Platform Terms（API）&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;声明可能使用 Input&#x2F;Output 训练&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;提供 opt-out 开关&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅「Improve the model for everyone」&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;开发者保留 Input 所有权&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.2&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;引用隐私政策&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 5.5&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ 这说明：API 端既没有说会用，也没有说不会用。不承诺 = 不可信。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-4-xing-ye-dui-bi-bie-ren-du-cheng-nuo-liao&quot;&gt;依据 4：行业对比——别人都承诺了&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;付费 API 承诺不训练？&lt;&#x2F;th&gt;&lt;th&gt;来源&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 明确承诺（2023.3 起）&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;your-data&quot;&gt;developers.openai.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 明确承诺&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;privacy.claude.com&#x2F;en&#x2F;articles&#x2F;7996868-is-my-data-used-for-model-training&quot;&gt;privacy.claude.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google Cloud Gemini&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 明确承诺&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.cloud.google.com&#x2F;gemini&#x2F;docs&#x2F;discover&#x2F;data-governance&quot;&gt;docs.cloud.google.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 未承诺&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;Open Platform Terms&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ 这说明：DeepSeek 的沉默不是行业惯例，是落后于同行。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;bu-chong&quot;&gt;补充&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;微博 @刘聪NLP&lt;&#x2F;strong&gt;（2026-05-15）：用户普遍担心 LLM 拿聊天数据训练&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

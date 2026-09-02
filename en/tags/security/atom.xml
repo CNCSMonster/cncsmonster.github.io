@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Security</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/security/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-29T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/security/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Qwen Code Auto Mode Classifier: Two-Stage LLM Approval Mechanism</title>
+        <published>2026-07-29T00:00:00+08:00</published>
+        <updated>2026-07-29T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/">&lt;blockquote&gt;
+&lt;p&gt;This article is based on reverse-engineered source code from Qwen Code &lt;code&gt;0.20.1-preview.7215&lt;&#x2F;code&gt;. Preview version internals may change across releases.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Qwen Code offers five approval modes: &lt;code&gt;plan&lt;&#x2F;code&gt;, &lt;code&gt;default&lt;&#x2F;code&gt;, &lt;code&gt;auto-edit&lt;&#x2F;code&gt;, &lt;code&gt;auto&lt;&#x2F;code&gt;, and &lt;code&gt;yolo&lt;&#x2F;code&gt;. In this version, &lt;strong&gt;new installations default to auto mode&lt;&#x2F;strong&gt; — tool calls are automatically approved through a multi-layer filtering system rather than requiring manual confirmation for each one. I also recommend auto mode for daily use; it strikes a good balance between efficiency and safety. This article dissects the mechanism and its configuration.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;architecture-overview&quot;&gt;Architecture Overview&lt;&#x2F;h2&gt;
+&lt;p&gt;Auto mode’s approval mechanism consists of four parts:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Rule layer&lt;&#x2F;strong&gt;: Deterministic rules (tool default permissions, user-defined rules, allowlists, regex blocking) that quickly filter clearly safe or clearly dangerous operations&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;LLM judgment layer&lt;&#x2F;strong&gt;: Two-stage Classifier that handles ambiguous cases the rules can’t cover&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fail-closed&lt;&#x2F;strong&gt;: When the classifier fails (timeout, API error, malformed response), it defaults to blocking — better safe than sorry&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Safety net&lt;&#x2F;strong&gt;: Denial Tracking detects deadlocks between the LLM and classifier, falling back to manual confirmation when thresholds are reached&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;Complete lifecycle of a tool call:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;LLM returns [A, B, C]
+  → Each independently goes through the approval flow:
+    ①-⑤ Rule layer → ⑥ LLM judgment layer
+    → A approved → executes → returns result
+    → B blocked → skipped
+    → C approved → executes → returns result
+  → All results sent back to the LLM together
+  → LLM sees the full picture and decides what to do next
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;rule-layer&quot;&gt;Rule Layer: ①-⑤&lt;&#x2F;h2&gt;
+&lt;p&gt;Before Qwen Code executes a tool call (reading files, running commands, editing code, etc.), it passes through these checkpoints:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Tool call
+  → ① Tool&amp;#x27;s default permission (e.g., read_file is safe by default, shell commands need approval)
+  → ② PermissionManager (user-defined rules)
+  → ③ acceptEdits fast-path (if in acceptEdits mode, workspace edits auto-approved)
+  → ④ Safe-tool allowlist (read_file, grep, glob, etc. auto-approved)
+  → ⑤ Guard (regex blocks dangerous command patterns like git clean, rm -rf — no LLM)
+  → ⑥ LLM Classifier (two-stage LLM judgment, see below)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;② is a user-configurable rules engine with four outcomes:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow&lt;&#x2F;code&gt; → approved immediately (skips ③-⑥)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;deny&lt;&#x2F;code&gt; → blocked immediately&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;ask&lt;&#x2F;code&gt; → prompts the user for manual confirmation&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;&#x2F;code&gt; (no matching rule) → continue to ③-⑥&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;two-stage-classifier&quot;&gt;Two-Stage Classifier&lt;&#x2F;h2&gt;
+&lt;p&gt;The first five checkpoints are deterministic rules — fast and free, but they can’t cover every case. The remaining tool calls are handed to an LLM. The classifier receives the tool name, parameters, and current conversation context, then runs in two stages:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;stage-1-fast-judgment&quot;&gt;Stage 1: Fast Judgment&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: fastModel (falls back to main model if not configured)&lt;&#x2F;li&gt;
+&lt;li&gt;Output: &lt;code&gt;{shouldBlock: boolean}&lt;&#x2F;code&gt; only&lt;&#x2F;li&gt;
+&lt;li&gt;Timeout: 10 seconds&lt;&#x2F;li&gt;
+&lt;li&gt;Behavior: allow → approve immediately; block → proceed to Stage 2&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;stage-2-review&quot;&gt;Stage 2: Review&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: same as Stage 1&lt;&#x2F;li&gt;
+&lt;li&gt;Output: &lt;code&gt;{thinking, shouldBlock, reason}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Timeout: 30 seconds&lt;&#x2F;li&gt;
+&lt;li&gt;Behavior: allow → approve; block → reject&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The &lt;code&gt;thinking&lt;&#x2F;code&gt; field in Stage 2’s output is a plain-text explanation written by the model (e.g., “user is only reading a file, safe”), helping developers understand why the classifier made its decision.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fail-closed-better-safe-than-sorry&quot;&gt;Fail-Closed: Better Safe Than Sorry&lt;&#x2F;h3&gt;
+&lt;p&gt;Any non-abort failure (API error, timeout, malformed response) returns &lt;code&gt;shouldBlock: true&lt;&#x2F;code&gt;. This means &lt;strong&gt;when the classifier is down, all approval-required tools are blocked&lt;&#x2F;strong&gt;. This is not a bug — it’s a deliberate security design.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;model-priority&quot;&gt;Model Priority&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;override → config.getFastModel() → config.getModel() → DEFAULT_QWEN_MODEL
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The classifier uses fastModel. Without it, it falls back to the main model — which is typically slower, adding a few hundred milliseconds to a few seconds per Stage 1 judgment, which adds up over a session.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;denial-tracking-preventing-infinite-loops&quot;&gt;Denial Tracking: Preventing Infinite Loops&lt;&#x2F;h2&gt;
+&lt;p&gt;If the classifier persistently blocks (LLM stuck in a dead end), the system won’t loop forever:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Counter&lt;&#x2F;th&gt;&lt;th&gt;Threshold&lt;&#x2F;th&gt;&lt;th&gt;Effect&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Consecutive blocks&lt;&#x2F;td&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Next call skips classifier, goes straight to manual confirmation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Consecutive unavailable&lt;&#x2F;td&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Total denials&lt;&#x2F;td&gt;&lt;td&gt;20&lt;&#x2F;td&gt;&lt;td&gt;Session-wide cap triggered&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;These thresholds are hardcoded and not configurable. All counters reset when switching approval modes.&lt;&#x2F;p&gt;
+&lt;p&gt;Key details:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Counted per tool call&lt;&#x2F;strong&gt;, not per batch — 2 blocked calls in one batch increments by 2&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fallback happens before the classifier&lt;&#x2F;strong&gt; — after 3 consecutive blocks, the 4th call skips the LLM call entirely and asks the user directly&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Counters reset on user approval&lt;&#x2F;strong&gt;, resuming auto mode; rejection keeps them, so the next call also goes to manual&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Accumulates across turns&lt;&#x2F;strong&gt; — the LLM sees each rejection, tries a different approach, gets blocked again, and after 3 consecutive blocks the system falls back to manual confirmation&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;configuration-recommendations&quot;&gt;Configuration Recommendations&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;fastModel&amp;quot;: &amp;quot;qwen3-coder-plus&amp;quot;,
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;autoMode&amp;quot;: {
+      &amp;quot;classifier&amp;quot;: {
+        &amp;quot;timeouts&amp;quot;: { &amp;quot;stage1Ms&amp;quot;: 10000, &amp;quot;stage2Ms&amp;quot;: 30000 },
+        &amp;quot;thinking&amp;quot;: { &amp;quot;stage2Enabled&amp;quot;: false }
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Key setting&lt;&#x2F;strong&gt;: &lt;code&gt;fastModel&lt;&#x2F;code&gt; is the classifier’s core dependency. Without it, the classifier falls back to the main model — which is typically slower, meaning every auto-mode tool call that requires classifier judgment will wait longer.&lt;&#x2F;p&gt;
+&lt;p&gt;For model selection, pick a &lt;strong&gt;fast&lt;&#x2F;strong&gt; model. The classifier only needs to output a boolean or a short text — no deep reasoning required. Non-thinking models (like &lt;code&gt;qwen3-coder-plus&lt;&#x2F;code&gt;) are a natural fit; thinking-capable models (like &lt;code&gt;deepseek-v4-flash&lt;&#x2F;code&gt;) work too — the classifier disables API thinking mode in both stages by default, so the model won’t do extra internal reasoning and stays fast. If you have sufficient local resources, a small local model as fastModel works too — zero API cost and fast response.&lt;&#x2F;p&gt;
+&lt;p&gt;The only models to avoid: those that &lt;strong&gt;force thinking on&lt;&#x2F;strong&gt; (can’t be disabled via parameters) — every judgment would waste time and tokens on unnecessary reasoning. Also, since the classifier sees conversation context and tool parameters, the fastModel’s service provider should be at least as trustworthy as your main model’s.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;stage2Enabled&lt;&#x2F;code&gt; controls whether Stage 2 uses API-level deep reasoning mode (slower, more tokens). The default &lt;code&gt;false&lt;&#x2F;code&gt; is fine — it doesn’t affect the &lt;code&gt;thinking&lt;&#x2F;code&gt; output field, which is just a plain-text explanation the model writes regardless.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code’s auto mode isn’t a simple “execute everything automatically” switch. It’s a carefully designed safety valve: the rule layer filters first, the LLM classifier handles ambiguous cases, fail-closed ensures errors don’t allow dangerous actions, and denial tracking prevents infinite loops. The cost is an extra LLM call (and tokens) for every tool invocation requiring judgment.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Add a Security Gate to Your Pi Coding Agent: pi-permission-gate</title>
+        <published>2026-05-30T00:00:00+08:00</published>
+        <updated>2026-05-30T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/"/>
+        <id>https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/">&lt;blockquote&gt;
+&lt;p&gt;Worried about accidentally deleting files or leaking API keys while using Pi? Try &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; — a rule-based permission interceptor that asks before sensitive operations and blocks dangerous commands automatically.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;in-one-sentence&quot;&gt;In One Sentence&lt;&#x2F;h2&gt;
+&lt;p&gt;Configure rules for your Pi agent to intercept reads&#x2F;writes on sensitive files and block dangerous commands. It doesn’t replace security audits, but does one thing well: &lt;strong&gt;ask before acting&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-it-can-do&quot;&gt;What It Can Do&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ Intercepts&lt;&#x2F;th&gt;&lt;th&gt;❌ Doesn’t Do&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Reading &lt;code&gt;~&#x2F;.ssh&#x2F;&lt;&#x2F;code&gt; private keys&lt;&#x2F;td&gt;&lt;td&gt;Audit logging&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Reading &lt;code&gt;.env&lt;&#x2F;code&gt; environment files&lt;&#x2F;td&gt;&lt;td&gt;MCP permission control&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Executing &lt;code&gt;rm -rf&lt;&#x2F;code&gt; commands&lt;&#x2F;td&gt;&lt;td&gt;Sub-agent permission forwarding&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Modifying files outside the project&lt;&#x2F;td&gt;&lt;td&gt;Complex policy engine&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pi install git:github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-permission-gate
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;configuration&quot;&gt;Configuration&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;global-rules-security-baseline&quot;&gt;Global Rules (Security Baseline)&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;~&#x2F;.pi&#x2F;agent&#x2F;permission-rules.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;defaultAction&amp;quot;: &amp;quot;ask&amp;quot;,
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;.ssh&amp;#x2F;**&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;SSH private keys&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    },
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;bash&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;rm -rf *&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;Dangerous deletion&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;project-rules-flexible-overrides&quot;&gt;Project Rules (Flexible Overrides)&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;&amp;lt;project&amp;gt;&#x2F;.pi&#x2F;permission-rules.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;trustedPaths&amp;quot;: [&amp;quot;.&amp;#x2F;data&amp;quot;, &amp;quot;.&amp;#x2F;tmp&amp;quot;],
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;, &amp;quot;write&amp;quot;, &amp;quot;edit&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;*&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;Project files&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;allow&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Configuration changes take effect immediately without restarting pi.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;user-experience&quot;&gt;User Experience&lt;&#x2F;h2&gt;
+&lt;p&gt;When the agent tries to access a sensitive file:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;⚠️ Sensitive Operation — SSH private keys
+
+Rule: **&amp;#x2F;.ssh&amp;#x2F;**
+Tool: read
+Target: &amp;#x2F;home&amp;#x2F;user&amp;#x2F;.ssh&amp;#x2F;id_rsa
+
+Allow?
+[Allow Once] [Always Allow] [Deny Once] [Always Deny]
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Always Allow&#x2F;Deny&lt;&#x2F;strong&gt;: Remember choice, auto-process next time&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Allow&#x2F;Deny Once&lt;&#x2F;strong&gt;: Only affects current operation&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;why-keep-it-simple&quot;&gt;Why Keep It Simple&lt;&#x2F;h2&gt;
+&lt;p&gt;Comparison with &lt;code&gt;pi-permission-system&lt;&#x2F;code&gt; (another permission extension):&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-system&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-gate&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Features&lt;&#x2F;td&gt;&lt;td&gt;Full (MCP, audit, sub-agents)&lt;&#x2F;td&gt;&lt;td&gt;Lean (files + commands)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Config&lt;&#x2F;td&gt;&lt;td&gt;JSON schema + YAML&lt;&#x2F;td&gt;&lt;td&gt;Simple JSON + glob&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Code&lt;&#x2F;td&gt;&lt;td&gt;~2000 lines&lt;&#x2F;td&gt;&lt;td&gt;~380 lines&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Use Case&lt;&#x2F;td&gt;&lt;td&gt;Teams&#x2F;Enterprise&lt;&#x2F;td&gt;&lt;td&gt;Individual developers&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;If you just need “ask before acting,” &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; is simpler and more direct.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-rules-not-ai&quot;&gt;Why Rules, Not AI&lt;&#x2F;h2&gt;
+&lt;p&gt;Security decisions need &lt;strong&gt;determinism&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Rule engine: 100% predictable, millisecond response&lt;&#x2F;li&gt;
+&lt;li&gt;AI judgment: May be inconsistent, requires API calls&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;“Probably should allow” isn’t good enough. Security needs explicit allow or deny.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;github&quot;&gt;GitHub&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;pi-permission-gate&quot;&gt;CNCSMonster&#x2F;pi-permission-gate&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;MIT licensed. Feedback welcome.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

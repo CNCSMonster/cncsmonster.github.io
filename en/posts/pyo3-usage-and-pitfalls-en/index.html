@@ -1,0 +1,245 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>PyO3 Usage and Pitfalls | CCM's Blog</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM's Blog" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM's Blog" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/ hreflang=zh rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM's Blog</a><div class=nav-links><div class=search-container><input placeholder="Search articles..." class=search-input id=search-input><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>Home</a><a href=https://cncsmonster.github.io/posts/>Blog</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> Ebooks</a><a href=https://cncsmonster.github.io/open-source/>Projects</a><a href=https://cncsmonster.github.io/about/>About</a><a title="Subscribe to blog updates" class=nav-subscribe href=https://cncsmonster.github.io/subscribe/> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a class=lang-link href=https://cncsmonster.github.io/posts/pyo3-usage-and-pitfalls/ title=切换到中文>中文</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>PyO3 Usage and Pitfalls</h1><div class=post-meta><time datetime=2026-08-31T00:00:00+08:00>2026-08-31</time><div class=post-tags><a class=tag href=https://cncsmonster.github.io/en/tags/rust/>#Rust</a><a class=tag href=https://cncsmonster.github.io/en/tags/python/>#Python</a><a class=tag href=https://cncsmonster.github.io/en/tags/pyo3/>#PyO3</a><a class=tag href=https://cncsmonster.github.io/en/tags/language-bindings/>#Language Bindings</a></div></div></header><div class=post-layout><div class=post-content><p>PyO3 connects Rust and Python. It supports several patterns: exposing Rust functions, structs, and modules to Python; retaining Python objects in Rust; and converting Python-created objects into Rust types so existing Rust business logic can be reused.<hr><h2 id=1-expose-a-rust-function-to-python>1. Expose a Rust Function to Python</h2><p>The simplest approach is to mark a function with <code>#[pyfunction]</code> and register it in a <code>#[pymodule]</code>.<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::prelude::*;
+
+#[pyfunction]
+fn add(left: i64, right: i64) -> i64 {
+    left + right
+}
+
+#[pymodule]
+fn calc(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(add, m)?)?;
+    Ok(())
+}
+</code></pre><p>Python can call it directly:<pre class=language-python data-lang=python><code class=language-python data-lang=python>import calc
+
+assert calc.add(2, 3) == 5
+</code></pre><p>This approach fits calculation functions, utility functions, and performance-sensitive code.<h2 id=2-expose-a-rust-struct-as-a-python-class>2. Expose a Rust Struct as a Python Class</h2><p><code>#[pyclass]</code> defines a class visible to Python, while <code>#[pymethods]</code> exposes its constructor, methods, and properties.<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::prelude::*;
+
+#[pyclass]
+struct Counter {
+    #[pyo3(get)]
+    value: i64,
+}
+
+#[pymethods]
+impl Counter {
+    #[new]
+    fn new() -> Self {
+        Self { value: 0 }
+    }
+
+    fn increment(&mut self) {
+        self.value += 1;
+    }
+}
+</code></pre><p>Python usage:<pre class=language-python data-lang=python><code class=language-python data-lang=python>counter = calc.Counter()
+counter.increment()
+assert counter.value == 1
+</code></pre><p>This approach fits objects whose Rust state must survive across multiple Python calls.<h2 id=3-pass-data-between-rust-and-python>3. Pass Data Between Rust and Python</h2><p>PyO3 can automatically convert many common types. For example, a Python dictionary can be extracted into a Rust <code>HashMap&LTString, f64></code>:<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use std::collections::HashMap;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+#[pyfunction]
+fn sum_values(values: &Bound<'_, PyDict>) -> PyResult&LTf64> {
+    let values: HashMap&LTString, f64> = values.extract()?;
+    Ok(values.values().sum())
+}
+</code></pre><p><code>extract()</code> creates Rust-owned data. If the object only needs to be read during the current call, use <code>Bound<'py, T></code> directly instead of converting the entire object into a Rust container first.<p>A simple rule:<ul><li>Convert to a Rust type when the data must outlive the Python call or be processed as Rust-owned data;<li>Prefer borrowing with <code>Bound<'py, T></code> when the object is only read during the current call.</ul><h2 id=4-store-a-python-object-in-rust>4. Store a Python Object in Rust</h2><p>The following three types are easy to confuse:<table><thead><tr><th>Type<th>Meaning<th>Typical use<tbody><tr><td><code>Python<'py></code><td>Proof that the current thread may access the Python interpreter<td>Calling Python APIs and binding <code>Py&LTT></code><tr><td><code>Bound<'py, T></code><td>An object reference bound to the current Python context<td>Reading or calling a Python object during the current call<tr><td><code>Py&LTT></code><td>A smart pointer holding a Python object reference without being tied to the current <code>'py</code> lifetime<td>Storing a Python object in a Rust struct for later use</table><p>For example, Rust may need to store a Python callback and call it later when an event occurs:<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>#[pyclass]
+struct Worker {
+    callback: Py&LTPyAny>,
+}
+</code></pre><p>Bind it to the current Python context when calling it:<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>fn call(&self, py: Python<'_>) -> PyResult<()> {
+    self.callback.bind(py).call0()?;
+    Ok(())
+}
+</code></pre><p><code>Py&LTT></code> is not the Python interpreter itself, and Rust does not take ownership of the Python object’s data. Rust holds a reference to an object managed by the Python interpreter.<p>For temporary access during the current call, use a bound reference instead:<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>fn read_data(data: &Bound<'_, PyDict>) -> usize {
+    data.len()
+}
+</code></pre><h2 id=5-let-python-provide-the-business-logic-required-by-a-rust-trait>5. Let Python Provide the Business Logic Required by a Rust Trait</h2><p>Rust can define a trait and the surrounding business flow while letting a Python object provide the concrete implementation. A Rust wrapper stores a reference to the Python object and implements the Rust trait; when the trait method is called, the wrapper forwards the call to the Python object’s method.<p>In this example, Rust defines the <code>Model</code> trait and the generic <code>solve_model()</code> function. Python defines <code>UserModel</code> and provides its <code>compute()</code> logic.<pre class=language-python data-lang=python><code class=language-python data-lang=python>class UserModel:
+    def compute(self, value):
+        return value * 2
+
+model = UserModel()
+assert calc.solve(model, 10.0) == 20.0
+</code></pre><p>When Python calls <code>calc.solve()</code>, <code>model</code> is a <code>UserModel</code> instance. The Rust function exposed to Python receives that object and stores it in a wrapper:<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::prelude::*;
+
+trait Model {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult&LTf64>;
+}
+
+struct UserModelWrapper {
+    model: Py&LTPyAny>,
+}
+
+impl Model for UserModelWrapper {
+    fn compute(&self, py: Python<'_>, value: f64) -> PyResult&LTf64> {
+        self.model
+            .bind(py)
+            .call_method1("compute", (value,))?
+            .extract()
+    }
+}
+
+fn solve_model&LTM: Model>(py: Python<'_>, model: &M, value: f64) -> PyResult&LTf64> {
+    model.compute(py, value)
+}
+
+#[pyfunction(name = "solve")]
+fn solve_wrapper(py: Python<'_>, model: Py&LTPyAny>, value: f64) -> PyResult&LTf64> {
+    let wrapper = UserModelWrapper { model };
+    solve_model(py, &wrapper, value)
+}
+
+#[pymodule]
+fn calc(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(solve_wrapper, m)?)?;
+    Ok(())
+}
+</code></pre><p>The complete call chain is:<pre class=language-text data-lang=text><code class=language-text data-lang=text>Python creates a UserModel instance
+    → Python calls calc.solve(model, 10.0)
+    → PyO3 receives model as solve_wrapper's Py&LTPyAny> parameter
+    → Rust creates UserModelWrapper and stores the Python object reference
+    → solve_model() calls wrapper.compute() through the Model trait
+    → wrapper.bind(py) obtains a Bound<'py, PyAny> for the current context
+    → call_method1("compute", (10.0,)) calls Python's model.compute(10.0)
+    → Python returns 20.0
+    → extract() converts the result to Rust f64
+    → solve_wrapper returns PyResult&LTf64>
+    → Python receives 20.0
+</code></pre><p><code>UserModel</code> is not converted into an equivalent Rust struct. <code>UserModelWrapper</code> is only an adapter: it satisfies Rust’s trait constraint, while the concrete <code>compute()</code> logic remains in Python.<h2 id=6-convert-a-python-object-structure-into-rust-types-and-use-existing-rust-trait-implementations>6. Convert a Python Object Structure into Rust Types and Use Existing Rust Trait Implementations</h2><p>Python objects cannot directly become a Rust <code>Box&LTdyn Evaluatable></code>. When Python constructs the object structure while Rust already has the trait-based business logic, use three layers:<ul><li><strong>Native Rust types</strong>: implement the trait and contain the business logic;<li><strong>PyO3 wrapper types</strong>: register Python classes so Python can construct the object structure;<li><strong>Conversion function</strong>: recursively traverse the Python object tree and rebuild the Rust trait-object tree.</ul><p>The call chain is:<pre class=language-text data-lang=text><code class=language-text data-lang=text>Python constructs a PyAdd, PyVar, and PyConst object tree
+    → Python calls the expression object's evaluate()
+    → Rust receives the Python object tree
+    → to_evaluatable() checks concrete types and recursively reads objects
+    → PyAdd, PyVar, and PyConst become AddExpr, VarExpr, and ConstExpr
+    → a native Rust expression tree is formed
+    → the existing Evaluatable::evaluate() implementation runs
+    → the result is returned to Python
+</code></pre><p>Two different conversion operations appear here: <code>vars.extract()</code> is a PyO3-provided object method; <code>to_evaluatable(py, obj)</code> is an ordinary function defined in this example that recursively converts the expression tree.<h3 id=1-rust-trait-and-native-types>1. Rust Trait and Native Types</h3><pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use std::collections::HashMap;
+
+pub trait Evaluatable: Send + Sync {
+    fn evaluate(&self, vars: &HashMap&LTString, f64>) -> Result&LTf64, String>;
+}
+
+pub struct ConstExpr {
+    pub value: f64,
+}
+
+pub struct VarExpr {
+    pub name: String,
+}
+
+pub struct AddExpr {
+    pub left: Box&LTdyn Evaluatable>,
+    pub right: Box&LTdyn Evaluatable>,
+}
+
+impl Evaluatable for ConstExpr {
+    fn evaluate(&self, _: &HashMap&LTString, f64>) -> Result&LTf64, String> {
+        Ok(self.value)
+    }
+}
+
+impl Evaluatable for VarExpr {
+    fn evaluate(&self, vars: &HashMap&LTString, f64>) -> Result&LTf64, String> {
+        vars.get(&self.name)
+            .copied()
+            .ok_or_else(|| format!("Undefined: {}", self.name))
+    }
+}
+
+impl Evaluatable for AddExpr {
+    fn evaluate(&self, vars: &HashMap&LTString, f64>) -> Result&LTf64, String> {
+        Ok(self.left.evaluate(vars)? + self.right.evaluate(vars)?)
+    }
+}
+</code></pre><blockquote><p><strong>Example note</strong>: <code>Send + Sync</code> here is a concurrency constraint declared by the <code>Evaluatable</code> business trait itself. It is not a general PyO3 requirement. Keep it only if these expression objects must be safely sent between or shared across threads.</blockquote><h3 id=2-pyo3-wrapper-types-and-the-conversion-bridge>2. PyO3 Wrapper Types and the Conversion Bridge</h3><p>The wrapper types are registered as Python classes. The conversion function checks concrete types and recursively builds a Rust object tree:<pre class=language-rust data-lang=rust><code class=language-rust data-lang=rust>use pyo3::exceptions::{PyRuntimeError, PyTypeError};
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+#[pyclass(name = "Const")]
+pub struct PyConst {
+    #[pyo3(get)]
+    pub value: f64,
+}
+
+#[pymethods]
+impl PyConst {
+    #[new]
+    fn new(value: f64) -> Self {
+        Self { value }
+    }
+}
+
+#[pyclass(name = "Var")]
+pub struct PyVar {
+    #[pyo3(get)]
+    pub name: String,
+}
+
+#[pymethods]
+impl PyVar {
+    #[new]
+    fn new(name: &str) -> Self {
+        Self { name: name.into() }
+    }
+}
+
+#[pyclass(name = "Add")]
+pub struct PyAdd {
+    #[pyo3(get)]
+    pub left: Py&LTPyAny>,
+    #[pyo3(get)]
+    pub right: Py&LTPyAny>,
+}
+
+#[pymethods]
+impl PyAdd {
+    #[new]
+    fn new(left: Py&LTPyAny>, right: Py&LTPyAny>) -> Self {
+        Self { left, right }
+    }
+
+    fn evaluate(&self, py: Python<'_>, vars: &Bound<'_, PyDict>) -> PyResult&LTf64> {
+        let vars: HashMap&LTString, f64> = vars.extract()?;
+        AddExpr {
+            left: to_evaluatable(py, &self.left)?,
+            right: to_evaluatable(py, &self.right)?,
+        }
+        .evaluate(&vars)
+        .map_err(PyRuntimeError::new_err)
+    }
+}
+
+fn to_evaluatable(py: Python<'_>, obj: &Py&LTPyAny>) -> PyResult&LTBox&LTdyn Evaluatable>> {
+    let obj = obj.bind(py);
+
+    if let Ok(value) = obj.downcast::&LTPyConst>() {
+        return Ok(Box::new(ConstExpr {
+            value: value.borrow().value,
+        }));
+    }
+
+    if let Ok(value) = obj.downcast::&LTPyVar>() {
+        return Ok(Box::new(VarExpr {
+            name: value.borrow().name.clone(),
+        }));
+    }
+
+    if let Ok(value) = obj.downcast::&LTPyAdd>() {
+        let value = value.borrow();
+        return Ok(Box::new(AddExpr {
+            left: to_evaluatable(py, &value.left)?,
+            right: to_evaluatable(py, &value.right)?,
+        }));
+    }
+
+    Err(PyTypeError::new_err("Expected Const, Var, or Add"))
+}
+</code></pre><p>Python can build and evaluate an expression:<pre class=language-python data-lang=python><code class=language-python data-lang=python>import calc
+
+x = calc.Var("x")
+y = calc.Var("y")
+expr = calc.Add(calc.Add(x, calc.Const(3.14)), y)
+
+assert expr.evaluate({"x": 10.0, "y": 5.0}) == 18.14
+</code></pre><p>This does not expose the Rust trait directly to Python. Instead, Python wrapper types form the interface, and the conversion step produces Rust objects implementing the trait.<p>The official PyO3 Trait Bounds tutorial addresses a different problem: a Rust wrapper holding a Python object implements an existing Rust trait, and that wrapper is passed to a generic function with a trait bound. It does not discuss recursively rebuilding a <code>Box&LTdyn Trait></code> object tree as in this example.<h2 id=7-common-pitfalls>7. Common Pitfalls</h2><h3 id=1-do-not-confuse-py-t-with-bound-py-t>1. Do Not Confuse <code>Py&LTT></code> with <code>Bound<'py, T></code></h3><ul><li>Use <code>Py&LTT></code> when Rust must retain a Python object for later reads or calls;<li>Use <code>Bound<'py, T></code> when the object is accessed only within the current Python context;<li>When accessing a <code>Py&LTT></code>, call <code>bind(py)</code> first to obtain <code>Bound<'py, T></code>.</ul><p>Confusing these types can lead to attempts to store a temporary <code>Bound<'py, T></code> in a long-lived Rust struct, or to access <code>Py&LTT></code> without first calling <code>bind(py)</code>.<h3 id=2-map-python-exceptions-at-the-boundary>2. Map Python Exceptions at the Boundary</h3><p>If the Rust business layer returns <code>Result&LTT, String></code>, map the error at the boundary to a specific Python exception such as <code>PyValueError</code>, <code>PyTypeError</code>, or <code>PyRuntimeError</code>.<h3 id=3-choose-conversion-logic-by-actual-type>3. Choose Conversion Logic by Actual Type</h3><p>When Rust receives a parameter of type <code>Py&LTPyAny></code>, it must determine at runtime which kind of Python object it is. Do not inspect strings such as <code>__class__.__name__</code>: an ordinary Python class can use the same name.<p>If only known <code>#[pyclass]</code> types are accepted, use <code>downcast::&LTPyConst>()</code>, <code>downcast::&LTPyVar>()</code>, and similar checks to inspect the object’s actual PyO3 type and apply the corresponding conversion logic. Return <code>PyTypeError</code> only after all supported type checks fail.<h3 id=4-binding-and-packaging-are-separate-concerns>4. Binding and Packaging Are Separate Concerns</h3><p>PyO3 provides the Rust/Python bindings. Building the extension as an installable Python package usually also requires a packaging tool such as <code>maturin</code>. The module name, Cargo configuration, and Python package layout must agree.<h2 id=references>References</h2><ul><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs/v0.23.5/ target=_blank>PyO3 User Guide</a><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs/main/doc/pyo3/struct.Bound target=_blank>PyO3 Bound API</a><li><a rel="noopener nofollow noreferrer" href=https://pyo3.rs/v0.23.5/trait-bounds target=_blank>PyO3 Trait Bounds Tutorial</a><li><a rel="noopener nofollow noreferrer" href=https://docs.rs/pyo3/0.23.5/pyo3/ target=_blank>PyO3 docs.rs</a><li><a rel="noopener nofollow noreferrer" href=https://www.maturin.rs/ target=_blank>maturin documentation</a><li><a rel="noopener nofollow noreferrer" href=https://doc.rust-lang.org/reference/types/trait-object.html target=_blank>Rust Trait Objects</a></ul></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#1-expose-a-rust-function-to-python>1. Expose a Rust Function to Python</a><li><a href=#2-expose-a-rust-struct-as-a-python-class>2. Expose a Rust Struct as a Python Class</a><li><a href=#3-pass-data-between-rust-and-python>3. Pass Data Between Rust and Python</a><li><a href=#4-store-a-python-object-in-rust>4. Store a Python Object in Rust</a><li><a href=#5-let-python-provide-the-business-logic-required-by-a-rust-trait>5. Let Python Provide the Business Logic Required by a Rust Trait</a><li><a href=#6-convert-a-python-object-structure-into-rust-types-and-use-existing-rust-trait-implementations>6. Convert a Python Object Structure into Rust Types and Use Existing Rust Trait Implementations</a> <ul><li><a href=#1-rust-trait-and-native-types>1. Rust Trait and Native Types</a><li><a href=#2-pyo3-wrapper-types-and-the-conversion-bridge>2. PyO3 Wrapper Types and the Conversion Bridge</a></ul><li><a href=#7-common-pitfalls>7. Common Pitfalls</a> <ul><li><a href=#1-do-not-confuse-py-t-with-bound-py-t>1. Do Not Confuse Py&LTT> with Bound<'py, T></a><li><a href=#2-map-python-exceptions-at-the-boundary>2. Map Python Exceptions at the Boundary</a><li><a href=#3-choose-conversion-logic-by-actual-type>3. Choose Conversion Logic by Actual Type</a><li><a href=#4-binding-and-packaging-are-separate-concerns>4. Binding and Packaging Are Separate Concerns</a></ul><li><a href=#references>References</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>Copyright：</strong> This work is licensed under <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en rel=noopener target=_blank>CC BY-NC-SA 4.0</a>. Please provide attribution and share alike.</div></footer><section class=comments id=comments><h2>Comments</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=en data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=next href=https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/>PPT Master Skill Deep Dive: SVG Intermediary, Web Annotations, and Native Editable PPTX →</a></nav></main><footer class=site-footer><p>© 2026 CCM. Powered by Zola.<div class=footer-links><a href=https://cncsmonster.github.io/>↑ Back to Home</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>Archive</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>Ebooks</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.en.js></script><script>(()=>{let j=1,m=`block`,k=``,l=`none`,i=0,h=null;var e=((a,b)=>{if(!a)return k;const c=new RegExp(`(`+ f(b)+ `)`,`gi`);return a.replace(c,`<mark>\$1</mark>`)});var g=(()=>{c();d()});var f=(a=>a.replace(/[.*+?^${}()|[\]\\]/g,`\\\\\$&`));var d=(()=>{const b=document.getElementById(`search-input`);const d=document.getElementById(`search-results`);if(!b||!d)return;let f=h;b.addEventListener(`input`,function(){const b=this.value.trim();if(b.length===i){d.innerHTML=k;d.style.display=l;return};clearTimeout(f);f=setTimeout(()=>{if(!a&&!c()){d.innerHTML=`<li class="no-results">Loading search...</li>`;d.style.display=m;return};const f=a.search(b);const g=10;if(f.length===i){d.innerHTML=`<li class="no-results">No results found</li>`}else{d.innerHTML=f.slice(i,g).map(a=>{const c=a.item;const d=e(c.title,b);const f=c.description?e(c.description,b):k;return `<li class="search-result"><a href="`+ c.path+ `"><h4>`+ d+ `</h4>`+ (f?`<p>`+ f+ `</p>`:k)+ `</a></li>`}).join(k)};d.style.display=m},150)});document.addEventListener(`click`,(a=>{if(!a.target.closest(`.search-container`)){d.style.display=l}}))});var c=(()=>{if(a)return !0;if(!b||b.length===i){console.warn(`搜索索引为空`);return !1};try{const c={includeScore:!1,includeMatches:!0,ignoreLocation:!0,threshold:0.15,minMatchCharLength:j,keys:[{name:`title`,weight:3},{name:`description`,weight:2},{name:`body`,weight:j},{name:`path`,weight:0.5}]};a=new Fuse(b,c);console.log(`搜索初始化成功，条目数:`,b.length);return !0}catch(a){console.error(`Fuse 初始化失败:`,a);return !1}});let a=h;const b=window.searchIndex||[];if(document.readyState===`loading`){document.addEventListener(`DOMContentLoaded`,g)}else{g()}})()</script>

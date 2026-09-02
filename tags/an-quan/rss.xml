@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - 安全</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/an-quan/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Wed, 29 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Qwen Code Auto Mode Classifier：两阶段 LLM 审批机制解析</title>
+          <pubDate>Wed, 29 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/</link>
+          <guid>https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/">&lt;blockquote&gt;
+&lt;p&gt;本文基于 Qwen Code &lt;code&gt;0.20.1-preview.7215&lt;&#x2F;code&gt; 版本的编译源码分析。preview 版本的机制可能随版本变化。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Qwen Code 提供五种审批模式：&lt;code&gt;plan&lt;&#x2F;code&gt;（计划）、&lt;code&gt;default&lt;&#x2F;code&gt;（默认确认）、&lt;code&gt;auto-edit&lt;&#x2F;code&gt;（自动编辑）、&lt;code&gt;auto&lt;&#x2F;code&gt;（自动审批）、&lt;code&gt;yolo&lt;&#x2F;code&gt;（全部自动）。在这个版本中，&lt;strong&gt;新用户安装后默认就是 auto 模式&lt;&#x2F;strong&gt;——工具调用不需要逐个确认，而是通过多层过滤自动判断每个操作是否安全。我平时使用也推荐 auto 模式，它在效率和安全之间取得了很好的平衡。本文拆解这个机制的工作原理和配置方式。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zheng-ti-jia-gou&quot;&gt;整体架构&lt;&#x2F;h2&gt;
+&lt;p&gt;Auto mode 的自动审批机制由四个部分组成：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;规则层&lt;&#x2F;strong&gt;：确定性规则（工具默认权限、用户自定义规则、白名单、正则拦截），快速过滤掉明确安全或明确危险的操作&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;LLM 判断层&lt;&#x2F;strong&gt;：两阶段 Classifier，处理规则覆盖不了的模糊地带&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fail-closed&lt;&#x2F;strong&gt;：classifier 出错时默认阻止——宁可错杀不放过&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全网&lt;&#x2F;strong&gt;：Denial Tracking，检测 LLM 和 classifier 的死循环，必要时降级为人工确认&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;一个工具调用的完整生命周期：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;LLM 返回 [A, B, C]
+  → 每个独立走审批流程：
+    ①-⑤ 规则层 → ⑥ LLM 判断层
+    → A 放行 → 执行 → 返回结果
+    → B 阻止 → 跳过
+    → C 放行 → 执行 → 返回结果
+  → 所有结果一起回传 LLM
+  → LLM 看到完整画面后决定下一步
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;gui-ze-ceng&quot;&gt;规则层：①-⑤&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 在执行工具调用（读文件、跑命令、改代码等）之前，会依次经过以下检查：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;工具调用
+  → ① 工具自身默认权限（比如 read_file 默认安全，shell 命令默认需要审批）
+  → ② PermissionManager（用户自定义规则引擎）
+  → ③ acceptEdits fast-path（如果当前是 acceptEdits 模式，工作区内编辑直接放行）
+  → ④ 安全工具白名单（read_file、grep、glob 等只读工具直接放行）
+  → ⑤ Guard（正则拦截危险命令模式，如 git clean、rm -rf 等，不经过 LLM）
+  → ⑥ LLM Classifier（两阶段 LLM 判断，见下节）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;② 是用户可配置的规则引擎，返回四种结果：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow&lt;&#x2F;code&gt; → 直接放行（跳过 ③-⑥）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;deny&lt;&#x2F;code&gt; → 直接阻止&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;ask&lt;&#x2F;code&gt; → 弹出确认框，等用户手动决定&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;&#x2F;code&gt;（无规则匹配）→ 继续 ③-⑥&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;liang-jie-duan-classifier&quot;&gt;两阶段 Classifier&lt;&#x2F;h2&gt;
+&lt;p&gt;前五步都是确定性规则——快、免费，但覆盖不了所有情况。剩下的工具调用交给 LLM 判断。Classifier 收到的是工具名称、参数和当前对话上下文，分两步走：&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;stage-1-kuai-su-pan-duan&quot;&gt;Stage 1：快速判断&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;模型：fastModel（未配置则 fallback 到主模型）&lt;&#x2F;li&gt;
+&lt;li&gt;输出：仅 &lt;code&gt;{shouldBlock: boolean}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;超时：10 秒&lt;&#x2F;li&gt;
+&lt;li&gt;行为：说 allow → 立即放行；说 block → 进入 Stage 2&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;stage-2-fu-he&quot;&gt;Stage 2：复核&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;模型：同 Stage 1&lt;&#x2F;li&gt;
+&lt;li&gt;输出：&lt;code&gt;{thinking, shouldBlock, reason}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;超时：30 秒&lt;&#x2F;li&gt;
+&lt;li&gt;行为：说 allow → 放行；说 block → 阻止&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Stage 2 输出中的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 是模型写的一段判断依据文本（比如“用户只是读取文件，安全“），帮助开发者理解 classifier 为什么做了这个决定。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fail-closed-zhu-ke-cuo-sha&quot;&gt;Fail-closed：宁可错杀&lt;&#x2F;h3&gt;
+&lt;p&gt;任何非主动中断的失败（API 错误、超时、响应格式不对）都返回 &lt;code&gt;shouldBlock: true&lt;&#x2F;code&gt;。这意味着 &lt;strong&gt;classifier 挂掉 = 所有需要审批的工具都被 block&lt;&#x2F;strong&gt;。这不是 bug，是安全设计。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;mo-xing-you-xian-ji&quot;&gt;模型优先级&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;override → config.getFastModel() → config.getModel() → DEFAULT_QWEN_MODEL
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Classifier 使用 fastModel。不配置时 fallback 到主模型，但主模型通常更慢——Stage 1 每次判断大约多花几百毫秒到几秒不等，积少成多。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;denial-tracking-fang-si-xun-huan&quot;&gt;Denial Tracking：防死循环&lt;&#x2F;h2&gt;
+&lt;p&gt;如果 classifier 持续 block（LLM 卡在死胡同），系统不会无限循环：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;计数器&lt;&#x2F;th&gt;&lt;th&gt;阈值&lt;&#x2F;th&gt;&lt;th&gt;效果&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;连续 block&lt;&#x2F;td&gt;&lt;td&gt;3 次&lt;&#x2F;td&gt;&lt;td&gt;下一个工具调用跳过 classifier，直接弹人工确认&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;连续 unavailable&lt;&#x2F;td&gt;&lt;td&gt;2 次&lt;&#x2F;td&gt;&lt;td&gt;同上&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;总计 denial&lt;&#x2F;td&gt;&lt;td&gt;20 次&lt;&#x2F;td&gt;&lt;td&gt;触发总额上限&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;以上阈值为硬编码，不可配置。切换审批模式时所有计数器重置。&lt;&#x2F;p&gt;
+&lt;p&gt;几个关键点：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;按工具调用累计&lt;&#x2F;strong&gt;，不是按批次——一批有 2 个 block 就加 2&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;降级发生在 classifier 之前&lt;&#x2F;strong&gt;——连续 3 次后第 4 次不再浪费 LLM 调用，直接问人&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;用户批准后计数器归零&lt;&#x2F;strong&gt;，恢复自动模式；拒绝则不重置，下一个继续人工确认&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;跨轮次累计&lt;&#x2F;strong&gt;——LLM 每轮看到被拒结果后换个方式再试，连续 3 次被拒就降级&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;pei-zhi-jian-yi&quot;&gt;配置建议&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;fastModel&amp;quot;: &amp;quot;qwen3-coder-plus&amp;quot;,
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;autoMode&amp;quot;: {
+      &amp;quot;classifier&amp;quot;: {
+        &amp;quot;timeouts&amp;quot;: { &amp;quot;stage1Ms&amp;quot;: 10000, &amp;quot;stage2Ms&amp;quot;: 30000 },
+        &amp;quot;thinking&amp;quot;: { &amp;quot;stage2Enabled&amp;quot;: false }
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;关键配置&lt;&#x2F;strong&gt;：&lt;code&gt;fastModel&lt;&#x2F;code&gt; 是 classifier 的核心依赖。不配置时 fallback 到主模型，但主模型通常更慢——每个需要 classifier 判断的工具调用都会多等一段时间。&lt;&#x2F;p&gt;
+&lt;p&gt;选型建议：选一个&lt;strong&gt;快的&lt;&#x2F;strong&gt;模型。classifier 只需要输出一个布尔值或一段简短文本，不需要深度推理。不思考的模型（如 &lt;code&gt;qwen3-coder-plus&lt;&#x2F;code&gt;）天然适合；有思考能力的模型（如 &lt;code&gt;deepseek-v4-flash&lt;&#x2F;code&gt;）也可以——classifier 两阶段都默认不开 API 思考模式，模型不会在内部做额外推理，一样很快。如果本地资源充足，配一个本地小模型当 fastModel 也行——零 API 成本，响应还快。&lt;&#x2F;p&gt;
+&lt;p&gt;唯一不建议的：某个模型&lt;strong&gt;强制开启思考&lt;&#x2F;strong&gt;（无法通过参数关闭），用在 fastModel 上每次判断都会多花思考的时间和 token。另外，classifier 能看到对话上下文和工具参数，fastModel 的服务提供商安全性应不低于主模型。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;stage2Enabled&lt;&#x2F;code&gt; 控制 Stage 2 是否让模型走 API 深度推理模式（更慢、更多 token）。默认 &lt;code&gt;false&lt;&#x2F;code&gt; 即可——Stage 2 输出中的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 字段不受影响，它只是模型写的一段普通文本解释。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zong-jie&quot;&gt;总结&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 的 auto mode 不是简单的“全部自动执行“，而是一个精心设计的安全阀门：规则层挡在前面，LLM classifier 做模糊地带的判断，fail-closed 保证出错时不会放行，denial tracking 防止死循环。代价是每个需要判断的工具调用都要多花一次 LLM 调用的时间和 token。&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>从被入侵挖矿到全面安全加固</title>
+          <pubDate>Sat, 30 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/cong-bei-ru-qin-wa-kuang-dao-quan-mian-an-quan-jia-gu/</link>
+          <guid>https://cncsmonster.github.io/posts/cong-bei-ru-qin-wa-kuang-dao-quan-mian-an-quan-jia-gu/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/cong-bei-ru-qin-wa-kuang-dao-quan-mian-an-quan-jia-gu/">&lt;h2 id=&quot;xu-fa-xian-hei-ke-huan-zai-gong-ji&quot;&gt;序：发现黑客还在攻击&lt;&#x2F;h2&gt;
+&lt;p&gt;2026 年 5 月 29 日，在排查系统 CPU 发热问题时，我惊讶地发现：&lt;strong&gt;黑客仍在持续攻击我的电脑！&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;今日 SSH 暴力破解尝试：293 次
+攻击来源：通过 rathole 隧道 (your-server-ip:2334)
+被尝试用户名：ubuntu, test, root, centos, dell, user...
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;更令人担忧的是，服务器端的安全配置仍然不完善：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;问题&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;SSH 允许密码登录&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;SSH 允许 root 登录&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;无 fail2ban 防护&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;防火墙未启用&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;这说明之前的修复只是“头痛医头”，没有从根本上解决问题。&lt;strong&gt;攻击者仍在尝试，我们的防线仍有漏洞。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;于是，我决定进行一次全面的安全加固。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;xi-tong-jia-gou&quot;&gt;系统架构&lt;&#x2F;h3&gt;
+&lt;p&gt;本次事件涉及三台主机，都通过 rathole 隧道将 SSH 服务暴露到公网：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;┌─────────────────────────────────────────────────────────────┐
+│                      家中局域网                              │
+│  ┌─────────────┐    ┌─────────────┐                        │
+│  │   主机 A    │    │   主机 B    │                        │
+│  │  (WSL2)     │    │   (Mac)     │                        │
+│  │  SSH 服务   │    │  SSH 服务   │                        │
+│  └──────┬──────┘    └──────┬──────┘                        │
+│         │                  │                                │
+│         └────────┬─────────┘                                │
+│                  │ rathole 隧道                             │
+│                  ↓                                          │
+│         ┌──────────────┐                                   │
+│         │   服务器     │                                   │
+│         │ (your-server-ip)│                                 │
+│         └──────┬───────┘                                   │
+│                ↓                                            │
+│            公网访问                                         │
+└─────────────────────────────────────────────────────────────┘
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;主机 A&lt;&#x2F;strong&gt;：主要受害者，被入侵并植入矿机&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;主机 B&lt;&#x2F;strong&gt;：次要风险点，SSH 也暴露在公网&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;服务器&lt;&#x2F;strong&gt;：运行 rathole 服务，转发流量&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-yuan-shi-ru-qin-shi-jian-2026-05-23&quot;&gt;一、原始入侵事件(2026-05-23)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;shi-jian-gai-shu&quot;&gt;事件概述&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL 通过 rathole 内网穿透将 SSH 暴露到公网(非标准端口)。5 月 22 日晚,攻击者通过字典暴力破解 &lt;code&gt;test&lt;&#x2F;code&gt; 用户的弱密码,成功登录并植入门罗币矿机。到 5 月 23 日凌晨被发现时,矿机已满负荷运行约一天,占用 2.4 GiB 内存。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gong-ji-lu-jing&quot;&gt;攻击路径&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;公网扫描器 → 公网入口:非标准端口 (rathole 穿透)
+                  ↓
+            WSL SSH (内网)
+                  ↓ 字典爆破
+            test 用户 (弱密码)
+                  ↓
+            部署矿机 + crontab 后门
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;shou-hai-cheng-du&quot;&gt;受害程度&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;项目&lt;&#x2F;th&gt;&lt;th&gt;情况&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;矿机进程&lt;&#x2F;td&gt;&lt;td&gt;伪装成 &lt;code&gt;systemd-udevdar&lt;&#x2F;code&gt;,吃满 CPU(1062%),占 2.4 GiB 内存。疑似 XMRig&#x2F;RandomX 挖门罗币&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;后门&lt;&#x2F;td&gt;&lt;td&gt;crontab &lt;code&gt;@reboot &#x2F;var&#x2F;tmp&#x2F;.sys_cache_94&lt;&#x2F;code&gt;(清理时空文件,未部署完)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;密码&lt;&#x2F;td&gt;&lt;td&gt;攻击者登录后立刻改了 test 密码&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API Key 泄露&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.bashrc&lt;&#x2F;code&gt; 中 DeepSeek API Key 明文存储,可能被窃取&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;数据&lt;&#x2F;td&gt;&lt;td&gt;无法确认攻击者是否读取&#x2F;拷贝了文件&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;lou-dong-qing-dan-ru-qin-shi-zhuang-tai-yi-quan-bu-xiu-fu&quot;&gt;漏洞清单(入侵时状态,已全部修复)&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;#&lt;&#x2F;th&gt;&lt;th&gt;问题&lt;&#x2F;th&gt;&lt;th&gt;严重度&lt;&#x2F;th&gt;&lt;th&gt;当前状态&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;SSH 允许密码登录&lt;&#x2F;strong&gt; - 根本原因&lt;&#x2F;td&gt;&lt;td&gt;🔴&lt;&#x2F;td&gt;&lt;td&gt;✅ 已禁用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;test 账户密码太弱&lt;&#x2F;strong&gt; - 字典一撞就进&lt;&#x2F;td&gt;&lt;td&gt;🔴&lt;&#x2F;td&gt;&lt;td&gt;✅ 已锁定&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;多余系统账户&lt;&#x2F;strong&gt; - 系统中存在不止一个弱密码的非核心账户&lt;&#x2F;td&gt;&lt;td&gt;🟡&lt;&#x2F;td&gt;&lt;td&gt;✅ 已清理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;非标准端口不防扫描&lt;&#x2F;strong&gt; - 全端口扫描不挑端口号&lt;&#x2F;td&gt;&lt;td&gt;🟡&lt;&#x2F;td&gt;&lt;td&gt;✅ 已加固&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;5&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;无 fail2ban&lt;&#x2F;strong&gt; - 1412 次失败尝试无任何自动阻断&lt;&#x2F;td&gt;&lt;td&gt;🟡&lt;&#x2F;td&gt;&lt;td&gt;✅ 已安装&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;6&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;API Key 明文放 bashrc&lt;&#x2F;strong&gt; - 被入侵即泄露&lt;&#x2F;td&gt;&lt;td&gt;🟡&lt;&#x2F;td&gt;&lt;td&gt;✅ 已吊销&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;shou-ci-xiu-fu-cuo-shi&quot;&gt;首次修复措施&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. 关闭密码登录(全局,所有用户)
+sudo sed -i &amp;#x27;s&amp;#x2F;^PasswordAuthentication yes&amp;#x2F;PasswordAuthentication no&amp;#x2F;&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config
+sudo systemctl restart sshd
+
+# 2. 锁定失陷账户
+sudo passwd -l test
+
+# 3. 杀掉恶意进程
+sudo pkill -KILL -u test
+
+# 4. 清除 crontab 后门
+sudo rm &amp;#x2F;var&amp;#x2F;spool&amp;#x2F;cron&amp;#x2F;crontabs&amp;#x2F;test
+
+# 5. 删除后门脚本
+sudo rm &amp;#x2F;var&amp;#x2F;tmp&amp;#x2F;.sys_cache_94
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-chi-xu-gong-ji-fa-xian-2026-05-29&quot;&gt;二、持续攻击发现(2026-05-29)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;fa-xian-guo-cheng&quot;&gt;发现过程&lt;&#x2F;h3&gt;
+&lt;p&gt;5 月 29 日,在排查系统 CPU 发热问题时,通过检查 SSH 日志发现了持续的暴力破解攻击:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 检查攻击日志
+grep &amp;quot;Invalid user&amp;quot; &amp;#x2F;var&amp;#x2F;log&amp;#x2F;auth.log | grep &amp;quot;2026-05-29&amp;quot; | wc -l
+# 输出:293
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;gong-ji-xiang-qing&quot;&gt;攻击详情&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;时间范围:14:45 - 18:20(约 3.5 小时)
+攻击频率:每 30-60 秒一次
+攻击来源:通过 rathole 隧道,显示为 127.0.0.1
+被尝试用户名:ubuntu, test, root, centos, dell, user, vq, pq, ba, qg, ii, eq...
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;fu-wu-qi-duan-an-quan-wen-ti&quot;&gt;服务器端安全问题&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 检查服务器SSH配置
+ssh root@your-server-ip &amp;quot;grep -E &amp;#x27;^(PermitRootLogin|PasswordAuthentication)&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config&amp;quot;
+
+# 输出:
+PermitRootLogin yes        # ❌ 危险!
+PasswordAuthentication yes # ❌ 危险!
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;fen-xi-wei-shen-me-shou-ci-xiu-fu-bu-wan-zheng&quot;&gt;分析:为什么首次修复不完整?&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;问题&lt;&#x2F;th&gt;&lt;th&gt;原因&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;只修复了客户端&lt;&#x2F;td&gt;&lt;td&gt;服务器端(your-server-ip)配置仍不安全&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;无自动封禁机制&lt;&#x2F;td&gt;&lt;td&gt;fail2ban 未安装,攻击者可以无限尝试&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;无用户限制&lt;&#x2F;td&gt;&lt;td&gt;没有 AllowUsers 配置,所有用户都暴露&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Mac 未加固&lt;&#x2F;td&gt;&lt;td&gt;Mac 的 SSH 也通过 rathole 暴露,且无安全配置&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-quan-mian-an-quan-jia-gu-2026-05-29&quot;&gt;三、全面安全加固(2026-05-29)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;3-1-ke-hu-duan-ben-ji-jia-gu&quot;&gt;3.1 客户端(本机)加固&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;an-zhuang-fail2ban&quot;&gt;安装 fail2ban&lt;&#x2F;h4&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 安装
+sudo apt install -y fail2ban
+
+# 配置
+cat &amp;gt; &amp;#x2F;etc&amp;#x2F;fail2ban&amp;#x2F;jail.local &amp;lt;&amp;lt; &amp;#x27;EOF&amp;#x27;
+[DEFAULT]
+bantime = 86400
+findtime = 600
+maxretry = 3
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+backend = systemd
+journalmatch = _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+maxretry = 3
+bantime = 86400
+findtime = 600
+EOF
+
+# 启动
+sudo systemctl enable fail2ban
+sudo systemctl start fail2ban
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;ssh-pei-zhi-jia-gu&quot;&gt;SSH 配置加固&lt;&#x2F;h4&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cat &amp;gt; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;hardening.conf &amp;lt;&amp;lt; &amp;#x27;EOF&amp;#x27;
+# SSH加固配置
+MaxStartups 3:50:10
+MaxSessions 3
+MaxAuthTries 3
+LoginGraceTime 30
+AllowUsers your-username
+PasswordAuthentication no
+PermitRootLogin no
+EOF
+
+sudo systemctl restart sshd
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;3-2-fu-wu-qi-duan-your-server-ip-jia-gu&quot;&gt;3.2 服务器端(your-server-ip)加固&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;warning-pei-zhi-chong-tu-wen-ti&quot;&gt;⚠️ 配置冲突问题&lt;&#x2F;h4&gt;
+&lt;p&gt;服务器默认配置存在冲突,需要先修复:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 检查配置
+ssh root@your-server-ip &amp;quot;grep -E &amp;#x27;^(PasswordAuthentication|PermitRootLogin)&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;*.conf&amp;quot;
+
+# 输出示例(存在冲突):
+# &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config:PermitRootLogin yes          ❌ 覆盖 hardening.conf
+# &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config:PasswordAuthentication yes    ❌ 覆盖 hardening.conf
+# &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;50-cloud-init.conf:PasswordAuthentication yes  ❌ 覆盖 hardening.conf
+# &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;hardening.conf:PermitRootLogin prohibit-password  ✅ 被覆盖
+# &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;hardening.conf:PasswordAuthentication no          ✅ 被覆盖
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;问题&lt;&#x2F;strong&gt;:&lt;code&gt;sshd_config&lt;&#x2F;code&gt; 和 &lt;code&gt;50-cloud-init.conf&lt;&#x2F;code&gt; 中的配置会覆盖 &lt;code&gt;hardening.conf&lt;&#x2F;code&gt; 的配置。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;修复方法&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. 注释掉 sshd_config 中的冲突配置
+sed -i &amp;#x27;s&amp;#x2F;^PermitRootLogin yes&amp;#x2F;#PermitRootLogin yes&amp;#x2F;&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config
+sed -i &amp;#x27;s&amp;#x2F;^PasswordAuthentication yes&amp;#x2F;#PasswordAuthentication yes&amp;#x2F;&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config
+
+# 2. 注释掉 50-cloud-init.conf 中的冲突配置
+sed -i &amp;#x27;s&amp;#x2F;^PasswordAuthentication yes&amp;#x2F;#PasswordAuthentication yes&amp;#x2F;&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;50-cloud-init.conf
+
+# 3. 重启 SSH 服务
+systemctl restart ssh
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;an-zhuang-fail2ban-1&quot;&gt;安装 fail2ban&lt;&#x2F;h4&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 连接服务器
+ssh root@your-server-ip
+
+# 安装 fail2ban
+apt install -y fail2ban
+
+# 配置 fail2ban
+cat &amp;gt; &amp;#x2F;etc&amp;#x2F;fail2ban&amp;#x2F;jail.local &amp;lt;&amp;lt; &amp;#x27;EOF&amp;#x27;
+[DEFAULT]
+bantime = 86400
+findtime = 600
+maxretry = 3
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+backend = systemd
+journalmatch = _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+maxretry = 3
+bantime = 86400
+findtime = 600
+EOF
+
+systemctl enable fail2ban
+systemctl start fail2ban
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;ssh-jia-gu&quot;&gt;SSH 加固&lt;&#x2F;h4&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cat &amp;gt; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config.d&amp;#x2F;hardening.conf &amp;lt;&amp;lt; &amp;#x27;EOF&amp;#x27;
+MaxStartups 3:50:10
+MaxSessions 3
+MaxAuthTries 3
+LoginGraceTime 30
+PasswordAuthentication no
+PermitRootLogin prohibit-password
+EOF
+
+systemctl restart sshd
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;3-3-mac-jia-gu&quot;&gt;3.3 Mac 加固&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 禁用密码登录
+sudo sed -i &amp;#x27;&amp;#x27; &amp;#x27;s&amp;#x2F;#PasswordAuthentication yes&amp;#x2F;PasswordAuthentication no&amp;#x2F;&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config
+
+# 禁止root登录
+sudo sed -i &amp;#x27;&amp;#x27; &amp;#x27;s&amp;#x2F;#PermitRootLogin prohibit-password&amp;#x2F;PermitRootLogin no&amp;#x2F;&amp;#x27; &amp;#x2F;etc&amp;#x2F;ssh&amp;#x2F;sshd_config
+
+# 测试配置
+sudo sshd -t
+
+# 重启SSH
+sudo launchctl stop com.openssh.sshd
+sudo launchctl start com.openssh.sshd
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-an-quan-deng-ji-dui-bi&quot;&gt;四、安全等级对比&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;fang-hu-ti-xi-yan-jin&quot;&gt;防护体系演进&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;维度&lt;&#x2F;th&gt;&lt;th&gt;入侵前&lt;&#x2F;th&gt;&lt;th&gt;首次修复后&lt;&#x2F;th&gt;&lt;th&gt;全面加固后&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;整体安全&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;🔴 高危&lt;&#x2F;td&gt;&lt;td&gt;🟡 中等&lt;&#x2F;td&gt;&lt;td&gt;🟢 安全&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;暴力破解防护&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 无&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 基础&lt;&#x2F;td&gt;&lt;td&gt;✅ fail2ban 自动封禁&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;密码认证&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 允许&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 部分禁用&lt;&#x2F;td&gt;&lt;td&gt;✅ 全部禁用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;用户限制&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 无&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 部分&lt;&#x2F;td&gt;&lt;td&gt;✅ AllowUsers&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;连接限制&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 无&lt;&#x2F;td&gt;&lt;td&gt;❌ 无&lt;&#x2F;td&gt;&lt;td&gt;✅ MaxStartups&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;服务管理&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 手动&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 手动&lt;&#x2F;td&gt;&lt;td&gt;✅ systemd 自动重启&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Mac 防护&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 无&lt;&#x2F;td&gt;&lt;td&gt;❌ 无&lt;&#x2F;td&gt;&lt;td&gt;✅ 完整加固&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;dang-qian-fang-hu-ti-xi&quot;&gt;当前防护体系&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;攻击者
+  ↓
+服务器 (your-server-ip)
+  ↓
+fail2ban → 3次失败 → 封禁24小时 ✅
+  ↓
+SSH加固 → 密码禁用 → 无法暴力破解 ✅
+  ↓
+rathole隧道
+  ↓
+客户端SSH
+  ↓
+AllowUsers → 只允许your-username ✅
+  ↓
+✅ 安全
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wu-yan-zheng-jie-guo-2026-05-31&quot;&gt;五、验证结果(2026-05-31)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;shi-ji-yan-zheng&quot;&gt;实际验证&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;ke-hu-duan-windows-wsl2&quot;&gt;客户端(Windows WSL2)&lt;&#x2F;h4&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;验证项&lt;&#x2F;th&gt;&lt;th&gt;测试方法&lt;&#x2F;th&gt;&lt;th&gt;结果&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;SSH 密码登录被拒绝&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;ssh -o PubkeyAuthentication=no test@127.0.0.1&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;Permission denied (publickey)&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;root 登录被拒绝&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;ssh root@127.0.0.1&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;Permission denied (publickey)&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;AllowUsers 配置生效&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;用 test 用户尝试登录&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;not allowed because not listed in AllowUsers&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h4 id=&quot;fu-wu-qi-duan-your-server-ip&quot;&gt;服务器端(your-server-ip)&lt;&#x2F;h4&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;验证项&lt;&#x2F;th&gt;&lt;th&gt;测试方法&lt;&#x2F;th&gt;&lt;th&gt;结果&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;SSH 密码登录被拒绝&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;ssh -o PubkeyAuthentication=no root@your-server-ip&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;Permission denied (publickey)&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;普通用户密码登录被拒绝&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;ssh -o PubkeyAuthentication=no your-username@your-server-ip&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;Permission denied (publickey)&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;配置冲突已修复&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;检查配置文件&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sshd_config&lt;&#x2F;code&gt; 和 &lt;code&gt;50-cloud-init.conf&lt;&#x2F;code&gt; 已注释冲突配置 ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;fail2ban 服务运行&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;systemctl status fail2ban&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;active&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;fail2ban 监控日志&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;fail2ban-client status sshd&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;File list: &#x2F;var&#x2F;log&#x2F;auth.log&lt;&#x2F;code&gt; ✅&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;li-lun-ke-xing-wei-shi-ji-hong-fa&quot;&gt;理论可行(未实际触发)&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;验证项&lt;&#x2F;th&gt;&lt;th&gt;理论依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;fail2ban 自动封禁&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;配置正确:maxretry=3, bantime=86400, findtime=600。filter 规则匹配 “Invalid user” 和 “not allowed” 模式。需 3 次失败触发封禁。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;fail2ban-gong-zuo-yuan-li&quot;&gt;fail2ban 工作原理&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;攻击者尝试登录
+    ↓
+sshd 记录日志到 journal(_SYSTEMD_UNIT=ssh.service)
+    ↓
+fail2ban 读取 journal 日志(backend = systemd)
+    ↓
+filter 匹配失败模式(&amp;quot;Invalid user&amp;quot; &amp;#x2F; &amp;quot;not allowed&amp;quot;)
+    ↓
+累计失败次数(maxretry = 3)
+    ↓
+超过阈值 → 封禁 IP(bantime = 86400)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;liu-he-xin-jiao-xun&quot;&gt;六、核心教训&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-an-quan-bu-kao-yin-cang-kao-mi-yao&quot;&gt;1. 安全不靠隐藏,靠密钥&lt;&#x2F;h3&gt;
+&lt;p&gt;换端口是障眼法。masscan&#x2F;zmap 这类工具可以在几分钟内扫描整个 IPv4 的指定端口段–攻击者不需要知道你的具体端口,扫一遍全网就全出来了。非标准端口只是少了一些噪声级别的攻击,真正的扫描器照样能找到。&lt;strong&gt;只有禁用密码、强制密钥认证能真正挡住。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-mei-yi-ge-xi-tong-zhang-hu-du-shi-ru-kou&quot;&gt;2. 每一个系统账户都是入口&lt;&#x2F;h3&gt;
+&lt;p&gt;系统上有多个用户(包括一个弱密码的 &lt;code&gt;test&lt;&#x2F;code&gt;)。攻击者试到 &lt;code&gt;test&lt;&#x2F;code&gt; 就成了。任何暴露到公网的服务,所有本地用户都同时暴露在攻击面下–只要有一个密码弱,整个系统就门户大开。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-gong-wang-bao-lu-ling-xin-ren&quot;&gt;3. 公网暴露 = 零信任&lt;&#x2F;h3&gt;
+&lt;p&gt;rathole 把内网服务直接映射到公网,等同于把 SSH 直接放到互联网上。&lt;strong&gt;必须假设公网流量 100% 是恶意的。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-bei-ru-qin-hou-yao-cha-chi-jiu-hua&quot;&gt;4. 被入侵后要查持久化&lt;&#x2F;h3&gt;
+&lt;p&gt;攻击者做了三件事:&lt;strong&gt;矿机、改密码、留 crontab&lt;&#x2F;strong&gt;。如果只杀进程不动 crontab,重启矿机又复活。排查时至少检查:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;crontab -l&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;&#x2F;var&#x2F;spool&#x2F;cron&#x2F;crontabs&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;~&#x2F;.ssh&#x2F;authorized_keys&lt;&#x2F;code&gt; 是否多了不明密钥&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;~&#x2F;.bashrc&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; 是否有后门代码&lt;&#x2F;li&gt;
+&lt;li&gt;systemd user services&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;&#x2F;tmp&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;&#x2F;var&#x2F;tmp&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;&#x2F;dev&#x2F;shm&lt;&#x2F;code&gt; 可疑文件&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;5-rathole-sui-dao-xu-yao-shuang-xiang-jia-gu&quot;&gt;5. rathole 隧道需要双向加固&lt;&#x2F;h3&gt;
+&lt;p&gt;rathole 会把内网服务完全暴露到公网,&lt;strong&gt;必须在客户端和服务器端都做安全加固&lt;&#x2F;strong&gt;。只修一端等于没修。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;6-fail2ban-dui-localhost-wu-xiao&quot;&gt;6. fail2ban 对 localhost 无效&lt;&#x2F;h3&gt;
+&lt;p&gt;通过 rathole 转发的连接显示为 127.0.0.1,fail2ban 无法封禁真正的攻击者IP。需要在&lt;strong&gt;服务器端&lt;&#x2F;strong&gt;也安装 fail2ban。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;7-ding-qi-jian-cha-an-quan-pei-zhi&quot;&gt;7. 定期检查安全配置&lt;&#x2F;h3&gt;
+&lt;p&gt;安全不是一次性工作,需要定期检查:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;监控 SSH 日志&lt;&#x2F;li&gt;
+&lt;li&gt;检查 fail2ban 封禁记录&lt;&#x2F;li&gt;
+&lt;li&gt;审计系统用户和权限&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;qi-shi-hou-qing-dan-ru-qin-hou-gai-zuo-shen-me&quot;&gt;七、事后清单:入侵后该做什么&lt;&#x2F;h2&gt;
+&lt;p&gt;如果发现被入侵,按这个顺序过一遍:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;杀进程止血&lt;&#x2F;strong&gt; - &lt;code&gt;pkill -KILL -u &amp;lt;失陷用户&amp;gt;&lt;&#x2F;code&gt; 先把矿机&#x2F;后门进程停掉&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;查持久化&lt;&#x2F;strong&gt; - crontab、authorized_keys、bashrc&#x2F;profile、systemd user services、&#x2F;tmp 和 &#x2F;var&#x2F;tmp 隐藏文件&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;吊销泄露的凭证&lt;&#x2F;strong&gt; - 入侵者可能已经读走了配置文件中的 API Key、token,到对应平台后台全部吊销换新&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;关密码改密钥&lt;&#x2F;strong&gt; - 这是根本防线,不是换端口&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;清理多余账户&lt;&#x2F;strong&gt; - 回顾系统上有哪些用户、哪些有弱密码、哪些根本不需要&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;全链路加固&lt;&#x2F;strong&gt; - 不只修客户端,还要修服务器端和所有通过 rathole 暴露的服务&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;ba-xiang-guan-pei-zhi-wen-jian&quot;&gt;八、相关配置文件&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;文件&lt;&#x2F;th&gt;&lt;th&gt;位置&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;客户端 SSH 配置&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;&#x2F;etc&#x2F;ssh&#x2F;sshd_config.d&#x2F;hardening.conf&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;AllowUsers, 密码禁用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;服务器 SSH 配置&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;&#x2F;etc&#x2F;ssh&#x2F;sshd_config.d&#x2F;hardening.conf&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;root限制, 密码禁用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;fail2ban 配置&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;&#x2F;etc&#x2F;fail2ban&#x2F;jail.local&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;自动封禁规则&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;rathole 服务&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;&#x2F;etc&#x2F;systemd&#x2F;system&#x2F;rathole.service&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;笔记本电脑转发&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;rathole-mac 服务&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;&#x2F;etc&#x2F;systemd&#x2F;system&#x2F;rathole-mac.service&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Mac 转发&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Mac SSH 配置&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;&#x2F;etc&#x2F;ssh&#x2F;sshd_config&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;密码禁用, root限制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;zong-jie&quot;&gt;总结&lt;&#x2F;h2&gt;
+&lt;p&gt;这次事件从发现入侵到全面加固,经历了两个阶段:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;首次修复(5月23日)&lt;&#x2F;strong&gt;:只修复了客户端,头痛医头&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;全面加固(5月29日)&lt;&#x2F;strong&gt;:发现攻击仍在继续,进行全链路加固&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;&lt;strong&gt;关键教训&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;安全不靠隐藏,靠密钥&lt;&#x2F;li&gt;
+&lt;li&gt;公网暴露 = 零信任&lt;&#x2F;li&gt;
+&lt;li&gt;被入侵后要查持久化&lt;&#x2F;li&gt;
+&lt;li&gt;rathole 隧道需要双向加固&lt;&#x2F;li&gt;
+&lt;li&gt;fail2ban 需要在服务器端安装&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;最终状态&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ 客户端 SSH 加固完成&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 服务器端 SSH 加固完成&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Mac SSH 加固完成&lt;&#x2F;li&gt;
+&lt;li&gt;✅ fail2ban 自动封禁配置完成&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 验证测试通过&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;攻击者仍在尝试,但我们的防线已经建立。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+</description>
+      </item>
+    </channel>
+</rss>

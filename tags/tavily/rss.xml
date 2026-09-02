@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Tavily</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/tavily/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Tue, 05 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Qwen Code 接入 Tavily 搜索</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/</link>
+          <guid>https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/">&lt;h2 id=&quot;1-huo-qu-api-key&quot;&gt;1. 获取 API Key&lt;&#x2F;h2&gt;
+&lt;p&gt;注册 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;tavily.com&#x2F;&quot;&gt;Tavily&lt;&#x2F;a&gt;，复制 API key。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-she-zhi-huan-jing-bian-liang&quot;&gt;2. 设置环境变量&lt;&#x2F;h2&gt;
+&lt;p&gt;将 &lt;code&gt;TAVILY_API_KEY&lt;&#x2F;code&gt; 持久化到系统环境变量中（&lt;code&gt;tvly-xxxxxxxx&lt;&#x2F;code&gt; 替换为你的 key）。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Linux &#x2F; macOS：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;echo &amp;#x27;export TAVILY_API_KEY=&amp;quot;tvly-xxxxxxxx&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.profile
+source ~&amp;#x2F;.profile
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果之前已经设置过，用编辑器打开 &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; 替换或删除旧值，避免重复行。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Windows（PowerShell）：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;[Environment]::SetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;tvly-xxxxxxxx&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;无需管理员权限。这个命令会写入当前用户的持久化环境变量，但不会修改已经打开的 PowerShell 进程；关闭并重新打开终端后生效。&lt;&#x2F;p&gt;
+&lt;p&gt;重新打开 PowerShell 后可验证：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果想在当前这个 PowerShell 窗口里立刻继续测试，也可以临时同步一次：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY = [Environment]::GetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;API key 涉及付费额度，自己手动执行以上命令，不要让 AI 代劳。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-an-zhuang-tavily-mcp&quot;&gt;3. 安装 Tavily MCP&lt;&#x2F;h2&gt;
+&lt;p&gt;发给 Qwen Code：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;请帮我用 qwen mcp add 命令安装 Tavily MCP，然后搜索验证是否正常。
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;结束。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;验证时间：2026-05-05，Qwen Code 0.15.6 + tavily-mcp 0.2.19&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</description>
+      </item>
+    </channel>
+</rss>

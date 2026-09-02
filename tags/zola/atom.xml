@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Zola</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/zola/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2024-01-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/zola/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Zola 博客支持 Mermaid 流程图</title>
+        <published>2024-01-01T00:00:00+08:00</published>
+        <updated>2024-01-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/"/>
+        <id>https://cncsmonster.github.io/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/">&lt;p&gt;记录如何让 Zola 静态博客支持 Mermaid 图表渲染。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ji-shu-fang-an&quot;&gt;技术方案&lt;&#x2F;h2&gt;
+&lt;p&gt;Mermaid 是前端渲染的图表工具，无需后端支持。方案如下：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Markdown 写作 → Zola 构建 → 静态 HTML → 浏览器加载 Mermaid.js → 渲染图表
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;核心：&lt;&#x2F;strong&gt; 在页面中加载 Mermaid.js 脚本，自动渲染 &lt;code&gt;language-mermaid&lt;&#x2F;code&gt; 代码块。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;pei-zhi-bu-zou&quot;&gt;配置步骤&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;bu-zou-1-chuang-jian-mermaid-jiao-ben&quot;&gt;步骤 1：创建 Mermaid 脚本&lt;&#x2F;h3&gt;
+&lt;p&gt;在 &lt;code&gt;static&#x2F;js&#x2F;mermaid.js&lt;&#x2F;code&gt; 创建以下脚本：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;document.addEventListener(&amp;#x27;DOMContentLoaded&amp;#x27;, function() {
+    const mermaidBlocks = document.querySelectorAll(&amp;#x27;pre code.language-mermaid&amp;#x27;);
+    if (mermaidBlocks.length === 0) return;
+    
+    const script = document.createElement(&amp;#x27;script&amp;#x27;);
+    script.src = &amp;#x27;https:&amp;#x2F;&amp;#x2F;cdn.jsdelivr.net&amp;#x2F;npm&amp;#x2F;mermaid@10&amp;#x2F;dist&amp;#x2F;mermaid.min.js&amp;#x27;;
+    
+    script.onload = function() {
+        mermaid.initialize({ startOnLoad: false, theme: &amp;#x27;default&amp;#x27; });
+        
+        mermaidBlocks.forEach((block, index) =&amp;gt; {
+            const pre = block.parentElement;
+            const code = block.textContent.trim();
+            const container = document.createElement(&amp;#x27;div&amp;#x27;);
+            container.className = &amp;#x27;mermaid-container&amp;#x27;;
+            container.id = `mermaid-${index}`;
+            
+            pre.parentElement.insertBefore(container, pre);
+            pre.remove();
+            
+            mermaid.render(`mermaid-${index}`, code).then(({ svg }) =&amp;gt; {
+                container.innerHTML = svg;
+            });
+        });
+    };
+    document.head.appendChild(script);
+});
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;bu-zou-2-zai-mo-ban-zhong-jia-zai-jiao-ben&quot;&gt;步骤 2：在模板中加载脚本&lt;&#x2F;h3&gt;
+&lt;p&gt;编辑 &lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt; 文件，在 &lt;code&gt;&amp;lt;&#x2F;body&amp;gt;&lt;&#x2F;code&gt; 标签之前添加 script 标签引入 mermaid.js。&lt;&#x2F;p&gt;
+&lt;p&gt;使用 Zola 的 &lt;code&gt;get_url&lt;&#x2F;code&gt; 函数生成正确的路径。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;实际代码请查看本项目的 &lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt; 文件。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;bu-zou-3-tian-jia-yang-shi&quot;&gt;步骤 3：添加样式&lt;&#x2F;h3&gt;
+&lt;p&gt;在 &lt;code&gt;static&#x2F;sass&#x2F;main.scss&lt;&#x2F;code&gt; 添加 Mermaid 容器样式：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;scss&quot; class=&quot;language-scss &quot;&gt;&lt;code class=&quot;language-scss&quot; data-lang=&quot;scss&quot;&gt;.mermaid-container {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    text-align: center;
+    overflow-x: auto;
+    
+    svg {
+        max-width: 100%;
+        height: auto;
+    }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;shi-yong-fang-shi&quot;&gt;使用方式&lt;&#x2F;h2&gt;
+&lt;p&gt;在 Markdown 中使用 &lt;code&gt;mermaid&lt;&#x2F;code&gt; 代码块：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;mermaid&quot; class=&quot;language-mermaid &quot;&gt;&lt;code class=&quot;language-mermaid&quot; data-lang=&quot;mermaid&quot;&gt;graph TD
+    A[开始] --&amp;gt; B{条件判断}
+    B --&amp;gt;|是 | C[执行 A]
+    B --&amp;gt;|否 | D[执行 B]
+    C --&amp;gt; E[结束]
+    D --&amp;gt; E
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;guan-jian-wen-jian-can-kao&quot;&gt;关键文件参考&lt;&#x2F;h2&gt;
+&lt;p&gt;本项目的相关文件位置：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;文件&lt;&#x2F;th&gt;&lt;th&gt;路径&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Mermaid 脚本&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;static&#x2F;js&#x2F;mermaid.js&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;模板文件&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;样式文件&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;static&#x2F;sass&#x2F;main.scss&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;示例文章&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;content&#x2F;posts&#x2F;mermaid 流程图使用指南.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-zi-yuan&quot;&gt;参考资源&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;资源&lt;&#x2F;th&gt;&lt;th&gt;链接&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Mermaid 官方文档&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;mermaid.js.org&#x2F;&quot;&gt;mermaid.js.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;在线编辑器&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;mermaid.live&#x2F;&quot;&gt;mermaid.live&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Zola 静态文件&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;content&#x2F;static-files&#x2F;&quot;&gt;getzola.org - Static Files&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Zola 模板&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;templates&#x2F;&quot;&gt;getzola.org - Templates&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;bei-zhu&quot;&gt;备注&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Mermaid 通过 CDN 加载，需要网络访问&lt;&#x2F;li&gt;
+&lt;li&gt;如需离线使用，可下载 &lt;code&gt;mermaid.min.js&lt;&#x2F;code&gt; 到本地 &lt;code&gt;static&#x2F;js&#x2F;&lt;&#x2F;code&gt; 目录&lt;&#x2F;li&gt;
+&lt;li&gt;支持流程图、序列图、类图、状态图、饼图、甘特图等&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

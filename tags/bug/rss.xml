@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Bug</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/bug/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Wed, 29 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Qwen Code WebFetch 的 SPA 盲区：html-to-text 空内容问题</title>
+          <pubDate>Wed, 29 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/</link>
+          <guid>https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/">&lt;p&gt;使用 Qwen Code 的 &lt;code&gt;web_fetch&lt;&#x2F;code&gt; 工具抓取 SPA（单页应用）页面时，经常会返回空内容。这不是网络问题，而是一个设计 gap：&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 对空 body 页面返回空字符串，但 Qwen Code 没有任何 fallback 机制。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;SPA 页面的 body 通常只有一个挂载点：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;html&quot; class=&quot;language-html &quot;&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&amp;lt;body&amp;gt;
+  &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;div&amp;gt;
+  &amp;lt;script src=&amp;quot;app.js&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;script&amp;gt;
+&amp;lt;&amp;#x2F;body&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 解析这段 HTML 后返回空字符串。但 curl 能拿到 &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; 和 &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt;——这些信息在 &lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; 里，不是 body 的一部分。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fu-xian&quot;&gt;复现&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;URL: https:&amp;#x2F;&amp;#x2F;www.stepfun.com
+web_fetch 返回: （空）
+curl 返回: &amp;lt;title&amp;gt;阶跃星辰&amp;lt;&amp;#x2F;title&amp;gt; + &amp;lt;meta description=&amp;quot;...&amp;quot;&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;jie-jue-fang-an&quot;&gt;解决方案&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;tui-jian-yong-tavily-extract-ti-dai&quot;&gt;推荐：用 &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; 替代&lt;&#x2F;h3&gt;
+&lt;p&gt;如果你已配置 Tavily MCP（参考 &lt;a href=&quot;&#x2F;posts&#x2F;qwen-code-tavily-mcp-setup&#x2F;&quot;&gt;Qwen Code 接入 Tavily 搜索&lt;&#x2F;a&gt;），直接使用 &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; 工具替代 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;。Tavily 在服务端渲染 JavaScript，能正确处理 SPA 页面。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;bei-xuan-jin-yong-web-fetch-pei-zhi-qi-ta-mcp-fetch-gong-ju&quot;&gt;备选：禁用 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;，配置其他 MCP fetch 工具&lt;&#x2F;h3&gt;
+&lt;p&gt;在 &lt;code&gt;settings.json&lt;&#x2F;code&gt; 中禁用内置 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;disabled&amp;quot;: [&amp;quot;web_fetch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP fetch 工具有多种类型：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;无头浏览器类&lt;&#x2F;strong&gt;：用 Playwright&#x2F;Puppeteer 渲染页面，能处理 SPA&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;API 类&lt;&#x2F;strong&gt;：如 Tavily Extract，服务端渲染后返回结构化内容&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;命令行类&lt;&#x2F;strong&gt;：封装 curl&#x2F;wget 等工具，简单直接但不渲染 JS&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;yuan-ma-shi-shi&quot;&gt;源码事实&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; packages&amp;#x2F;core&amp;#x2F;src&amp;#x2F;tools&amp;#x2F;web-fetch.ts (v0.20.1-preview.7215)
+const textContent = convert(html, {
+  wordwrap: false,
+  selectors: [
+    { selector: &amp;#x27;a&amp;#x27;, options: { ignoreHref: true } },
+    { selector: &amp;#x27;img&amp;#x27;, format: &amp;#x27;skip&amp;#x27; },
+  ],
+}).substring(0, MAX_CONTENT_LENGTH);
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;没有 fallback 逻辑。&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 返回空 → 直接送空字符串给 LLM → LLM 拿到空内容 → 返回空或胡编。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yu-claude-code-de-dui-bi&quot;&gt;与 Claude Code 的对比&lt;&#x2F;h2&gt;
+&lt;p&gt;Claude Code 的 WebFetch 同样没有 SPA fallback。两者在 SPA 场景下都有盲区。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;gei-gong-xian-zhe-de-xiu-fu-si-lu&quot;&gt;给贡献者的修复思路&lt;&#x2F;h2&gt;
+&lt;p&gt;如果你有兴趣修复这个问题，以下是几个方向（按成本从低到高）：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; fallback&lt;&#x2F;strong&gt;：&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 返回空时，提取 &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; + &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; 作为兜底。改动最小，只需在 &lt;code&gt;convert()&lt;&#x2F;code&gt; 返回空时加一个 fallback 分支。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;SPA 检测&lt;&#x2F;strong&gt;：识别 &lt;code&gt;&amp;lt;div id=&quot;root&quot;&amp;gt;&lt;&#x2F;code&gt; 等特征，提示用户该页面需要 JS 渲染，建议使用 MCP 工具。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;无头浏览器集成&lt;&#x2F;strong&gt;：对检测到的 SPA 页面，用无头浏览器渲染后再提取内容。效果最好但引入重依赖。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+    </channel>
+</rss>

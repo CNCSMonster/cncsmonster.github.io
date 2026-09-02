@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Code Agent</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/code-agent/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-30T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/code-agent/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Add a Security Gate to Your Pi Coding Agent: pi-permission-gate</title>
+        <published>2026-05-30T00:00:00+08:00</published>
+        <updated>2026-05-30T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/"/>
+        <id>https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/pi-permission-gate-security-extension/">&lt;blockquote&gt;
+&lt;p&gt;Worried about accidentally deleting files or leaking API keys while using Pi? Try &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; — a rule-based permission interceptor that asks before sensitive operations and blocks dangerous commands automatically.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;in-one-sentence&quot;&gt;In One Sentence&lt;&#x2F;h2&gt;
+&lt;p&gt;Configure rules for your Pi agent to intercept reads&#x2F;writes on sensitive files and block dangerous commands. It doesn’t replace security audits, but does one thing well: &lt;strong&gt;ask before acting&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-it-can-do&quot;&gt;What It Can Do&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ Intercepts&lt;&#x2F;th&gt;&lt;th&gt;❌ Doesn’t Do&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Reading &lt;code&gt;~&#x2F;.ssh&#x2F;&lt;&#x2F;code&gt; private keys&lt;&#x2F;td&gt;&lt;td&gt;Audit logging&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Reading &lt;code&gt;.env&lt;&#x2F;code&gt; environment files&lt;&#x2F;td&gt;&lt;td&gt;MCP permission control&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Executing &lt;code&gt;rm -rf&lt;&#x2F;code&gt; commands&lt;&#x2F;td&gt;&lt;td&gt;Sub-agent permission forwarding&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Modifying files outside the project&lt;&#x2F;td&gt;&lt;td&gt;Complex policy engine&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pi install git:github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-permission-gate
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;configuration&quot;&gt;Configuration&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;global-rules-security-baseline&quot;&gt;Global Rules (Security Baseline)&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;~&#x2F;.pi&#x2F;agent&#x2F;permission-rules.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;defaultAction&amp;quot;: &amp;quot;ask&amp;quot;,
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;.ssh&amp;#x2F;**&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;SSH private keys&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    },
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;bash&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;rm -rf *&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;Dangerous deletion&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;project-rules-flexible-overrides&quot;&gt;Project Rules (Flexible Overrides)&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;&amp;lt;project&amp;gt;&#x2F;.pi&#x2F;permission-rules.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;trustedPaths&amp;quot;: [&amp;quot;.&amp;#x2F;data&amp;quot;, &amp;quot;.&amp;#x2F;tmp&amp;quot;],
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;, &amp;quot;write&amp;quot;, &amp;quot;edit&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;*&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;Project files&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;allow&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Configuration changes take effect immediately without restarting pi.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;user-experience&quot;&gt;User Experience&lt;&#x2F;h2&gt;
+&lt;p&gt;When the agent tries to access a sensitive file:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;⚠️ Sensitive Operation — SSH private keys
+
+Rule: **&amp;#x2F;.ssh&amp;#x2F;**
+Tool: read
+Target: &amp;#x2F;home&amp;#x2F;user&amp;#x2F;.ssh&amp;#x2F;id_rsa
+
+Allow?
+[Allow Once] [Always Allow] [Deny Once] [Always Deny]
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Always Allow&#x2F;Deny&lt;&#x2F;strong&gt;: Remember choice, auto-process next time&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Allow&#x2F;Deny Once&lt;&#x2F;strong&gt;: Only affects current operation&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;why-keep-it-simple&quot;&gt;Why Keep It Simple&lt;&#x2F;h2&gt;
+&lt;p&gt;Comparison with &lt;code&gt;pi-permission-system&lt;&#x2F;code&gt; (another permission extension):&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-system&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-gate&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Features&lt;&#x2F;td&gt;&lt;td&gt;Full (MCP, audit, sub-agents)&lt;&#x2F;td&gt;&lt;td&gt;Lean (files + commands)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Config&lt;&#x2F;td&gt;&lt;td&gt;JSON schema + YAML&lt;&#x2F;td&gt;&lt;td&gt;Simple JSON + glob&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Code&lt;&#x2F;td&gt;&lt;td&gt;~2000 lines&lt;&#x2F;td&gt;&lt;td&gt;~380 lines&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Use Case&lt;&#x2F;td&gt;&lt;td&gt;Teams&#x2F;Enterprise&lt;&#x2F;td&gt;&lt;td&gt;Individual developers&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;If you just need “ask before acting,” &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; is simpler and more direct.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-rules-not-ai&quot;&gt;Why Rules, Not AI&lt;&#x2F;h2&gt;
+&lt;p&gt;Security decisions need &lt;strong&gt;determinism&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Rule engine: 100% predictable, millisecond response&lt;&#x2F;li&gt;
+&lt;li&gt;AI judgment: May be inconsistent, requires API calls&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;“Probably should allow” isn’t good enough. Security needs explicit allow or deny.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;github&quot;&gt;GitHub&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;pi-permission-gate&quot;&gt;CNCSMonster&#x2F;pi-permission-gate&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;MIT licensed. Feedback welcome.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

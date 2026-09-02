@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - 工具</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/gong-ju/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sun, 24 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>gsudo 信任窗口撤销复盘</title>
+          <pubDate>Sun, 24 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/gsudo-trust-window-lesson/</link>
+          <guid>https://cncsmonster.github.io/posts/gsudo-trust-window-lesson/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/gsudo-trust-window-lesson/">&lt;p&gt;gsudo v1.1 尝试做了一个“信任窗口“功能：用户勾选“信任 5 分钟“后自动放行。但发布前撤掉了。这里记下为什么撤销，以及正确的方向是什么。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;bei-jing&quot;&gt;背景&lt;&#x2F;h2&gt;
+&lt;p&gt;pi 等 coding agent 执行系统包安装、服务重启等操作时，需要提权。但 agent 没有用户密码，sudo 的 &lt;code&gt;askpass&lt;&#x2F;code&gt; 机制在非交互环境下也无法工作。gsudo 通过弹出 GUI 窗口让用户点击确认，解决了“agent 需要 sudo 但没有密码“的问题。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;gsudo 不检查 sudo 的凭证缓存状态。agent 每调一次 gsudo → gsudo 每次弹窗 → &lt;strong&gt;每次都要用户重新输密码&lt;&#x2F;strong&gt;，哪怕一秒钟前刚刚输过、sudo 缓存还有效。&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;安装 5 个包，5 条 apt install →
+  agent 调了 5 次 gsudo →
+    用户弹了 5 次密码框，输了 5 遍密码
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;用户期望的是：第一次输密码 → sudo 缓存有效期内 → 后续调用只弹确认按钮（不输密码）。但 gsudo 没有利用 sudo 缓存状态，每次都当全新的提权请求处理。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;chang-shi-xin-ren-chuang-kou&quot;&gt;尝试：信任窗口&lt;&#x2F;h2&gt;
+&lt;p&gt;gsudo v1.1 实现了一个“信任窗口“功能：用户在 GUI 勾选“信任此实例 5 分钟“后，同实例后续调用自动放行，跳过确认弹窗。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;已撤销&lt;&#x2F;strong&gt;。v1.1 正式发布中不包含此功能。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;wei-shen-me-che-xiao&quot;&gt;为什么撤销&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;用时间偷换意图。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;信任窗口试图回答的问题是：“用户信任这个 agent 继续提权吗？”&lt;&#x2F;p&gt;
+&lt;p&gt;但实现方式用的是：“用户 5 分钟前点过信任，所以现在还信任”。&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;场景 A：agent 连续调 10 条命令，2 分钟完事 → 还剩 3 分钟信任空挂在那边
+场景 B：一次性复杂任务跑 8 分钟 → 5 分钟弹窗弹回来，打断用户
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;固定时长的信任窗口和实际任务节奏完全脱节。&lt;strong&gt;“信任“绑定到的是意图（这次任务我信你），不是倒计时。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zheng-que-fang-xiang&quot;&gt;正确方向&lt;&#x2F;h2&gt;
+&lt;p&gt;问题的根源是 &lt;strong&gt;gsudo 没有利用 sudo 已有的凭证缓存&lt;&#x2F;strong&gt;。sudo 自己有 &lt;code&gt;timestamp_timeout&lt;&#x2F;code&gt;（默认 15 分钟），在这个窗口内 &lt;code&gt;sudo cmd&lt;&#x2F;code&gt; 不需要密码。修复应该让 gsudo 在每次被调用时先尝试免密执行：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;gsudo 被调用
+  → 检查 sudo timestamp 是否有效
+    → 有效 → 弹简化确认（只需点&amp;quot;确认&amp;quot;，不用输密码）
+    → 过期 → 弹完整密码框
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;更深层的问题——弹窗频率——正确方向在 agent 层：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;v1.0  逐条确认              ← 每调 gsudo 弹一次
+  │
+  ▼
+v2.x  会话级信任            ← agent 启动时一句&amp;quot;本次会话允许提权&amp;quot;
+  │
+  ▼
+v3.x  任务级信任            ← agent 声明任务类型
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;gsudo 本身不需要变——它只是一个“让用户点确认“的 GUI 桥。真正的改法在 agent 层。&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>gsudo：给你的 AI Coding Agent 装个图形化 sudo</title>
+          <pubDate>Mon, 11 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/gsudo-ai-agent-gui-sudo/</link>
+          <guid>https://cncsmonster.github.io/posts/gsudo-ai-agent-gui-sudo/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/gsudo-ai-agent-gui-sudo/">&lt;p&gt;&lt;strong&gt;AI 在终端里写代码时突然要 sudo 权限——然后它就卡住了。而你正在前台干别的事，根本没看见。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;AI Coding Agent（pi、Claude Code、Qwen Code 等）在终端里运行时，终端本身不是 root 启动的。当它需要执行 &lt;code&gt;sudo apt install&lt;&#x2F;code&gt; 或 &lt;code&gt;systemctl restart&lt;&#x2F;code&gt; 时，&lt;code&gt;sudo&lt;&#x2F;code&gt; 会向终端索要密码——但 AI 的 subprocess 环境里没有可交互的 tty，密码输不进去。命令直接失败。&lt;&#x2F;p&gt;
+&lt;p&gt;然后 AI 的三种反应都让人头疼：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;反复重试&lt;&#x2F;strong&gt; — 看到 “permission denied” 就循环重试，任务卡死&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;幻觉&lt;&#x2F;strong&gt; — 把错误输出当成命令结果，用虚构的数据继续往下走（事后排查才发现全是假的）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;放弃任务&lt;&#x2F;strong&gt; — “我没有权限，无法完成此任务”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;三种情况都让 AI 的自主运行变得不可靠。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fang-an&quot;&gt;方案&lt;&#x2F;h2&gt;
+&lt;p&gt;gsudo 是一个给 AI Agent 用的图形化提权前端。工作原理：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;AI 调用 gsudo --reason &amp;quot;安装 nginx&amp;quot; -- apt install -y nginx
+              ↓
+    ┌─────────────────────┐
+    │ 🔐 需要管理员权限     │  ← 窗口置顶弹出
+    │ ℹ 安装 nginx         │     展示命令和原因
+    │ sudo apt install...  │
+    │ 密码: [●●●●●●]       │  ← 你输密码
+    │        [拒绝] [执行]  │
+    └─────────────────────┘
+              ↓
+       命令以 root 执行
+       输出返回给 AI
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;你在前台干别的事时，弹窗会置顶出现在你面前——不用切终端、不用找是哪个实例。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yi-xing-ming-ling-ti-yan&quot;&gt;一行命令体验&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 依赖（仅 Linux 需要，macOS&amp;#x2F;Windows 自带）
+sudo apt install python3-tk
+
+# 安装脚本
+curl -o ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo https:&amp;#x2F;&amp;#x2F;raw.githubusercontent.com&amp;#x2F;CNCSMonster&amp;#x2F;gsudo&amp;#x2F;main&amp;#x2F;scripts&amp;#x2F;gsudo
+chmod +x ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo
+
+# 试试
+gsudo --reason &amp;quot;测试 gsudo&amp;quot; -- whoami
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;yi-ge-xi-jie-ai-bu-xu-yao-jie-xi-bao-zhuang-wen-ben&quot;&gt;一个细节：AI 不需要解析包装文本&lt;&#x2F;h2&gt;
+&lt;p&gt;普通工具的输出是这样的：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;🔐 请求管理员权限
+  sudo whoami
+✓ 命令执行成功
+root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;AI 需要正则解析出 &lt;code&gt;root&lt;&#x2F;code&gt;。gsudo 把命令输出和状态信息分开了：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;stdout → root              ← AI 的 capture_output 拿到这个
+stderr → 🔐 ... ✓ ...      ← 状态信息，给人看的
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;AI 直接读 stdout 就是干净的输出，不用解析。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kua-ping-tai&quot;&gt;跨平台&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Linux&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;macOS&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Windows&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;提权方式&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;UAC&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;交互&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;输密码&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;输密码&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;点确认&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Python + Tkinter 实现，零外部依赖。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xiang-mu&quot;&gt;项目&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;GitHub: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;gsudo&quot;&gt;CNCSMonster&#x2F;gsudo&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Linux 实机测试通过，macOS &#x2F; Windows 待设备验证&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

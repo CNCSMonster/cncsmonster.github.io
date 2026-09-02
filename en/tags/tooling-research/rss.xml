@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Tooling Research</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/tooling-research/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sun, 30 Aug 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>PPT Master Skill Deep Dive: SVG Intermediary, Web Annotations, and Native Editable PPTX</title>
+          <pubDate>Sun, 30 Aug 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/">&lt;p&gt;Most AI slide generation tools simply paste full-bleed flat images onto slides. While visually appealing initially, &lt;strong&gt;text cannot be edited, shapes cannot be moved, and zooming in results in blurry rasterization&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;ppt-master&lt;&#x2F;code&gt; is an open-source Skill designed for AI Coding Agents (such as Claude Code, Qwen Code, and Codex). Its core value lies in &lt;strong&gt;parsing your documents to produce fully native DrawingML PPTX files where every text box can be edited and every vector shape can be recolored and adjusted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-end-to-end-user-experience&quot;&gt;1. End-to-End User Experience&lt;&#x2F;h2&gt;
+&lt;p&gt;The typical collaboration workflow with this Skill is seamless:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Triggering the Skill&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Explicit Command&lt;&#x2F;strong&gt;: Trigger directly via slash commands (e.g. &lt;code&gt;&#x2F;ppt-master &amp;lt;doc-path&amp;gt;&lt;&#x2F;code&gt;) or variable injection (&lt;code&gt;$ppt-master&lt;&#x2F;code&gt;);&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Natural Language Intent&lt;&#x2F;strong&gt;: Say naturally: &lt;em&gt;“Convert this technical spec into a 10-slide presentation.”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Automated Structuring &amp;amp; Vector Layout&lt;&#x2F;strong&gt;: The AI agent extracts document hierarchy, designs visual outlines, and generates SVG vector code for each slide.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Local Web Preview, In-Place Annotations &amp;amp; Precise Refinement&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;A local Flask server runs at &lt;code&gt;http:&#x2F;&#x2F;127.0.0.1:5050&lt;&#x2F;code&gt; rendering the generated SVGs;&lt;&#x2F;li&gt;
+&lt;li&gt;You can review slides in the browser, &lt;strong&gt;click on any unsatisfying text or shape to add an annotation&lt;&#x2F;strong&gt;, and hit &lt;strong&gt;Submit Annotations&lt;&#x2F;strong&gt; to write changes to disk;&lt;&#x2F;li&gt;
+&lt;li&gt;Return to your terminal and instruct the AI: &lt;em&gt;“Annotations submitted, please refine.”&lt;&#x2F;em&gt; The AI inspects disk annotations via &lt;code&gt;check_annotations.py&lt;&#x2F;code&gt; and regenerates only targeted elements.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Export Native PPTX&lt;&#x2F;strong&gt;: Once satisfied, the final SVGs are compiled locally into a native &lt;code&gt;.pptx&lt;&#x2F;code&gt; file ready for secondary editing in Microsoft Office or WPS.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;ecosystem-comparison&quot;&gt;Ecosystem Comparison&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Skill&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Ecosystem &amp;amp; Characteristics&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Best Use Case&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;anthropics&#x2F;skills@pptx&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Official lightweight script for basic shapes &amp;amp; text&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Quick, simple presentation outlines&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;hugohe3&#x2F;ppt-master&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Community comprehensive toolkit with SVG interactive annotations &amp;amp; deep DrawingML output&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;High-quality, complex technical and business decks&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;claude-office-skills&#x2F;skills@ppt-visual&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Community visual-first layout generator&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Poster-style and graphic-heavy slides&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-architecture-why-are-slides-truly-editable&quot;&gt;2. Architecture: Why Are Slides Truly Editable?&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;the-two-stage-conversion-architecture-svg-drawingml&quot;&gt;The Two-Stage Conversion Architecture (SVG → DrawingML)&lt;&#x2F;h3&gt;
+&lt;p&gt;PowerPoint relies on Microsoft’s &lt;strong&gt;DrawingML&lt;&#x2F;strong&gt; XML specification. Direct generation of DrawingML by LLMs frequently suffers from XML syntax errors and broken files.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;ppt-master&lt;&#x2F;code&gt; resolves this through a two-stage intermediary model:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Source Document → [AI Vector Layout] → SVG Code → [Deterministic Python Script] → DrawingML (PPTX)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Stage 1 (AI Creative Layout)&lt;&#x2F;strong&gt;: LLMs naturally excel at producing clean SVG markup, handling visual layout, palettes, and typography;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Stage 2 (Deterministic Compilation)&lt;&#x2F;strong&gt;: A local Python script (&lt;code&gt;svg_to_pptx.py&lt;&#x2F;code&gt;) maps SVG tags (&lt;code&gt;&amp;lt;text&amp;gt;&lt;&#x2F;code&gt;, &lt;code&gt;&amp;lt;rect&amp;gt;&lt;&#x2F;code&gt;, &lt;code&gt;&amp;lt;path&amp;gt;&lt;&#x2F;code&gt;) directly into native PowerPoint DrawingML XML nodes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-security-audit-zero-api-fallback&quot;&gt;3. Security Audit &amp;amp; Zero-API Fallback&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-security-audit-findings&quot;&gt;1. Security Audit Findings&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Network Isolation&lt;&#x2F;strong&gt;: Local preview binds strictly to &lt;code&gt;127.0.0.1:5050&lt;&#x2F;code&gt; with zero telemetry;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Execution Safety&lt;&#x2F;strong&gt;: Zero &lt;code&gt;eval()&lt;&#x2F;code&gt; or &lt;code&gt;exec()&lt;&#x2F;code&gt; usage; &lt;code&gt;subprocess&lt;&#x2F;code&gt; calls only internal deterministic toolchains;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;File System&lt;&#x2F;strong&gt;: Reads and writes are scoped to project paths with path-traversal safeguards;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Verdict&lt;&#x2F;strong&gt;: &lt;strong&gt;Clean and safe.&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-zero-external-api-dependency-offline-manual-mode&quot;&gt;2. Zero External API Dependency &amp;amp; Offline Manual Mode&lt;&#x2F;h3&gt;
+&lt;p&gt;The core generation pipeline runs &lt;strong&gt;completely offline without commercial APIs&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Pipeline Stage&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;External API Required?&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Execution Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Document Conversion&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ No&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Local Python libraries (PyMuPDF, docx, etc.)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;SVG Generation &amp;amp; PPTX Export&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ No&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Local agent SVG generation + &lt;code&gt;python-pptx&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Browser Preview &amp;amp; Annotations&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ No&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Local Flask (&lt;code&gt;127.0.0.1:5050&lt;&#x2F;code&gt;) + &lt;code&gt;check_annotations.py&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;AI Image Gen &#x2F; Image Search &#x2F; TTS&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;⚠️ Optional&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Configurable across 14+ backends&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Offline Manual Fallback&lt;&#x2F;strong&gt;:
+If no image generation API key is configured, image slots are automatically tagged as &lt;code&gt;Needs-Manual&lt;&#x2F;code&gt; with dashed prompt placeholders, ensuring the PPTX export pipeline finishes without blockers.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-installation-dependency-decoupling&quot;&gt;4. Installation &amp;amp; Dependency Decoupling&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Handling &lt;code&gt;npx skills add&lt;&#x2F;code&gt; Timeouts&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;The repository contains ~99MB of template assets. If the CLI times out, use &lt;code&gt;rsync&lt;&#x2F;code&gt; to backfill &lt;code&gt;scripts&#x2F;&lt;&#x2F;code&gt; (105 Python scripts) from a full clone.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bypassing PEP 668 via &lt;code&gt;uv venv&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;Modern Linux distros block global &lt;code&gt;pip&lt;&#x2F;code&gt; installation. Use &lt;code&gt;uv&lt;&#x2F;code&gt; to establish a clean, isolated virtual environment:&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;uv venv ~&amp;#x2F;.ppt-master&amp;#x2F;venv
+uv pip install -r requirements.txt --python ~&amp;#x2F;.ppt-master&amp;#x2F;venv&amp;#x2F;bin&amp;#x2F;python
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Decoupling &lt;code&gt;pycairo&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;svglib&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;svglib&lt;&#x2F;code&gt; (requiring system &lt;code&gt;libcairo2-dev&lt;&#x2F;code&gt;) is merely an optional fallback for legacy Office rasterization. Core DrawingML export does not require it and runs smoothly with the remaining 88 dependencies.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+    </channel>
+</rss>

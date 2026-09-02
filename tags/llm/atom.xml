@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - LLM</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/llm/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-29T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/llm/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Qwen Code Auto Mode Classifier：两阶段 LLM 审批机制解析</title>
+        <published>2026-07-29T00:00:00+08:00</published>
+        <updated>2026-07-29T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/">&lt;blockquote&gt;
+&lt;p&gt;本文基于 Qwen Code &lt;code&gt;0.20.1-preview.7215&lt;&#x2F;code&gt; 版本的编译源码分析。preview 版本的机制可能随版本变化。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Qwen Code 提供五种审批模式：&lt;code&gt;plan&lt;&#x2F;code&gt;（计划）、&lt;code&gt;default&lt;&#x2F;code&gt;（默认确认）、&lt;code&gt;auto-edit&lt;&#x2F;code&gt;（自动编辑）、&lt;code&gt;auto&lt;&#x2F;code&gt;（自动审批）、&lt;code&gt;yolo&lt;&#x2F;code&gt;（全部自动）。在这个版本中，&lt;strong&gt;新用户安装后默认就是 auto 模式&lt;&#x2F;strong&gt;——工具调用不需要逐个确认，而是通过多层过滤自动判断每个操作是否安全。我平时使用也推荐 auto 模式，它在效率和安全之间取得了很好的平衡。本文拆解这个机制的工作原理和配置方式。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zheng-ti-jia-gou&quot;&gt;整体架构&lt;&#x2F;h2&gt;
+&lt;p&gt;Auto mode 的自动审批机制由四个部分组成：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;规则层&lt;&#x2F;strong&gt;：确定性规则（工具默认权限、用户自定义规则、白名单、正则拦截），快速过滤掉明确安全或明确危险的操作&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;LLM 判断层&lt;&#x2F;strong&gt;：两阶段 Classifier，处理规则覆盖不了的模糊地带&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fail-closed&lt;&#x2F;strong&gt;：classifier 出错时默认阻止——宁可错杀不放过&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全网&lt;&#x2F;strong&gt;：Denial Tracking，检测 LLM 和 classifier 的死循环，必要时降级为人工确认&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;一个工具调用的完整生命周期：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;LLM 返回 [A, B, C]
+  → 每个独立走审批流程：
+    ①-⑤ 规则层 → ⑥ LLM 判断层
+    → A 放行 → 执行 → 返回结果
+    → B 阻止 → 跳过
+    → C 放行 → 执行 → 返回结果
+  → 所有结果一起回传 LLM
+  → LLM 看到完整画面后决定下一步
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;gui-ze-ceng&quot;&gt;规则层：①-⑤&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 在执行工具调用（读文件、跑命令、改代码等）之前，会依次经过以下检查：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;工具调用
+  → ① 工具自身默认权限（比如 read_file 默认安全，shell 命令默认需要审批）
+  → ② PermissionManager（用户自定义规则引擎）
+  → ③ acceptEdits fast-path（如果当前是 acceptEdits 模式，工作区内编辑直接放行）
+  → ④ 安全工具白名单（read_file、grep、glob 等只读工具直接放行）
+  → ⑤ Guard（正则拦截危险命令模式，如 git clean、rm -rf 等，不经过 LLM）
+  → ⑥ LLM Classifier（两阶段 LLM 判断，见下节）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;② 是用户可配置的规则引擎，返回四种结果：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow&lt;&#x2F;code&gt; → 直接放行（跳过 ③-⑥）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;deny&lt;&#x2F;code&gt; → 直接阻止&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;ask&lt;&#x2F;code&gt; → 弹出确认框，等用户手动决定&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;&#x2F;code&gt;（无规则匹配）→ 继续 ③-⑥&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;liang-jie-duan-classifier&quot;&gt;两阶段 Classifier&lt;&#x2F;h2&gt;
+&lt;p&gt;前五步都是确定性规则——快、免费，但覆盖不了所有情况。剩下的工具调用交给 LLM 判断。Classifier 收到的是工具名称、参数和当前对话上下文，分两步走：&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;stage-1-kuai-su-pan-duan&quot;&gt;Stage 1：快速判断&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;模型：fastModel（未配置则 fallback 到主模型）&lt;&#x2F;li&gt;
+&lt;li&gt;输出：仅 &lt;code&gt;{shouldBlock: boolean}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;超时：10 秒&lt;&#x2F;li&gt;
+&lt;li&gt;行为：说 allow → 立即放行；说 block → 进入 Stage 2&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;stage-2-fu-he&quot;&gt;Stage 2：复核&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;模型：同 Stage 1&lt;&#x2F;li&gt;
+&lt;li&gt;输出：&lt;code&gt;{thinking, shouldBlock, reason}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;超时：30 秒&lt;&#x2F;li&gt;
+&lt;li&gt;行为：说 allow → 放行；说 block → 阻止&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Stage 2 输出中的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 是模型写的一段判断依据文本（比如“用户只是读取文件，安全“），帮助开发者理解 classifier 为什么做了这个决定。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fail-closed-zhu-ke-cuo-sha&quot;&gt;Fail-closed：宁可错杀&lt;&#x2F;h3&gt;
+&lt;p&gt;任何非主动中断的失败（API 错误、超时、响应格式不对）都返回 &lt;code&gt;shouldBlock: true&lt;&#x2F;code&gt;。这意味着 &lt;strong&gt;classifier 挂掉 = 所有需要审批的工具都被 block&lt;&#x2F;strong&gt;。这不是 bug，是安全设计。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;mo-xing-you-xian-ji&quot;&gt;模型优先级&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;override → config.getFastModel() → config.getModel() → DEFAULT_QWEN_MODEL
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Classifier 使用 fastModel。不配置时 fallback 到主模型，但主模型通常更慢——Stage 1 每次判断大约多花几百毫秒到几秒不等，积少成多。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;denial-tracking-fang-si-xun-huan&quot;&gt;Denial Tracking：防死循环&lt;&#x2F;h2&gt;
+&lt;p&gt;如果 classifier 持续 block（LLM 卡在死胡同），系统不会无限循环：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;计数器&lt;&#x2F;th&gt;&lt;th&gt;阈值&lt;&#x2F;th&gt;&lt;th&gt;效果&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;连续 block&lt;&#x2F;td&gt;&lt;td&gt;3 次&lt;&#x2F;td&gt;&lt;td&gt;下一个工具调用跳过 classifier，直接弹人工确认&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;连续 unavailable&lt;&#x2F;td&gt;&lt;td&gt;2 次&lt;&#x2F;td&gt;&lt;td&gt;同上&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;总计 denial&lt;&#x2F;td&gt;&lt;td&gt;20 次&lt;&#x2F;td&gt;&lt;td&gt;触发总额上限&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;以上阈值为硬编码，不可配置。切换审批模式时所有计数器重置。&lt;&#x2F;p&gt;
+&lt;p&gt;几个关键点：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;按工具调用累计&lt;&#x2F;strong&gt;，不是按批次——一批有 2 个 block 就加 2&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;降级发生在 classifier 之前&lt;&#x2F;strong&gt;——连续 3 次后第 4 次不再浪费 LLM 调用，直接问人&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;用户批准后计数器归零&lt;&#x2F;strong&gt;，恢复自动模式；拒绝则不重置，下一个继续人工确认&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;跨轮次累计&lt;&#x2F;strong&gt;——LLM 每轮看到被拒结果后换个方式再试，连续 3 次被拒就降级&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;pei-zhi-jian-yi&quot;&gt;配置建议&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;fastModel&amp;quot;: &amp;quot;qwen3-coder-plus&amp;quot;,
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;autoMode&amp;quot;: {
+      &amp;quot;classifier&amp;quot;: {
+        &amp;quot;timeouts&amp;quot;: { &amp;quot;stage1Ms&amp;quot;: 10000, &amp;quot;stage2Ms&amp;quot;: 30000 },
+        &amp;quot;thinking&amp;quot;: { &amp;quot;stage2Enabled&amp;quot;: false }
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;关键配置&lt;&#x2F;strong&gt;：&lt;code&gt;fastModel&lt;&#x2F;code&gt; 是 classifier 的核心依赖。不配置时 fallback 到主模型，但主模型通常更慢——每个需要 classifier 判断的工具调用都会多等一段时间。&lt;&#x2F;p&gt;
+&lt;p&gt;选型建议：选一个&lt;strong&gt;快的&lt;&#x2F;strong&gt;模型。classifier 只需要输出一个布尔值或一段简短文本，不需要深度推理。不思考的模型（如 &lt;code&gt;qwen3-coder-plus&lt;&#x2F;code&gt;）天然适合；有思考能力的模型（如 &lt;code&gt;deepseek-v4-flash&lt;&#x2F;code&gt;）也可以——classifier 两阶段都默认不开 API 思考模式，模型不会在内部做额外推理，一样很快。如果本地资源充足，配一个本地小模型当 fastModel 也行——零 API 成本，响应还快。&lt;&#x2F;p&gt;
+&lt;p&gt;唯一不建议的：某个模型&lt;strong&gt;强制开启思考&lt;&#x2F;strong&gt;（无法通过参数关闭），用在 fastModel 上每次判断都会多花思考的时间和 token。另外，classifier 能看到对话上下文和工具参数，fastModel 的服务提供商安全性应不低于主模型。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;stage2Enabled&lt;&#x2F;code&gt; 控制 Stage 2 是否让模型走 API 深度推理模式（更慢、更多 token）。默认 &lt;code&gt;false&lt;&#x2F;code&gt; 即可——Stage 2 输出中的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 字段不受影响，它只是模型写的一段普通文本解释。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zong-jie&quot;&gt;总结&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 的 auto mode 不是简单的“全部自动执行“，而是一个精心设计的安全阀门：规则层挡在前面，LLM classifier 做模糊地带的判断，fail-closed 保证出错时不会放行，denial tracking 防止死循环。代价是每个需要判断的工具调用都要多花一次 LLM 调用的时间和 token。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>LLM Provider 数据训练政策横向对比</title>
+        <published>2026-07-02T00:00:00+08:00</published>
+        <updated>2026-07-02T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/llm-data-policy-comparison/"/>
+        <id>https://cncsmonster.github.io/posts/llm-data-policy-comparison/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/llm-data-policy-comparison/">&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;已调研的 7 家厂商中，&lt;strong&gt;小米最透明&lt;&#x2F;strong&gt;（隐私政策逐字承诺不训练），&lt;strong&gt;智谱团队版和企业合同次之&lt;&#x2F;strong&gt;，&lt;strong&gt;StepFun 和 DeepSeek 最模糊&lt;&#x2F;strong&gt;（条款沉默）。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;quan-mao-yi-lan&quot;&gt;全貌一览&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;API 服务&lt;&#x2F;th&gt;&lt;th&gt;数据训练政策&lt;&#x2F;th&gt;&lt;th&gt;Opt-out&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;可信度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiMo API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;隐私政策逐字承诺 “will not use for training”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;明确承诺不用于训练&lt;&#x2F;strong&gt;（专用条款）&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;个人版 Coding Plan&lt;&#x2F;td&gt;&lt;td&gt;🟡 通用条款允许脱敏后训练&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;按量付费 API&lt;&#x2F;td&gt;&lt;td&gt;🟡 通用条款允许脱敏后训练&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;C 端订阅 &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;🔶 &lt;strong&gt;中文版默认训练&lt;&#x2F;strong&gt;，英文版可邮件 opt-out&lt;&#x2F;td&gt;&lt;td&gt;🌐 英文可&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API（国际）&lt;&#x2F;td&gt;&lt;td&gt;🟡 &lt;strong&gt;ToS 授权改进服务&lt;&#x2F;strong&gt;，未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API（国内）&lt;&#x2F;td&gt;&lt;td&gt;🟡 未明确声明用于训练，但未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;条款沉默&lt;&#x2F;strong&gt;，没说会也没说不会&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Step Plan &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;条款沉默&lt;&#x2F;strong&gt;，保留 “improve the Services”&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Gemini API（Cloud 付费）&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Gemini API（免费&#x2F;消费者）&lt;&#x2F;td&gt;&lt;td&gt;🔶 &lt;strong&gt;默认训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;an-ti-dui-fen-zu&quot;&gt;按梯队分组&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;green-circle-ke-xin-lai-ming-que-cheng-nuo-bu-xun-lian&quot;&gt;🟢 可信赖（明确承诺不训练）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;承诺形式&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;小米 MiMo&lt;&#x2F;td&gt;&lt;td&gt;隐私政策逐字承诺&lt;&#x2F;td&gt;&lt;td&gt;国内版：“未经您的事先同意不会用于训练”；国际版：“will not use for training or any other purposes”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;智谱 团队版&lt;&#x2F;td&gt;&lt;td&gt;套餐购买协议专用条款&lt;&#x2F;td&gt;&lt;td&gt;“数据默认不用于模型训练”，具有合同法律效力&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Cloud 管道&lt;&#x2F;td&gt;&lt;td&gt;企业条款&lt;&#x2F;td&gt;&lt;td&gt;开了 Cloud Billing 的 API &#x2F; Vertex AI 不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;yellow-circle-mo-hu-di-dai-wei-ming-que-pai-chu&quot;&gt;🟡 模糊地带（未明确排除）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;风险点&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;智谱 个人版&#x2F;按量付费&lt;&#x2F;td&gt;&lt;td&gt;通用协议授权“永久不可撤销“数据使用权 + 脱敏后可用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiniMax&lt;&#x2F;td&gt;&lt;td&gt;国际版 ToS 保留 “improve the Services”；国内版条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 英文版&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练，但可邮件 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;red-circle-gao-feng-xian-mo-ren-xun-lian-huo-chen-mo&quot;&gt;🔴 高风险（默认训练或沉默）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;风险点&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 中文版&lt;&#x2F;td&gt;&lt;td&gt;C 端和 API 都默认用于训练，无 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek API&lt;&#x2F;td&gt;&lt;td&gt;条款完全沉默，未承诺不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;StepFun API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;英文 ToS 保留 “improve the Services”，国内条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google 免费&#x2F;消费者管道&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;guan-jian-chai-yi-wei-du&quot;&gt;关键差异维度&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;opt-out-neng-li&quot;&gt;Opt-out 能力&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ 可 opt-out&lt;&#x2F;th&gt;&lt;th&gt;❌ 无 opt-out&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 英文版（邮件）&lt;&#x2F;td&gt;&lt;td&gt;智谱（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek Web&#x2F;App（开关）&lt;&#x2F;td&gt;&lt;td&gt;Kimi 中文版（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiniMax（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;StepFun（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;guo-ji-ban-vs-guo-nei-ban-chai-yi&quot;&gt;国际版 vs 国内版差异&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;差异&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;国际版 z.ai 对 API 客户声称不存储（DPA），国内版授权永久使用权&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;英文版可邮件 opt-out，中文版无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;国际版 ToS 明确授权训练，国内版条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;两版措辞类似，国际版覆盖更广（“content” 含多模态）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;fang-fa-lun-shuo-ming&quot;&gt;方法论说明&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;所有结论基于各厂商的&lt;strong&gt;公开协议原文&lt;&#x2F;strong&gt;，不是营销文案或客服口径&lt;&#x2F;li&gt;
+&lt;li&gt;效力层级：专用合同 &amp;gt; 服务专用条款 &amp;gt; 通用用户协议 &amp;gt; 隐私政策&lt;&#x2F;li&gt;
+&lt;li&gt;“条款沉默” = 协议中找不到明确排除训练的表述&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;ge-han-shang-xiang-xi-diao-yan&quot;&gt;各厂商详细调研&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;完整调研&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;小米 MiMo&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;xiaomi-mimo-token-plan-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;智谱 GLM&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;zhipu-glm-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;google-model-service-data-privacy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;deepseek-api-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;StepFun&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;stepfun-step-plan-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiniMax&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;minimax-api-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Kimi&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;kimi-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Shimmy：Ollama 的 Rust 替代方案实测（WSL2 + Intel 集显）</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/shimmy-ollama-rust-alternative-wsl2-intel/"/>
+        <id>https://cncsmonster.github.io/posts/shimmy-ollama-rust-alternative-wsl2-intel/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/shimmy-ollama-rust-alternative-wsl2-intel/">&lt;p&gt;想找一个比 Ollama 更轻量的本地 LLM 推理服务器？&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt; 用 Rust 写成，单二进制文件，100% OpenAI API 兼容，零配置启动。本文基于 WSL2 + Intel 集显环境的实测，记录了踩坑过程和问题根因。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文是「本地 LLM 推理环境」系列第一篇。&lt;a href=&quot;&#x2F;posts&#x2F;wsl2-intel-gpu-llm-inference-diagnosis&#x2F;&quot;&gt;系列第二篇：WSL2 + Intel 集显跑 LLM 推理的分层诊断 →&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;shimmy-shi-shen-me&quot;&gt;Shimmy 是什么&lt;&#x2F;h2&gt;
+&lt;p&gt;一句话：&lt;strong&gt;Ollama 的 Rust 平替&lt;&#x2F;strong&gt;——更轻、更快、零依赖。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;维度&lt;&#x2F;th&gt;&lt;th&gt;Shimmy&lt;&#x2F;th&gt;&lt;th&gt;Ollama&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;语言&lt;&#x2F;td&gt;&lt;td&gt;Rust&lt;&#x2F;td&gt;&lt;td&gt;Go&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;依赖&lt;&#x2F;td&gt;&lt;td&gt;单二进制，无额外依赖&lt;&#x2F;td&gt;&lt;td&gt;需要 llama.cpp 动态库&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;许可&lt;&#x2F;td&gt;&lt;td&gt;MIT&lt;&#x2F;td&gt;&lt;td&gt;非商用限制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;GPU 支持&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Vulkan &#x2F; OpenCL &#x2F; MLX&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Metal&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;模型格式&lt;&#x2F;td&gt;&lt;td&gt;GGUF + SafeTensors&lt;&#x2F;td&gt;&lt;td&gt;GGUF&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API 兼容&lt;&#x2F;td&gt;&lt;td&gt;OpenAI 100%&lt;&#x2F;td&gt;&lt;td&gt;OpenAI + 自有 API&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;端口分配&lt;&#x2F;td&gt;&lt;td&gt;自动（默认 11435）&lt;&#x2F;td&gt;&lt;td&gt;固定（11434）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;响应缓存&lt;&#x2F;td&gt;&lt;td&gt;LRU + TTL，20-40% 提升&lt;&#x2F;td&gt;&lt;td&gt;无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;项目地址：https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-kai-shi&quot;&gt;快速开始&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Linux x86_64
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-linux-x86_64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# macOS ARM64 (含 MLX for Apple Silicon)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-macos-arm64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# Windows x64 (含 CUDA + Vulkan + OpenCL)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-windows-x86_64.exe -o shimmy.exe
+
+# 启动
+.&amp;#x2F;shimmy serve --gpu-backend auto
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;零配置：自动从 HuggingFace 缓存、Ollama 本地目录发现模型。热切换模型无需重启。&lt;&#x2F;p&gt;
+&lt;p&gt;启动后即提供 OpenAI 兼容的 &lt;code&gt;&#x2F;v1&#x2F;chat&#x2F;completions&lt;&#x2F;code&gt; 接口，现有 OpenAI 工具无需改动即可接入：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;curl http:&amp;#x2F;&amp;#x2F;localhost:11435&amp;#x2F;v1&amp;#x2F;chat&amp;#x2F;completions \
+  -H &amp;quot;Content-Type: application&amp;#x2F;json&amp;quot; \
+  -d &amp;#x27;{&amp;quot;model&amp;quot;:&amp;quot;your-model&amp;quot;,&amp;quot;messages&amp;quot;:[{&amp;quot;role&amp;quot;:&amp;quot;user&amp;quot;,&amp;quot;content&amp;quot;:&amp;quot;hello&amp;quot;}]}&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;ji-shu-jia-gou&quot;&gt;技术架构&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Rust + Tokio&lt;&#x2F;strong&gt;：内存安全，异步高性能&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;llama.cpp 后端&lt;&#x2F;strong&gt;：行业标准 GGUF 推理&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GPU 后端优先级&lt;&#x2F;strong&gt;：CUDA → Vulkan → OpenCL → MLX → CPU (fallback)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;动态端口管理&lt;&#x2F;strong&gt;：零冲突，自动分配&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;shi-ce-wsl2-intel-ji-xian&quot;&gt;实测：WSL2 + Intel 集显&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;ce-shi-huan-jing&quot;&gt;测试环境&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;项目&lt;&#x2F;th&gt;&lt;th&gt;值&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Core Ultra 7 255H (12 核心)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;内存&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;19GB&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Arc 140T (Arrow Lake H)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;环境&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;WSL2 (Linux 6.6.87)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 库已安装 (&lt;code&gt;libvulkan_intel.so&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;v1.9.0 (源码编译，启用 &lt;code&gt;llama-vulkan&lt;&#x2F;code&gt; feature)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;ce-shi-1-qwen3-5-0-8b-gguf-x-wu-fa-yun-xing&quot;&gt;测试 1: Qwen3.5-0.8B GGUF — ❌ 无法运行&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;llama_model_load: error loading model: unknown model architecture: &amp;#x27;qwen35&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;原因：Shimmy v1.9.0 内置的 llama.cpp &lt;strong&gt;尚未支持 Qwen3.5 架构&lt;&#x2F;strong&gt;。Qwen3.5 使用混合 SSM (Mamba) + Transformer 架构，需要更新版本的 llama.cpp。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;ce-shi-2-qwen2-5-safetensors-warning-ke-jia-zai-tui-li-wei-wan-cheng&quot;&gt;测试 2: Qwen2.5 SafeTensors — ⚠️ 可加载，推理未完成&lt;&#x2F;h3&gt;
+&lt;p&gt;SafeTensors 模型可以成功加载，但 Shimmy 报告 “Full transformer inference coming soon!”，推理支持仍在开发中。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gpu-hou-duan-shi-ce&quot;&gt;GPU 后端实测&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;后端&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CUDA&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 无 NVIDIA GPU&lt;&#x2F;td&gt;&lt;td&gt;不适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 可初始化但无真实 GPU&lt;&#x2F;td&gt;&lt;td&gt;WSL2 中只有 &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; 软件渲染器&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenCL&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 未编译&lt;&#x2F;td&gt;&lt;td&gt;可通过 &lt;code&gt;--features llama-opencl&lt;&#x2F;code&gt; 启用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MLX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ macOS only&lt;&#x2F;td&gt;&lt;td&gt;不适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;关键发现&lt;&#x2F;strong&gt;：&lt;code&gt;llvmpipe&lt;&#x2F;code&gt; 是 Mesa 的 CPU 软件渲染器，用 CPU 多线程模拟 Vulkan GPU。用 &lt;code&gt;--gpu-backend vulkan&lt;&#x2F;code&gt; 实际还是 CPU 做矩阵运算，可能反而更慢。&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Device: llvmpipe (LLVM 20.1.2, 256 bits)
+Type: CPU  ← 不是真正的 GPU！
+Vendor ID: 0x10005 (Mesa software renderer)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;wen-ti-gen-yin&quot;&gt;问题根因&lt;&#x2F;h2&gt;
+&lt;p&gt;无法运行不是 Shimmy 的问题，而是 &lt;strong&gt;WSL2 + Intel 集显的环境限制&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 DXG 内核模块与 Intel GPU 驱动不兼容&lt;&#x2F;strong&gt; — dmesg 持续报 ioctl 失败&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Intel GPU 驱动版本偏旧&lt;&#x2F;strong&gt; — 当前 32.0.101.6554，最新 32.0.101.8801（2026-05-15）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Windows Insider Preview Canary 频道&lt;&#x2F;strong&gt; — 26200 预发布版，兼容性不稳定&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;hou-xu-fang-xiang&quot;&gt;后续方向&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;优先级&lt;&#x2F;th&gt;&lt;th&gt;方案&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;更新 Intel GPU 驱动到最新版&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 更新 WSL2&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;退出 Insider Preview，切回稳定版&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;尝试 Level Zero 路径绕过 OpenCL DXG 问题&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;shui-gua-he-yong-shimmy&quot;&gt;谁适合用 Shimmy？&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ &lt;strong&gt;CUDA 环境&lt;&#x2F;strong&gt;（NVIDIA GPU）：开箱即用，性能最佳&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;macOS Apple Silicon&lt;&#x2F;strong&gt;：MLX 后端原生支持&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;需要 OpenAI API 兼容&lt;&#x2F;strong&gt;的现有工具链&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;WSL2 + Intel&#x2F;AMD 集显&lt;&#x2F;strong&gt;：Vulkan 后端受限，建议等驱动更新&lt;&#x2F;li&gt;
+&lt;li&gt;❌ &lt;strong&gt;纯 CPU 推理追求极致性能&lt;&#x2F;strong&gt;：Ollama 可能更成熟&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;can-kao-lian-jie&quot;&gt;参考链接&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;shimmy&quot;&gt;Shimmy Crates.io&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics 驱动下载&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>WSL2 + Intel 集显跑 LLM 推理：为什么不行？分层诊断全记录</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/"/>
+        <id>https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/">&lt;p&gt;在 &lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel&#x2F;&quot;&gt;上一篇&lt;&#x2F;a&gt; 中，Shimmy 在 WSL2 + Intel 集显环境下无法运行。本文深入拆解这个问题的根因——不是 Shimmy 的锅，也不是 llama.cpp 的锅，而是 &lt;strong&gt;WSL2 的 DXG 内核模块与 Intel GPU 驱动在协议层就不兼容&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文是「本地 LLM 推理环境」系列第二篇。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;he-xin-jie-lun&quot;&gt;核心结论&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL2 中 Intel 集成显卡&lt;strong&gt;无法用于 LLM 推理&lt;&#x2F;strong&gt;。问题不在 IGC 或 OpenCL 驱动本身，而是 WSL2 DXG 内核模块与 Intel Arc 140T 的 Windows 驱动不兼容。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wsl2-de-gpu-zhan-chang-shen-me-yang&quot;&gt;WSL2 的 GPU 栈长什么样&lt;&#x2F;h2&gt;
+&lt;p&gt;从硬件往上 4 层：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Python (llama-cpp-python, OpenCL)
+         ↓
+[3] IGC — Intel Graphics Compiler
+         ↓
+[2] OpenCL ICD (intel-opencl-icd)
+         ↓
+[1] WSL2 DXG 内核模块 (&amp;#x2F;dev&amp;#x2F;dxg)
+         ↓
+[0] Windows Intel GPU 驱动
+         ↓
+     物理 GPU (Intel Arc 140T &amp;#x2F; Arrow Lake H)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;ge-ceng-zhen-duan-jie-guo&quot;&gt;各层诊断结果&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;层&lt;&#x2F;th&gt;&lt;th&gt;组件&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;th&gt;证据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;[0]&lt;&#x2F;td&gt;&lt;td&gt;Windows 驱动 (32.0.101.6554)&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;偏旧&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;2025-01-15，Intel 在 1~5 月发布了大量 Arrow Lake 更新&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[1]&lt;&#x2F;td&gt;&lt;td&gt;WSL2 DXG (kernel 6.6.87.2)&lt;&#x2F;td&gt;&lt;td&gt;🔴 &lt;strong&gt;大量 ioctl 失败&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;dmesg 从开机 5 秒起持续报错&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[2]&lt;&#x2F;td&gt;&lt;td&gt;OpenCL ICD (23.43.27642.40)&lt;&#x2F;td&gt;&lt;td&gt;✅ 能枚举 GPU&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;clGetDeviceIDs&lt;&#x2F;code&gt; 成功返回 Intel Graphics&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[3]&lt;&#x2F;td&gt;&lt;td&gt;IGC (1.0.15468.25)&lt;&#x2F;td&gt;&lt;td&gt;✅ 库完整&lt;&#x2F;td&gt;&lt;td&gt;编译正常，但提交内核需过 DXG 层 → 崩溃&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Layer 1 是真正的故障点。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;dmesg-li-de-tie-zheng&quot;&gt;dmesg 里的铁证&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;dmesg&lt;&#x2F;code&gt; 从头到尾充斥 DXG ioctl 错误，&lt;strong&gt;不是运行 llama.cpp 才触发&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;[    5.459659] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22  (EINVAL)
+[    5.460357] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -2   (ENOENT)
+[    5.460880] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+...
+[78509.821263] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+[78509.825964] misc dxg: dxgkio_reserve_gpu_va:     Ioctl failed: -75  (EOVERFLOW)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;错误码含义：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;errno&lt;&#x2F;th&gt;&lt;th&gt;宏&lt;&#x2F;th&gt;&lt;th&gt;含义&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;-2&lt;&#x2F;td&gt;&lt;td&gt;ENOENT&lt;&#x2F;td&gt;&lt;td&gt;适配器不存在&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-22&lt;&#x2F;td&gt;&lt;td&gt;EINVAL&lt;&#x2F;td&gt;&lt;td&gt;参数无效（WSL2 DXG 传了 Windows 驱动不理解的参数）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-75&lt;&#x2F;td&gt;&lt;td&gt;EOVERFLOW&lt;&#x2F;td&gt;&lt;td&gt;GPU 虚拟地址预留溢出&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;WSL2 内核的 dxg 模块和 Windows 侧的 Intel GPU 驱动在协议层面不兼容。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;gen-ben-yuan-yin&quot;&gt;根本原因&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Intel Arc 140T 属于 Arrow Lake H 架构，2024 年底刚发布。&lt;&#x2F;strong&gt; Windows 驱动 &lt;code&gt;32.0.101.6554&lt;&#x2F;code&gt;（2025-01-15）是 Arrow Lake 早期版本，对 WSL2 的 DXG 接口支持不完整。DXG 模块向 Windows 驱动发出请求时，驱动不理解或处理有 bug，导致 ioctl 返回 EINVAL&#x2F;EOVERFLOW。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;cai-keng-fan-si&quot;&gt;踩坑反思&lt;&#x2F;h2&gt;
+&lt;p&gt;第一次看到 &lt;code&gt;IGC segfault&lt;&#x2F;code&gt; 时，直觉是“IGC 有问题“。于是查 IGC 版本、看是不是已知 bug、翻 Reddit — IGC 是最新版，没有已知问题。换个方向，测试了 Vulkan（WSL2 不支持原生 Vulkan 透传）、DirectML（Windows 专属，WSL2 不适用）和 Shimmy（底层还是同一个 llama.cpp，完全无关的变量）。&lt;&#x2F;p&gt;
+&lt;p&gt;四个小时花在了&lt;strong&gt;往上追和往旁边追&lt;&#x2F;strong&gt;。往下只需要一个命令，五分钟。&lt;&#x2F;p&gt;
+&lt;p&gt;崩溃日志格式天然引导你关注崩溃的那一层。&lt;code&gt;IGC: Internal Compiler Error&lt;&#x2F;code&gt; — IGC 的名字在错误信息里，注意力就被钉在 IGC 上。但实际上，任何一个组件在&lt;strong&gt;调用外部&lt;&#x2F;strong&gt;时崩溃，根因几乎总是在被调的那一层。纯内部计算崩了才是自己的问题。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wu-chong-fang-an-shi-ce-dui-bi&quot;&gt;五种方案实测对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;方案&lt;&#x2F;th&gt;&lt;th&gt;GPU 识别&lt;&#x2F;th&gt;&lt;th&gt;推理&lt;&#x2F;th&gt;&lt;th&gt;推荐度&lt;&#x2F;th&gt;&lt;th&gt;备注&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Vulkan (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ 只有 llvmpipe&lt;&#x2F;td&gt;&lt;td&gt;fallback CPU&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Mesa 需要原生 &lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;OpenCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;✅ 枚举成功&lt;&#x2F;td&gt;&lt;td&gt;❌ DXG ioctl 崩溃&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;更新驱动后再试&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;SYCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ 已确认不可行&lt;&#x2F;td&gt;&lt;td&gt;需手动 patch ABI&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;社区已放弃&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ 开箱即用&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;当前唯一可用方案&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;IPEX-LLM (Win)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ 17-18 t&#x2F;s&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;Lunar Lake 已验证&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;ge-fang-an-xiang-qing&quot;&gt;各方案详情&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Vulkan (WSL2)&lt;&#x2F;strong&gt;：&lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt; 设备不存在，Mesa Intel Vulkan ICD 无法初始化。强制指定后 GPU 数量为 0。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;OpenCL (WSL2)&lt;&#x2F;strong&gt;：GPU 能被正确识别（&lt;code&gt;Intel(R) Graphics [0x7d51]&lt;&#x2F;code&gt;），但提交计算内核时 IGC 编译崩溃——根源在 DXG 层。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;SYCL (WSL2)&lt;&#x2F;strong&gt;：Reddit r&#x2F;IntelArc 用户 2026-04 确认，WSL2 无法通过标准 Intel SYCL 运行时识别 Intel GPU。社区一致建议改用 Windows 原生。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;：Windows 版原生支持 Intel GPU，WSL2 通过 HTTP API 调用即可。&lt;strong&gt;实测验证通过，开箱即用。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;IPEX-LLM (Windows 原生)&lt;&#x2F;strong&gt;：r&#x2F;IntelArc 用户通过替换 IPEX-LLM 内置 Ollama 二进制，在 Lunar Lake Arc 140V 上实现 qwen3:8b 达到 17-18 tokens&#x2F;s，100% GPU 占用。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ke-xing-de-hou-xu-fang-xiang&quot;&gt;可行的后续方向&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;优先级&lt;&#x2F;th&gt;&lt;th&gt;方案&lt;&#x2F;th&gt;&lt;th&gt;操作&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;🔑 更新 Windows Intel GPU 驱动&lt;&#x2F;td&gt;&lt;td&gt;下载最新版（当前 6554 → 最新 8801）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;更新 WSL2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;切回 Windows 稳定版&lt;&#x2F;td&gt;&lt;td&gt;退出 Insider Preview Canary&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;尝试 Level Zero 路径&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo apt install intel-level-zero-gpu&lt;&#x2F;code&gt;，走不同 DXG ioctl&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;推荐顺序&lt;&#x2F;strong&gt;：先更新驱动 → 再更新 WSL → 测试效果 → 如仍有问题再切稳定版。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics 驱动下载&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;basic-commands&quot;&gt;Microsoft WSL 基本命令&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy 项目&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel&#x2F;&quot;&gt;上一篇：Shimmy 评测&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Qwen Code</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/qwen-code/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-29T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/qwen-code/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Qwen Code Auto Mode Classifier：两阶段 LLM 审批机制解析</title>
+        <published>2026-07-29T00:00:00+08:00</published>
+        <updated>2026-07-29T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-auto-mode-classifier/">&lt;blockquote&gt;
+&lt;p&gt;本文基于 Qwen Code &lt;code&gt;0.20.1-preview.7215&lt;&#x2F;code&gt; 版本的编译源码分析。preview 版本的机制可能随版本变化。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Qwen Code 提供五种审批模式：&lt;code&gt;plan&lt;&#x2F;code&gt;（计划）、&lt;code&gt;default&lt;&#x2F;code&gt;（默认确认）、&lt;code&gt;auto-edit&lt;&#x2F;code&gt;（自动编辑）、&lt;code&gt;auto&lt;&#x2F;code&gt;（自动审批）、&lt;code&gt;yolo&lt;&#x2F;code&gt;（全部自动）。在这个版本中，&lt;strong&gt;新用户安装后默认就是 auto 模式&lt;&#x2F;strong&gt;——工具调用不需要逐个确认，而是通过多层过滤自动判断每个操作是否安全。我平时使用也推荐 auto 模式，它在效率和安全之间取得了很好的平衡。本文拆解这个机制的工作原理和配置方式。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zheng-ti-jia-gou&quot;&gt;整体架构&lt;&#x2F;h2&gt;
+&lt;p&gt;Auto mode 的自动审批机制由四个部分组成：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;规则层&lt;&#x2F;strong&gt;：确定性规则（工具默认权限、用户自定义规则、白名单、正则拦截），快速过滤掉明确安全或明确危险的操作&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;LLM 判断层&lt;&#x2F;strong&gt;：两阶段 Classifier，处理规则覆盖不了的模糊地带&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fail-closed&lt;&#x2F;strong&gt;：classifier 出错时默认阻止——宁可错杀不放过&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;安全网&lt;&#x2F;strong&gt;：Denial Tracking，检测 LLM 和 classifier 的死循环，必要时降级为人工确认&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;一个工具调用的完整生命周期：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;LLM 返回 [A, B, C]
+  → 每个独立走审批流程：
+    ①-⑤ 规则层 → ⑥ LLM 判断层
+    → A 放行 → 执行 → 返回结果
+    → B 阻止 → 跳过
+    → C 放行 → 执行 → 返回结果
+  → 所有结果一起回传 LLM
+  → LLM 看到完整画面后决定下一步
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;gui-ze-ceng&quot;&gt;规则层：①-⑤&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 在执行工具调用（读文件、跑命令、改代码等）之前，会依次经过以下检查：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;工具调用
+  → ① 工具自身默认权限（比如 read_file 默认安全，shell 命令默认需要审批）
+  → ② PermissionManager（用户自定义规则引擎）
+  → ③ acceptEdits fast-path（如果当前是 acceptEdits 模式，工作区内编辑直接放行）
+  → ④ 安全工具白名单（read_file、grep、glob 等只读工具直接放行）
+  → ⑤ Guard（正则拦截危险命令模式，如 git clean、rm -rf 等，不经过 LLM）
+  → ⑥ LLM Classifier（两阶段 LLM 判断，见下节）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;② 是用户可配置的规则引擎，返回四种结果：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow&lt;&#x2F;code&gt; → 直接放行（跳过 ③-⑥）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;deny&lt;&#x2F;code&gt; → 直接阻止&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;ask&lt;&#x2F;code&gt; → 弹出确认框，等用户手动决定&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;&#x2F;code&gt;（无规则匹配）→ 继续 ③-⑥&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;liang-jie-duan-classifier&quot;&gt;两阶段 Classifier&lt;&#x2F;h2&gt;
+&lt;p&gt;前五步都是确定性规则——快、免费，但覆盖不了所有情况。剩下的工具调用交给 LLM 判断。Classifier 收到的是工具名称、参数和当前对话上下文，分两步走：&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;stage-1-kuai-su-pan-duan&quot;&gt;Stage 1：快速判断&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;模型：fastModel（未配置则 fallback 到主模型）&lt;&#x2F;li&gt;
+&lt;li&gt;输出：仅 &lt;code&gt;{shouldBlock: boolean}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;超时：10 秒&lt;&#x2F;li&gt;
+&lt;li&gt;行为：说 allow → 立即放行；说 block → 进入 Stage 2&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;stage-2-fu-he&quot;&gt;Stage 2：复核&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;模型：同 Stage 1&lt;&#x2F;li&gt;
+&lt;li&gt;输出：&lt;code&gt;{thinking, shouldBlock, reason}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;超时：30 秒&lt;&#x2F;li&gt;
+&lt;li&gt;行为：说 allow → 放行；说 block → 阻止&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Stage 2 输出中的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 是模型写的一段判断依据文本（比如“用户只是读取文件，安全“），帮助开发者理解 classifier 为什么做了这个决定。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fail-closed-zhu-ke-cuo-sha&quot;&gt;Fail-closed：宁可错杀&lt;&#x2F;h3&gt;
+&lt;p&gt;任何非主动中断的失败（API 错误、超时、响应格式不对）都返回 &lt;code&gt;shouldBlock: true&lt;&#x2F;code&gt;。这意味着 &lt;strong&gt;classifier 挂掉 = 所有需要审批的工具都被 block&lt;&#x2F;strong&gt;。这不是 bug，是安全设计。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;mo-xing-you-xian-ji&quot;&gt;模型优先级&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;override → config.getFastModel() → config.getModel() → DEFAULT_QWEN_MODEL
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Classifier 使用 fastModel。不配置时 fallback 到主模型，但主模型通常更慢——Stage 1 每次判断大约多花几百毫秒到几秒不等，积少成多。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;denial-tracking-fang-si-xun-huan&quot;&gt;Denial Tracking：防死循环&lt;&#x2F;h2&gt;
+&lt;p&gt;如果 classifier 持续 block（LLM 卡在死胡同），系统不会无限循环：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;计数器&lt;&#x2F;th&gt;&lt;th&gt;阈值&lt;&#x2F;th&gt;&lt;th&gt;效果&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;连续 block&lt;&#x2F;td&gt;&lt;td&gt;3 次&lt;&#x2F;td&gt;&lt;td&gt;下一个工具调用跳过 classifier，直接弹人工确认&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;连续 unavailable&lt;&#x2F;td&gt;&lt;td&gt;2 次&lt;&#x2F;td&gt;&lt;td&gt;同上&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;总计 denial&lt;&#x2F;td&gt;&lt;td&gt;20 次&lt;&#x2F;td&gt;&lt;td&gt;触发总额上限&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;以上阈值为硬编码，不可配置。切换审批模式时所有计数器重置。&lt;&#x2F;p&gt;
+&lt;p&gt;几个关键点：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;按工具调用累计&lt;&#x2F;strong&gt;，不是按批次——一批有 2 个 block 就加 2&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;降级发生在 classifier 之前&lt;&#x2F;strong&gt;——连续 3 次后第 4 次不再浪费 LLM 调用，直接问人&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;用户批准后计数器归零&lt;&#x2F;strong&gt;，恢复自动模式；拒绝则不重置，下一个继续人工确认&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;跨轮次累计&lt;&#x2F;strong&gt;——LLM 每轮看到被拒结果后换个方式再试，连续 3 次被拒就降级&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;pei-zhi-jian-yi&quot;&gt;配置建议&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;fastModel&amp;quot;: &amp;quot;qwen3-coder-plus&amp;quot;,
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;autoMode&amp;quot;: {
+      &amp;quot;classifier&amp;quot;: {
+        &amp;quot;timeouts&amp;quot;: { &amp;quot;stage1Ms&amp;quot;: 10000, &amp;quot;stage2Ms&amp;quot;: 30000 },
+        &amp;quot;thinking&amp;quot;: { &amp;quot;stage2Enabled&amp;quot;: false }
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;关键配置&lt;&#x2F;strong&gt;：&lt;code&gt;fastModel&lt;&#x2F;code&gt; 是 classifier 的核心依赖。不配置时 fallback 到主模型，但主模型通常更慢——每个需要 classifier 判断的工具调用都会多等一段时间。&lt;&#x2F;p&gt;
+&lt;p&gt;选型建议：选一个&lt;strong&gt;快的&lt;&#x2F;strong&gt;模型。classifier 只需要输出一个布尔值或一段简短文本，不需要深度推理。不思考的模型（如 &lt;code&gt;qwen3-coder-plus&lt;&#x2F;code&gt;）天然适合；有思考能力的模型（如 &lt;code&gt;deepseek-v4-flash&lt;&#x2F;code&gt;）也可以——classifier 两阶段都默认不开 API 思考模式，模型不会在内部做额外推理，一样很快。如果本地资源充足，配一个本地小模型当 fastModel 也行——零 API 成本，响应还快。&lt;&#x2F;p&gt;
+&lt;p&gt;唯一不建议的：某个模型&lt;strong&gt;强制开启思考&lt;&#x2F;strong&gt;（无法通过参数关闭），用在 fastModel 上每次判断都会多花思考的时间和 token。另外，classifier 能看到对话上下文和工具参数，fastModel 的服务提供商安全性应不低于主模型。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;stage2Enabled&lt;&#x2F;code&gt; 控制 Stage 2 是否让模型走 API 深度推理模式（更慢、更多 token）。默认 &lt;code&gt;false&lt;&#x2F;code&gt; 即可——Stage 2 输出中的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 字段不受影响，它只是模型写的一段普通文本解释。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zong-jie&quot;&gt;总结&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 的 auto mode 不是简单的“全部自动执行“，而是一个精心设计的安全阀门：规则层挡在前面，LLM classifier 做模糊地带的判断，fail-closed 保证出错时不会放行，denial tracking 防止死循环。代价是每个需要判断的工具调用都要多花一次 LLM 调用的时间和 token。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Qwen Code WebFetch 的 SPA 盲区：html-to-text 空内容问题</title>
+        <published>2026-07-29T00:00:00+08:00</published>
+        <updated>2026-07-29T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/">&lt;p&gt;使用 Qwen Code 的 &lt;code&gt;web_fetch&lt;&#x2F;code&gt; 工具抓取 SPA（单页应用）页面时，经常会返回空内容。这不是网络问题，而是一个设计 gap：&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 对空 body 页面返回空字符串，但 Qwen Code 没有任何 fallback 机制。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;SPA 页面的 body 通常只有一个挂载点：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;html&quot; class=&quot;language-html &quot;&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&amp;lt;body&amp;gt;
+  &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;div&amp;gt;
+  &amp;lt;script src=&amp;quot;app.js&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;script&amp;gt;
+&amp;lt;&amp;#x2F;body&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 解析这段 HTML 后返回空字符串。但 curl 能拿到 &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; 和 &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt;——这些信息在 &lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; 里，不是 body 的一部分。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fu-xian&quot;&gt;复现&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;URL: https:&amp;#x2F;&amp;#x2F;www.stepfun.com
+web_fetch 返回: （空）
+curl 返回: &amp;lt;title&amp;gt;阶跃星辰&amp;lt;&amp;#x2F;title&amp;gt; + &amp;lt;meta description=&amp;quot;...&amp;quot;&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;jie-jue-fang-an&quot;&gt;解决方案&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;tui-jian-yong-tavily-extract-ti-dai&quot;&gt;推荐：用 &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; 替代&lt;&#x2F;h3&gt;
+&lt;p&gt;如果你已配置 Tavily MCP（参考 &lt;a href=&quot;&#x2F;posts&#x2F;qwen-code-tavily-mcp-setup&#x2F;&quot;&gt;Qwen Code 接入 Tavily 搜索&lt;&#x2F;a&gt;），直接使用 &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; 工具替代 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;。Tavily 在服务端渲染 JavaScript，能正确处理 SPA 页面。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;bei-xuan-jin-yong-web-fetch-pei-zhi-qi-ta-mcp-fetch-gong-ju&quot;&gt;备选：禁用 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;，配置其他 MCP fetch 工具&lt;&#x2F;h3&gt;
+&lt;p&gt;在 &lt;code&gt;settings.json&lt;&#x2F;code&gt; 中禁用内置 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;disabled&amp;quot;: [&amp;quot;web_fetch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP fetch 工具有多种类型：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;无头浏览器类&lt;&#x2F;strong&gt;：用 Playwright&#x2F;Puppeteer 渲染页面，能处理 SPA&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;API 类&lt;&#x2F;strong&gt;：如 Tavily Extract，服务端渲染后返回结构化内容&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;命令行类&lt;&#x2F;strong&gt;：封装 curl&#x2F;wget 等工具，简单直接但不渲染 JS&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;yuan-ma-shi-shi&quot;&gt;源码事实&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; packages&amp;#x2F;core&amp;#x2F;src&amp;#x2F;tools&amp;#x2F;web-fetch.ts (v0.20.1-preview.7215)
+const textContent = convert(html, {
+  wordwrap: false,
+  selectors: [
+    { selector: &amp;#x27;a&amp;#x27;, options: { ignoreHref: true } },
+    { selector: &amp;#x27;img&amp;#x27;, format: &amp;#x27;skip&amp;#x27; },
+  ],
+}).substring(0, MAX_CONTENT_LENGTH);
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;没有 fallback 逻辑。&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 返回空 → 直接送空字符串给 LLM → LLM 拿到空内容 → 返回空或胡编。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yu-claude-code-de-dui-bi&quot;&gt;与 Claude Code 的对比&lt;&#x2F;h2&gt;
+&lt;p&gt;Claude Code 的 WebFetch 同样没有 SPA fallback。两者在 SPA 场景下都有盲区。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;gei-gong-xian-zhe-de-xiu-fu-si-lu&quot;&gt;给贡献者的修复思路&lt;&#x2F;h2&gt;
+&lt;p&gt;如果你有兴趣修复这个问题，以下是几个方向（按成本从低到高）：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; fallback&lt;&#x2F;strong&gt;：&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 返回空时，提取 &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; + &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; 作为兜底。改动最小，只需在 &lt;code&gt;convert()&lt;&#x2F;code&gt; 返回空时加一个 fallback 分支。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;SPA 检测&lt;&#x2F;strong&gt;：识别 &lt;code&gt;&amp;lt;div id=&quot;root&quot;&amp;gt;&lt;&#x2F;code&gt; 等特征，提示用户该页面需要 JS 渲染，建议使用 MCP 工具。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;无头浏览器集成&lt;&#x2F;strong&gt;：对检测到的 SPA 页面，用无头浏览器渲染后再提取内容。效果最好但引入重依赖。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Qwen Code 如何自动学习你的编程习惯？AutoSkill 机制深度解析</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-autoskill-deep-dive/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-autoskill-deep-dive/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-autoskill-deep-dive/">&lt;p&gt;在使用 Qwen Code 一段时间后，你可能注意到 &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; 目录下凭空多出了几个 skill——&lt;code&gt;skill-review&lt;&#x2F;code&gt;、&lt;code&gt;skill-testing&lt;&#x2F;code&gt;——它们的 frontmatter 里标记着 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;。这些不是你写的，也没人手动创建过。&lt;&#x2F;p&gt;
+&lt;p&gt;这是 Qwen Code 的 &lt;strong&gt;AutoSkill 机制&lt;&#x2F;strong&gt;：一种程序性记忆的自动提炼能力。本文基于源码逆向和设计文档，完整拆解这个机制的工作原理、安全设计和学术渊源。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;autoskill-shi-shen-me&quot;&gt;AutoSkill 是什么&lt;&#x2F;h2&gt;
+&lt;p&gt;一句话：&lt;strong&gt;会话结束后，Qwen Code 会在后台自动判断你刚才的操作流程是否值得复用，如果值得，就把它保存为一个项目级 skill。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;它和 Auto Memory 的定位不同：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;维度&lt;&#x2F;th&gt;&lt;th&gt;Auto Memory&lt;&#x2F;th&gt;&lt;th&gt;AutoSkill&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;记忆类型&lt;&#x2F;td&gt;&lt;td&gt;陈述性（用户是谁、项目背景）&lt;&#x2F;td&gt;&lt;td&gt;程序性（如何做某类任务）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;触发时机&lt;&#x2F;td&gt;&lt;td&gt;每次会话结束&lt;&#x2F;td&gt;&lt;td&gt;会话内工具调用 ≥ 20 次&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;写入目标&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;memory&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;内容性质&lt;&#x2F;td&gt;&lt;td&gt;用户偏好、项目上下文&lt;&#x2F;td&gt;&lt;td&gt;可复用的操作步骤、最佳实践&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;简单说，Memory 记住“你是谁“，AutoSkill 记住“你怎么做事“。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;hong-fa-tiao-jian&quot;&gt;触发条件&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;会话结束
+  ├─ toolCallCount ≥ 20 ?        &amp;#x2F;&amp;#x2F; 密度不足 → skip
+  ├─ skillsModifiedInSession ?   &amp;#x2F;&amp;#x2F; 本轮已手动操作 skill → skip
+  └─ 都满足 → scheduleSkillReview()
+               └─ fork 独立子 agent（8 轮上限，2 分钟超时）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;只有当一次会话中工具调用足够密集（≥ 20 次），且用户没有手动编辑过 skill 文件时，才会触发。这避免了在简单问答会话中产生低质量 skill。&lt;&#x2F;p&gt;
+&lt;p&gt;触发后，系统 fork 一个独立的 review agent（不是主对话的延续），最多运行 8 轮、2 分钟超时，对会话内容进行评估和提炼。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quan-xian-sha-xiang-he-xin-an-quan-she-ji&quot;&gt;权限沙箱：核心安全设计&lt;&#x2F;h2&gt;
+&lt;p&gt;AutoSkill 最精妙的部分是它的安全机制。review agent 被关在一个严格的沙箱里：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;权限&lt;&#x2F;th&gt;&lt;th&gt;安全机制&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;read_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 项目根目录内&lt;&#x2F;td&gt;&lt;td&gt;防止读取 &lt;code&gt;~&#x2F;.aws&#x2F;credentials&lt;&#x2F;code&gt; 等敏感文件并注入到 SKILL.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;ls&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 项目根目录内&lt;&#x2F;td&gt;&lt;td&gt;同上&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;write_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 仅 &lt;code&gt;.qwen&#x2F;skills&#x2F;&amp;lt;name&amp;gt;&#x2F;SKILL.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;只能创建&lt;strong&gt;不存在&lt;&#x2F;strong&gt;的文件（防覆盖）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;edit&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 仅 &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; 内 + 目标文件必须含 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;不能改用户手写的 skill&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;核心原则：&lt;strong&gt;auto-skill 只能动自己创建的东西，绝不能碰用户手写的 skill。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;source-auto-skill-bao-hu-ji-zhi&quot;&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; 保护机制&lt;&#x2F;h3&gt;
+&lt;p&gt;双重防线：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;硬约束（权限管理器）&lt;&#x2F;strong&gt;：&lt;code&gt;edit&lt;&#x2F;code&gt; 前读取 frontmatter，无 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; 则拒绝&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;软约束（system prompt）&lt;&#x2F;strong&gt;：“You may ONLY modify skill files that contain ‘source: auto-skill’”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;用户若将自己创建的 skill 也加上 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;，即表示允许 review agent 后续自动更新它。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fang-ming-cheng-chong-tu-fu-gai&quot;&gt;防名称冲突覆盖&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; write_file 只允许创建新文件
+try {
+  await fs.stat(ctx.filePath);
+  return &amp;#x27;deny&amp;#x27;;  &amp;#x2F;&amp;#x2F; 文件已存在 → 拒绝
+} catch (err) {
+  if (err.code === &amp;#x27;ENOENT&amp;#x27;) return &amp;#x27;allow&amp;#x27;;  &amp;#x2F;&amp;#x2F; 不存在 → 允许创建
+  return &amp;#x27;deny&amp;#x27;;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这意味着：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;创建新 skill → &lt;code&gt;write_file&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;更新已有 auto-skill → 必须用 &lt;code&gt;edit&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;覆盖任何已有文件 → 拒绝 ❌&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;fang-symlink-chuan-yue&quot;&gt;防 symlink 穿越&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;assertRealProjectSkillPath()&lt;&#x2F;code&gt; 用 &lt;code&gt;fs.realpath()&lt;&#x2F;code&gt; 解析真实路径，确认在 &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; 内，防止通过符号链接写入项目外的位置。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xue-shu-yuan-yuan&quot;&gt;学术渊源&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Trace2Skill 论文（arXiv: 2603.25158）
+    ↓
+Hermes Agent（Nous Research，开源）——prompt 原始来源
+    ↓ Qwen Code 设计文档：&amp;quot;移植自 Hermes _SKILL_REVIEW_PROMPT，只做最小化适配&amp;quot;
+Qwen Code AutoSkill
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Qwen Code 设计文档明确提到：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;review agent 使用的提示语直接移植自 Hermes &lt;code&gt;_SKILL_REVIEW_PROMPT&lt;&#x2F;code&gt;，只做最小化适配。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Hermes 的原始 prompt 远比 Qwen 版本详细——包含 CLASS-LEVEL 技能组织、偏好嵌入、protected skills、Do NOT capture 列表等。Qwen 版本做了大幅精简，聚焦于“非平凡方法“和“试错过程“的提炼。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;hermes-vs-qwen-code&quot;&gt;Hermes vs Qwen Code&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Hermes&lt;&#x2F;th&gt;&lt;th&gt;Qwen Code&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;触发时机&lt;&#x2F;td&gt;&lt;td&gt;会话内 agent 直接调用 + 会话后后台 review&lt;&#x2F;td&gt;&lt;td&gt;仅会话后后台 fork&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;保护机制&lt;&#x2F;td&gt;&lt;td&gt;ContextVar 追踪写入来源 + tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; frontmatter + 文件级权限管理器&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;写入范围&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.hermes&#x2F;skills&#x2F;&lt;&#x2F;code&gt;（全局）&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;（项目级）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Prompt 复杂度&lt;&#x2F;td&gt;&lt;td&gt;详细（含技能组织、偏好嵌入等）&lt;&#x2F;td&gt;&lt;td&gt;精简（聚焦可复用操作流程）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;yu-qi-ta-agent-dui-bi&quot;&gt;与其他 Agent 对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Agent&lt;&#x2F;th&gt;&lt;th&gt;自动提炼程序性 skill&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hermes Agent&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 有（会话内 + 会话后）&lt;&#x2F;td&gt;&lt;td&gt;最早的开源实现，有 tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Qwen Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 有（会话后）&lt;&#x2F;td&gt;&lt;td&gt;移植 Hermes prompt + 文件级权限沙箱&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Claude Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;Auto Memory 只记录陈述性知识，不提炼操作流程&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Cursor&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;Skills 全部手动创建&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;Skills 全部手动创建，Memory 手动管理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Codex CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;内置 skills + AGENTS.md 扩展，无自动提炼&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Gemini CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;手动创建 SKILL.md，Memory 读取 GEMINI.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;目前只有 Hermes 和 Qwen Code 实现了自动提炼程序性 skill 的能力，其他主流 AI coding agent 都还停留在手动管理阶段。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao-lian-jie&quot;&gt;参考链接&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;blob&#x2F;main&#x2F;docs&#x2F;design&#x2F;skill-nudge&#x2F;skill-nudge.md&quot;&gt;设计文档&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;实现源码：&lt;code&gt;packages&#x2F;core&#x2F;src&#x2F;memory&#x2F;skillReviewAgentPlanner.ts&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;首次提交：2026-05-09（&lt;code&gt;#3673&lt;&#x2F;code&gt;），默认开启：2026-05-27（&lt;code&gt;#4547&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2603.25158&quot;&gt;Trace2Skill 论文&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>MiMo 模型配置避免降智：thinking 参数正确配置</title>
+        <published>2026-05-28T00:00:00+08:00</published>
+        <updated>2026-05-28T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/mimo-thinking-config-guide/"/>
+        <id>https://cncsmonster.github.io/posts/mimo-thinking-config-guide/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/mimo-thinking-config-guide/">&lt;blockquote&gt;
+&lt;p&gt;创建日期：2026-05-27
+更新日期：2026-05-28
+状态：已完成
+类型：踩坑记录（半衰期 5-10 年）
+来源：配置 MiMo V2.5 Pro 到 pi&#x2F;qwen-code 的实践经验&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;MiMo 模型配置不当会导致“降智“——推理能力静默失效，不报错但不思考。表现为：模型回答简单问题还行，但需要复杂推理时质量明显下降。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;he-xin-fa-xian&quot;&gt;核心发现&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;reasoning: true&lt;&#x2F;code&gt; ≠ 推理功能真的在工作。&lt;&#x2F;strong&gt; 要让客户端正确使用推理模型，需要三个配置项同时正确：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;配置项&lt;&#x2F;th&gt;&lt;th&gt;作用&lt;&#x2F;th&gt;&lt;th&gt;缺失后果&lt;&#x2F;th&gt;&lt;th&gt;官方依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;thinkingFormat&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;告诉客户端用什么参数格式请求思考&lt;&#x2F;td&gt;&lt;td&gt;请求格式错误，API 不返回 reasoning&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米官方文档&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;requiresReasoningContentOnAssistantMessages&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;告诉客户端多轮回放时必须传回 &lt;code&gt;reasoning_content&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiMo 要求每个 assistant message（带 tool_calls）必须传回，否则 400&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;en-US&#x2F;faq&quot;&gt;小米官方 FAQ&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;maxTokensField&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;某些 provider 用 &lt;code&gt;max_completion_tokens&lt;&#x2F;code&gt; 而非 &lt;code&gt;max_tokens&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;参数名错误，服务端忽略或报错&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米官方文档示例&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;三者缺一不可。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;gen-ben-yuan-ze&quot;&gt;根本原则&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;配置任何模型服务，第一步是查官方文档。&lt;&#x2F;strong&gt; 没有官方文档依据，不凭感觉配置。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zheng-que-lu-jing-xian-cha-wen-dang-pei-zhi-san-jian-tao&quot;&gt;正确路径：先查文档，配置三件套&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;bu-zou-1-du-guan-fang-api-wen-dang&quot;&gt;步骤 1：读官方 API 文档&lt;&#x2F;h3&gt;
+&lt;p&gt;确认三个关键信息：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;思考参数名（&lt;code&gt;thinking&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;enable_thinking&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;reasoning_effort&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;合法值（&lt;code&gt;enabled&#x2F;disabled&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;true&#x2F;false&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;low&#x2F;medium&#x2F;high&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;reasoning_content 回传要求&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;MiMo 官方依据&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米 MiMo API 官方文档&lt;&#x2F;a&gt; 明确说明 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 可选值为 &lt;code&gt;enabled&lt;&#x2F;code&gt; 和 &lt;code&gt;disabled&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;bu-zou-2-xuan-ze-pi-pei-de-thinkingformat&quot;&gt;步骤 2：选择匹配的 thinkingFormat&lt;&#x2F;h3&gt;
+&lt;p&gt;pi 的 &lt;code&gt;thinkingFormat&lt;&#x2F;code&gt; 配置项决定 pi 向 API 发送哪几个参数：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;thinkingFormat 值&lt;&#x2F;th&gt;&lt;th&gt;pi 发送的 API 参数&lt;&#x2F;th&gt;&lt;th&gt;适用模型&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;reasoning_effort&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;只发 &lt;code&gt;reasoning_effort&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;标准 OpenAI&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;deepseek&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;同时发 &lt;code&gt;thinking&lt;&#x2F;code&gt; &lt;strong&gt;和&lt;&#x2F;strong&gt; &lt;code&gt;reasoning_effort&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;DeepSeek V4, MiMo&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;qwen&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;只发 &lt;code&gt;enable_thinking&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;百炼 Qwen&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;qwen-chat-template&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;只发 &lt;code&gt;chat_template_kwargs.enable_thinking&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;本地 Qwen&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;MiMo 使用 &lt;code&gt;&quot;deepseek&quot;&lt;&#x2F;code&gt; 格式&lt;&#x2F;strong&gt;（同时发送 &lt;code&gt;thinking&lt;&#x2F;code&gt; 和 &lt;code&gt;reasoning_effort&lt;&#x2F;code&gt;），不是 &lt;code&gt;&quot;reasoning_effort&quot;&lt;&#x2F;code&gt; 也不是 &lt;code&gt;&quot;qwen&quot;&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;官方依据&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米 MiMo API 官方文档&lt;&#x2F;a&gt; 明确说明使用 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 参数控制思维链，与 DeepSeek 格式一致。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;bu-zou-3-pei-zhi-thinkinglevelmap-ru-xu-yao&quot;&gt;步骤 3：配置 thinkingLevelMap（如需要）&lt;&#x2F;h3&gt;
+&lt;p&gt;pi 有 6 个思考级别：&lt;code&gt;off&lt;&#x2F;code&gt;、&lt;code&gt;minimal&lt;&#x2F;code&gt;、&lt;code&gt;low&lt;&#x2F;code&gt;、&lt;code&gt;medium&lt;&#x2F;code&gt;、&lt;code&gt;high&lt;&#x2F;code&gt;、&lt;code&gt;xhigh&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;目标 API 不一定全支持。&lt;code&gt;thinkingLevelMap&lt;&#x2F;code&gt; 做映射：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;映射&lt;&#x2F;th&gt;&lt;th&gt;含义&lt;&#x2F;th&gt;&lt;th&gt;示例&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;minimal&quot;: &quot;low&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;pi 的 &lt;code&gt;minimal&lt;&#x2F;code&gt; → API 的 &lt;code&gt;low&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiMo 不支持 &lt;code&gt;minimal&lt;&#x2F;code&gt;，用 &lt;code&gt;low&lt;&#x2F;code&gt; 替代&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;xhigh&quot;: &quot;high&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;pi 的 &lt;code&gt;xhigh&lt;&#x2F;code&gt; → API 的 &lt;code&gt;high&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiMo 最高只到 &lt;code&gt;high&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;&quot;medium&quot;: null&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;pi 的 &lt;code&gt;medium&lt;&#x2F;code&gt; → 在 UI 中隐藏&lt;&#x2F;td&gt;&lt;td&gt;模型不支持中等推理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;bu-zou-4-gai-yi-xiang-yan-yi-xiang&quot;&gt;步骤 4：改一项，验一项&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 逐个验证配置项
+pi -p &amp;quot;test&amp;quot; --model mimo-v2.5-pro
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;shi-ji-pei-zhi-shi-li&quot;&gt;实际配置示例&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;pi-de-models-json-pei-zhi&quot;&gt;pi 的 models.json 配置&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;xiaomi-token-plan-cn&amp;quot;: {
+    &amp;quot;baseUrl&amp;quot;: &amp;quot;https:&amp;#x2F;&amp;#x2F;token-plan-cn.xiaomimimo.com&amp;#x2F;v1&amp;quot;,
+    &amp;quot;api&amp;quot;: &amp;quot;openai-completions&amp;quot;,
+    &amp;quot;apiKey&amp;quot;: &amp;quot;MIMO_API_KEY&amp;quot;,
+    &amp;quot;compat&amp;quot;: {
+      &amp;quot;supportsDeveloperRole&amp;quot;: false,
+      &amp;quot;supportsReasoningEffort&amp;quot;: true,
+      &amp;quot;thinkingFormat&amp;quot;: &amp;quot;deepseek&amp;quot;,
+      &amp;quot;requiresReasoningContentOnAssistantMessages&amp;quot;: true,
+      &amp;quot;maxTokensField&amp;quot;: &amp;quot;max_completion_tokens&amp;quot;
+    },
+    &amp;quot;models&amp;quot;: [
+      {
+        &amp;quot;id&amp;quot;: &amp;quot;mimo-v2.5-pro&amp;quot;,
+        &amp;quot;name&amp;quot;: &amp;quot;[XiaoMi] MiMo V2.5 Pro&amp;quot;,
+        &amp;quot;reasoning&amp;quot;: true,
+        &amp;quot;input&amp;quot;: [&amp;quot;text&amp;quot;],
+        &amp;quot;contextWindow&amp;quot;: 1048576,
+        &amp;quot;maxTokens&amp;quot;: 64000,
+        &amp;quot;thinkingLevelMap&amp;quot;: {
+          &amp;quot;minimal&amp;quot;: &amp;quot;low&amp;quot;,
+          &amp;quot;xhigh&amp;quot;: &amp;quot;high&amp;quot;
+        }
+      }
+    ]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;官方依据&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米 MiMo API 官方文档&lt;&#x2F;a&gt; 示例中使用 &lt;code&gt;max_completion_tokens&lt;&#x2F;code&gt; 参数。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;qwen-code-de-pei-zhi-ge-shi-wan-quan-bu-tong&quot;&gt;qwen-code 的配置（格式完全不同）&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;generationConfig&amp;quot;: {
+    &amp;quot;extra_body&amp;quot;: {
+      &amp;quot;thinking&amp;quot;: {
+        &amp;quot;type&amp;quot;: &amp;quot;enabled&amp;quot;
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;&#x2F;strong&gt;：同一个 MiMo API，pi 和 qwen-code 的配置语法完全不同，不能照搬。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ge-mo-xing-api-zhi-chi-de-reasoning-can-shu-dui-bi&quot;&gt;各模型 API 支持的 reasoning 参数对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;模型&lt;&#x2F;th&gt;&lt;th&gt;thinking 开关&lt;&#x2F;th&gt;&lt;th&gt;reasoning_effort 值域&lt;&#x2F;th&gt;&lt;th&gt;必须回传 reasoning_content&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek V4&lt;&#x2F;td&gt;&lt;td&gt;✅ &lt;code&gt;enabled&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;disabled&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;high&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;max&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 是（带 tool_calls 时）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiMo V2.5 Pro&lt;&#x2F;td&gt;&lt;td&gt;✅ &lt;code&gt;thinking.type: enabled&#x2F;disabled&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;low&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;medium&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;high&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 是&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;百炼 Qwen&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;enable_thinking: true&#x2F;false&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;不支持&lt;&#x2F;td&gt;&lt;td&gt;❌ 不需要&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;官方依据&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米 MiMo API 官方文档&lt;&#x2F;a&gt; 明确说明 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 可选值为 &lt;code&gt;enabled&lt;&#x2F;code&gt; 和 &lt;code&gt;disabled&lt;&#x2F;code&gt;，默认值因模型而异。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;diao-shi-san-tiao-huang-jin-fa-ze&quot;&gt;调试三条黄金法则&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;先读官方文档&lt;&#x2F;strong&gt;：配任何 API 前，先找模型官方的 API 文档（参数名、合法值、thinking 控制方式、content 是否回传）。不搜二手帖子、不凭直觉猜。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;一次只改一项，改了立刻验证&lt;&#x2F;strong&gt;：改一个 setting → 用 &lt;code&gt;pi -p &quot;测试&quot; --model &amp;lt;id&amp;gt;&lt;&#x2F;code&gt; 验证 → 确认 OK 再改下一项。试错不要叠加。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;遇到报错先读报错&lt;&#x2F;strong&gt;：报错信息往往就是答案。例：&lt;code&gt;Input should be &#x27;low&#x27;, &#x27;medium&#x27; or &#x27;high&#x27;, input: &#x27;minimal&#x27;&lt;&#x2F;code&gt; 这句话等于一份 API 参数说明书。先读清报错，再排查是值不对、格式不对还是没重载，&lt;strong&gt;不要看到报错就换格式&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;chang-jian-cuo-wu-pai-cha&quot;&gt;常见错误排查&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;现象&lt;&#x2F;th&gt;&lt;th&gt;可能原因&lt;&#x2F;th&gt;&lt;th&gt;排查方法&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;模型回答简单，但复杂问题质量差&lt;&#x2F;td&gt;&lt;td&gt;thinking 参数未生效&lt;&#x2F;td&gt;&lt;td&gt;检查 thinkingFormat 是否正确&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;多轮对话报 400 错误&lt;&#x2F;td&gt;&lt;td&gt;reasoning_content 未回传&lt;&#x2F;td&gt;&lt;td&gt;检查 requiresReasoningContentOnAssistantMessages&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;参数名错误&lt;&#x2F;td&gt;&lt;td&gt;maxTokensField 配置错误&lt;&#x2F;td&gt;&lt;td&gt;检查是 max_tokens 还是 max_completion_tokens&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;思考级别不生效&lt;&#x2F;td&gt;&lt;td&gt;thinkingLevelMap 映射错误&lt;&#x2F;td&gt;&lt;td&gt;检查 API 支持的值域&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;contextwindow-jing-que-zhi&quot;&gt;contextWindow 精确值&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;1M&lt;&#x2F;code&gt; 的数学精确值是 &lt;code&gt;1_048_576&lt;&#x2F;code&gt;（1024×1024），不是 &lt;code&gt;1_000_000&lt;&#x2F;code&gt;。虽然 API 通常都会接受，但精确值更专业。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;xiao-mi-guan-fang-wen-dang&quot;&gt;小米官方文档&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米 MiMo API 官方文档 - OpenAI API&lt;&#x2F;a&gt; - &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 参数说明、&lt;code&gt;max_completion_tokens&lt;&#x2F;code&gt; 示例&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;en-US&#x2F;faq&quot;&gt;小米 MiMo API 官方文档 - FAQ&lt;&#x2F;a&gt; - &lt;code&gt;reasoning_content&lt;&#x2F;code&gt; 多轮回放要求&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;en-US&#x2F;quick-start&#x2F;model-hyperparameters&quot;&gt;Model Hyperparameters&lt;&#x2F;a&gt; - temperature&#x2F;top_p 参数说明&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;di-san-fang-yan-zheng&quot;&gt;第三方验证&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.aimlapi.com&#x2F;api-references&#x2F;text-models-llm&#x2F;xiaomi&#x2F;mimo-v2.5-pro&quot;&gt;AI&#x2F;ML API 文档 - MiMo V2.5 Pro&lt;&#x2F;a&gt; - 确认 &lt;code&gt;reasoning_effort&lt;&#x2F;code&gt; 支持 &lt;code&gt;low&lt;&#x2F;code&gt;, &lt;code&gt;medium&lt;&#x2F;code&gt;, &lt;code&gt;high&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;HKUDS&#x2F;nanobot&#x2F;issues&#x2F;3585&quot;&gt;nanobot issue #3585&lt;&#x2F;a&gt; - 确认 &lt;code&gt;reasoning_effort&lt;&#x2F;code&gt; 可选值为 &lt;code&gt;low&lt;&#x2F;code&gt;, &lt;code&gt;medium&lt;&#x2F;code&gt;, &lt;code&gt;high&lt;&#x2F;code&gt;, &lt;code&gt;adaptive&lt;&#x2F;code&gt;, &lt;code&gt;null&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;openrouter.ai&#x2F;xiaomi&#x2F;mimo-v2.5&#x2F;api&quot;&gt;OpenRouter MiMo API&lt;&#x2F;a&gt; - reasoning 参数使用说明&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;qi-ta-lai-yuan&quot;&gt;其他来源&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.deepseek.com&#x2F;api-docs&quot;&gt;DeepSeek API 文档&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;pi 的 thinkingFormat 配置文档&lt;&#x2F;li&gt;
+&lt;li&gt;实践经验总结&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;guan-fang-wen-dang-yan-zheng-jie-guo&quot;&gt;官方文档验证结果&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;笔记声明&lt;&#x2F;th&gt;&lt;th&gt;验证状态&lt;&#x2F;th&gt;&lt;th&gt;官方依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;MiMo 使用 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 格式（&lt;code&gt;enabled&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;disabled&lt;&#x2F;code&gt;）&lt;&#x2F;td&gt;&lt;td&gt;✅ 已验证&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米官方文档 - OpenAI API&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;reasoning_effort&lt;&#x2F;code&gt; 支持 &lt;code&gt;low&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;medium&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;high&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 已验证&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.aimlapi.com&#x2F;api-references&#x2F;text-models-llm&#x2F;xiaomi&#x2F;mimo-v2.5-pro&quot;&gt;AI&#x2F;ML API 文档&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;reasoning_content&lt;&#x2F;code&gt; 必须多轮回放时传回&lt;&#x2F;td&gt;&lt;td&gt;✅ 已验证&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;en-US&#x2F;faq&quot;&gt;小米官方文档 - FAQ&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;不传回 &lt;code&gt;reasoning_content&lt;&#x2F;code&gt; 会报 400&lt;&#x2F;td&gt;&lt;td&gt;✅ 已验证&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;en-US&#x2F;faq&quot;&gt;小米官方文档 - FAQ&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;maxTokensField&lt;&#x2F;code&gt; 为 &lt;code&gt;max_completion_tokens&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 已验证&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.xiaomimimo.com&#x2F;docs&#x2F;zh-CN&#x2F;api&#x2F;chat&#x2F;openai-api&quot;&gt;小米官方文档 - OpenAI API&lt;&#x2F;a&gt; 示例代码&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiMo 使用 &lt;code&gt;&quot;deepseek&quot;&lt;&#x2F;code&gt; 格式&lt;&#x2F;td&gt;&lt;td&gt;✅ 已验证&lt;&#x2F;td&gt;&lt;td&gt;官方文档确认使用 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 格式，与 DeepSeek 格式一致&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;关键发现&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;小米官方文档明确说明使用 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 参数控制思维链（&lt;code&gt;enabled&lt;&#x2F;code&gt;&#x2F;&lt;code&gt;disabled&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;官方示例代码中使用 &lt;code&gt;max_completion_tokens&lt;&#x2F;code&gt; 参数&lt;&#x2F;li&gt;
+&lt;li&gt;FAQ 中明确说明多轮对话需要传回 &lt;code&gt;reasoning_content&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;MiMo 的 &lt;code&gt;thinking.type&lt;&#x2F;code&gt; 格式与 DeepSeek 的 &lt;code&gt;thinking&lt;&#x2F;code&gt; 格式一致，因此 pi 中应使用 &lt;code&gt;&quot;deepseek&quot;&lt;&#x2F;code&gt; 格式&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Kimi Code API 接入为什么会 403？</title>
+        <published>2026-05-24T00:00:00+08:00</published>
+        <updated>2026-05-24T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/kimi-code-api-access-403/"/>
+        <id>https://cncsmonster.github.io/posts/kimi-code-api-access-403/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/kimi-code-api-access-403/">&lt;p&gt;我在把 Kimi Code 接入 pi 和 Qwen Code 时，遇到一个容易误判的问题：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;为什么 Kimi Code 官方说支持 OpenAI 兼容协议，但我用标准 OpenAI SDK 调 &lt;code&gt;coding&#x2F;v1&#x2F;chat&#x2F;completions&lt;&#x2F;code&gt; 会返回 403？&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;结论是：&lt;strong&gt;Kimi Code 的 OpenAI 兼容端点会检查 coding agent 客户端身份；对 pi 和 Qwen Code 来说，更稳的方式都是走 Anthropic 兼容端点。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;liang-ge-duan-dian-bu-shi-wan-quan-deng-jia-de&quot;&gt;两个端点不是完全等价的&lt;&#x2F;h2&gt;
+&lt;p&gt;Kimi Code 官方文档提供两个协议端点：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;协议&lt;&#x2F;th&gt;&lt;th&gt;Base URL&lt;&#x2F;th&gt;&lt;th&gt;常见用途&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;OpenAI 兼容&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;https:&#x2F;&#x2F;api.kimi.com&#x2F;coding&#x2F;v1&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Roo Code &#x2F; OpenAI-compatible 工具&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Anthropic 兼容&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;https:&#x2F;&#x2F;api.kimi.com&#x2F;coding&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Claude Code &#x2F; Anthropic Messages 工具&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;一开始我用 OpenAI SDK 风格请求 OpenAI 兼容端点，返回 403，大意是 Kimi For Coding 只能在 Coding Agents 中使用。&lt;&#x2F;p&gt;
+&lt;p&gt;读 Kimi Code CLI 源码后，原因比较清楚：Kimi Code CLI 请求中会附带一组 &lt;code&gt;X-Msh-*&lt;&#x2F;code&gt; 身份头，用来标识请求来自 Kimi Code CLI 这类 coding agent。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ts&quot; class=&quot;language-ts &quot;&gt;&lt;code class=&quot;language-ts&quot; data-lang=&quot;ts&quot;&gt;&amp;#x2F;&amp;#x2F; packages&amp;#x2F;oauth&amp;#x2F;src&amp;#x2F;identity.ts
+export function createKimiDefaultHeaders(options: KimiIdentityOptions): Record&amp;lt;string, string&amp;gt; {
+  return {
+    &amp;#x27;User-Agent&amp;#x27;: createKimiUserAgent(options),
+    &amp;#x27;X-Msh-Platform&amp;#x27;: &amp;#x27;kimi-code-cli&amp;#x27;,
+    &amp;#x27;X-Msh-Version&amp;#x27;: requiredAsciiHeader(options.version, &amp;#x27;Kimi identity version&amp;#x27;),
+    &amp;#x27;X-Msh-Device-Name&amp;#x27;: asciiHeader(hostname()),
+    &amp;#x27;X-Msh-Device-Model&amp;#x27;: asciiHeader(deviceModel()),
+    &amp;#x27;X-Msh-Os-Version&amp;#x27;: asciiHeader(release()),
+    &amp;#x27;X-Msh-Device-Id&amp;#x27;: createKimiDeviceId(options.homeDir),
+  };
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;所以这里的 403 不是简单的 API Key 错误，也不只是 User-Agent 问题，而是 OpenAI 兼容端点还依赖额外的客户端身份信息。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;注意：Kimi 官方文档也提醒，使用时应保持工具真实身份标识，篡改客户端标识可能导致会员权益暂停。公开或生产使用时不要为了绕过限制伪造身份。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;pi-tui-jian-zou-anthropic-jian-rong-xie-yi&quot;&gt;pi：推荐走 Anthropic 兼容协议&lt;&#x2F;h2&gt;
+&lt;p&gt;对 pi 来说，最省事也最干净的方式是直接配置 Anthropic 兼容端点：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;kimi&amp;quot;: {
+    &amp;quot;baseUrl&amp;quot;: &amp;quot;https:&amp;#x2F;&amp;#x2F;api.kimi.com&amp;#x2F;coding&amp;#x2F;&amp;quot;,
+    &amp;quot;api&amp;quot;: &amp;quot;anthropic-messages&amp;quot;,
+    &amp;quot;apiKey&amp;quot;: &amp;quot;KIMI_CODE_API_KEY&amp;quot;,
+    &amp;quot;models&amp;quot;: [
+      {
+        &amp;quot;id&amp;quot;: &amp;quot;kimi-for-coding&amp;quot;,
+        &amp;quot;name&amp;quot;: &amp;quot;[Kimi Coding Plan]&amp;quot;,
+        &amp;quot;reasoning&amp;quot;: true,
+        &amp;quot;input&amp;quot;: [&amp;quot;text&amp;quot;, &amp;quot;image&amp;quot;],
+        &amp;quot;contextWindow&amp;quot;: 262144,
+        &amp;quot;maxTokens&amp;quot;: 128000
+      }
+    ]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这个端点用 &lt;code&gt;x-api-key&lt;&#x2F;code&gt; 认证即可，不需要额外注入 &lt;code&gt;X-Msh-*&lt;&#x2F;code&gt; 头。我本地用 pi 实测可以正常返回。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;qwen-code-ye-ying-gai-you-xian-zou-anthropic-jian-rong-xie-yi&quot;&gt;Qwen Code：也应该优先走 Anthropic 兼容协议&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 同样支持 &lt;code&gt;modelProviders.anthropic&lt;&#x2F;code&gt;，因此也没必要优先走 OpenAI 兼容端点。&lt;&#x2F;p&gt;
+&lt;p&gt;推荐配置形态是把 Kimi Code 放到 &lt;code&gt;modelProviders.anthropic&lt;&#x2F;code&gt; 里：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;modelProviders&amp;quot;: {
+    &amp;quot;anthropic&amp;quot;: [
+      {
+        &amp;quot;id&amp;quot;: &amp;quot;kimi-for-coding&amp;quot;,
+        &amp;quot;name&amp;quot;: &amp;quot;[Kimi Code] K2.6&amp;quot;,
+        &amp;quot;baseUrl&amp;quot;: &amp;quot;https:&amp;#x2F;&amp;#x2F;api.kimi.com&amp;#x2F;coding&amp;quot;,
+        &amp;quot;envKey&amp;quot;: &amp;quot;KIMI_CODE_API_KEY&amp;quot;,
+        &amp;quot;generationConfig&amp;quot;: {
+          &amp;quot;contextWindowSize&amp;quot;: 262144
+        }
+      }
+    ]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;我查了当前 Qwen Code 源码：Anthropic provider 对非 Anthropic 原生 base URL 会走 proxy identity，使用 &lt;code&gt;Authorization: Bearer &amp;lt;key&amp;gt;&lt;&#x2F;code&gt;。我又用 curl 验证了 Kimi Code 的 Anthropic &lt;code&gt;&#x2F;v1&#x2F;messages&lt;&#x2F;code&gt; 端点同时接受 &lt;code&gt;x-api-key&lt;&#x2F;code&gt; 和 &lt;code&gt;Authorization: Bearer&lt;&#x2F;code&gt;，都能返回 200。&lt;&#x2F;p&gt;
+&lt;p&gt;所以更准确的建议是：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;pi：走 &lt;code&gt;anthropic-messages&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;Qwen Code：走 &lt;code&gt;modelProviders.anthropic&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;只有在你明确要调试 OpenAI 兼容端点时，才需要研究 &lt;code&gt;X-Msh-*&lt;&#x2F;code&gt; 和 &lt;code&gt;customHeaders&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;ru-guo-reng-ran-zou-qwen-code-de-openai-jian-rong-duan-dian&quot;&gt;如果仍然走 Qwen Code 的 OpenAI 兼容端点&lt;&#x2F;h2&gt;
+&lt;p&gt;如果你确实在 Qwen Code 中走 OpenAI 兼容端点，需要注意一个配置位置问题：&lt;code&gt;customHeaders&lt;&#x2F;code&gt; 不能放在模型配置外层，而要放进 &lt;code&gt;generationConfig&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;原因是 Qwen Code 的 OpenAI-compatible provider 从 &lt;code&gt;contentGeneratorConfig.customHeaders&lt;&#x2F;code&gt; 读取自定义头，而 &lt;code&gt;contentGeneratorConfig&lt;&#x2F;code&gt; 是由 &lt;code&gt;generationConfig&lt;&#x2F;code&gt; 构造出来的。&lt;&#x2F;p&gt;
+&lt;p&gt;也就是说：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;generationConfig&amp;quot;: {
+    &amp;quot;customHeaders&amp;quot;: {
+      &amp;quot;...&amp;quot;: &amp;quot;...&amp;quot;
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;才会生效。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ 以上仅解释技术机制，不建议为了绕过限制伪造客户端身份。生产或公开配置应以 Kimi 官方允许的接入方式为准。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;zhe-ci-pai-cha-de-jing-yan&quot;&gt;这次排查的经验&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;兼容协议不等于等价协议。&lt;&#x2F;strong&gt; OpenAI-compatible 和 Anthropic-compatible 只是接口形状相似，不代表认证、网关和风控逻辑相同。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;403 不一定是 Key 错。&lt;&#x2F;strong&gt; 也可能是请求头、客户端身份、端点策略不匹配。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;优先选择阻力最小的官方路径。&lt;&#x2F;strong&gt; 对 pi 和 Qwen Code 来说，Anthropic 兼容端点就是更合适的接入方式。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>AI Code CLI 能力增强应基于 MCP 协议，而非内置工具源码</title>
+        <published>2026-05-05T00:00:00+08:00</published>
+        <updated>2026-05-05T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/"/>
+        <id>https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/">&lt;p&gt;&lt;strong&gt;不要在会被删除的代码上盖房子。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ju-ti-jing-li&quot;&gt;具体经历&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 旧版内置了 &lt;code&gt;web_search&lt;&#x2F;code&gt; 工具，支持 Tavily、Google、DashScope 三个搜索后端（DashScope 可走 Qwen OAuth 认证）。但它的 provider 选择是静态的——用户在配置中指定一个 default，工具一次搜索只调一个 provider，失败就直接报错，不会尝试下一个。&lt;&#x2F;p&gt;
+&lt;p&gt;笔者的目标是在工具内部实现运行时 provider fallback：按 Tavily → Google → DashScope 的顺序依次尝试，前一个失败自动切换到下一个，避免单后端不可用时搜索能力彻底瘫痪。&lt;&#x2F;p&gt;
+&lt;p&gt;2026-04-24，方案还在本地，Qwen Code PR #3502 合并——&lt;strong&gt;把整个 &lt;code&gt;web_search&lt;&#x2F;code&gt; 内置工具删了&lt;&#x2F;strong&gt;，替换成 MCP 架构。旧版的所有配置键（&lt;code&gt;webSearch&lt;&#x2F;code&gt; 块、&lt;code&gt;advanced.tavilyApiKey&lt;&#x2F;code&gt;、&lt;code&gt;--tavily-api-key&lt;&#x2F;code&gt; 等 CLI 参数）全部作废。笔者针对的是一个已经不存在的目标。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wei-shen-me-zhe-ge-fang-xiang-zhan-bu-zhu-jiao&quot;&gt;为什么这个方向站不住脚&lt;&#x2F;h2&gt;
+&lt;p&gt;不是方案本身有问题——旧版确实缺少运行时 fallback，这是一个合理的改进方向。问题是地基：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;web_search&lt;&#x2F;code&gt; 从存在到消失只隔了一个 PR。AI Code CLI 品类发展不到两年，内置工具随时可能被重构、合并或删除。&lt;&#x2F;li&gt;
+&lt;li&gt;MCP 是跨 CLI 的通用协议，Qwen Code、Claude Code、Gemini CLI 都支持。工具本身独立于任何 CLI 的实现——不存在“改了半天源码，工具一删全白干“的风险。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;fan-si-zheng-que-de-zuo-fa&quot;&gt;反思：正确的做法&lt;&#x2F;h2&gt;
+&lt;p&gt;fallback 本身的方向没问题——旧版确实需要，MCP 层也同样需要。错的是实现位置：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;❌ 修改 CLI 内置工具的源码来实现 fallback&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 写一个独立的 MCP server，内部封装多 provider fallback 逻辑&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;同样的功能，放在内部工具源码里随时可能被删；放在 MCP server 里，和 CLI 版本解耦，自己控制生命周期。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jing-yan&quot;&gt;经验&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;在 AI Code CLI 上做能力增强，优先在 MCP 层——工具独立于 CLI 实现，不会因为上游重构而作废。&lt;&#x2F;li&gt;
+&lt;li&gt;动手前确认目标模块的生命周期：是稳定核心能力，还是随时可能被替代的实验性功能？&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Qwen Code 接入 Tavily 搜索</title>
+        <published>2026-05-05T00:00:00+08:00</published>
+        <updated>2026-05-05T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/">&lt;h2 id=&quot;1-huo-qu-api-key&quot;&gt;1. 获取 API Key&lt;&#x2F;h2&gt;
+&lt;p&gt;注册 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;tavily.com&#x2F;&quot;&gt;Tavily&lt;&#x2F;a&gt;，复制 API key。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-she-zhi-huan-jing-bian-liang&quot;&gt;2. 设置环境变量&lt;&#x2F;h2&gt;
+&lt;p&gt;将 &lt;code&gt;TAVILY_API_KEY&lt;&#x2F;code&gt; 持久化到系统环境变量中（&lt;code&gt;tvly-xxxxxxxx&lt;&#x2F;code&gt; 替换为你的 key）。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Linux &#x2F; macOS：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;echo &amp;#x27;export TAVILY_API_KEY=&amp;quot;tvly-xxxxxxxx&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.profile
+source ~&amp;#x2F;.profile
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果之前已经设置过，用编辑器打开 &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; 替换或删除旧值，避免重复行。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Windows（PowerShell）：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;[Environment]::SetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;tvly-xxxxxxxx&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;无需管理员权限。这个命令会写入当前用户的持久化环境变量，但不会修改已经打开的 PowerShell 进程；关闭并重新打开终端后生效。&lt;&#x2F;p&gt;
+&lt;p&gt;重新打开 PowerShell 后可验证：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果想在当前这个 PowerShell 窗口里立刻继续测试，也可以临时同步一次：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY = [Environment]::GetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;API key 涉及付费额度，自己手动执行以上命令，不要让 AI 代劳。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-an-zhuang-tavily-mcp&quot;&gt;3. 安装 Tavily MCP&lt;&#x2F;h2&gt;
+&lt;p&gt;发给 Qwen Code：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;请帮我用 qwen mcp add 命令安装 Tavily MCP，然后搜索验证是否正常。
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;结束。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;验证时间：2026-05-05，Qwen Code 0.15.6 + tavily-mcp 0.2.19&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+</feed>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 输入法</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/shu-ru-fa/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-15T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/shu-ru-fa/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>记一次 WSL2 输入法卡顿排查与修复</title>
+        <published>2026-05-15T00:00:00+08:00</published>
+        <updated>2026-05-15T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/"/>
+        <id>https://cncsmonster.github.io/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/">&lt;h2 id=&quot;yu-dao-tong-yang-de-wen-ti&quot;&gt;遇到同样的问题？&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL2 终端里打中文“不跟手“——按键到字符出现有粘滞延迟。&lt;&#x2F;p&gt;
+&lt;p&gt;先看下面三行确认是不是同一个问题，然后直接跳到&lt;strong&gt;快速修复&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness   # 默认 60，内存充裕时 &amp;gt; 10 说明阈值太宽松
+free -h | grep Swap           # 空闲内存充裕却占了几百 MB → 疑为历史遗留&amp;#x2F;抖动
+df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F; | tail -1       # 系统盘 &amp;gt; 80% 时 IME 文件 I&amp;#x2F;O 容易受影响
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;yi-ju-hua-gen-yin&quot;&gt;一句话根因&lt;&#x2F;h2&gt;
+&lt;p&gt;三条线同时卡在键盘到回显的路径上：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;键盘 → [Windows 输入管道] ← C 盘满，IME 变慢
+     → 终端               ← 同上
+     → [ConPTY → WSL]    ← autoMemoryReclaim 频繁中断 VM
+     → shell → 回显       ← swap 抖动，pty 回显延迟
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;C 盘满&lt;&#x2F;strong&gt; → Windows 侧的输入法框架和终端渲染都变钝&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swappiness=60（默认值）&lt;&#x2F;strong&gt; → 明明有 18GB 空闲内存，系统却往 swap 里塞进程&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swap 抖动&lt;&#x2F;strong&gt; → 被换出的页面断续被读回，I&#x2F;O 恰好踩在 pty 回显的时间窗口里&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;单独一层不卡，三层叠加刚好在你击键到看见字符这几十毫秒里。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-xiu-fu&quot;&gt;快速修复&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;jiang-swappiness-chi-jiu-hua-li-ke-jian-xiao&quot;&gt;① 降 swappiness + 持久化（立刻见效）&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo sysctl vm.swappiness=10                                          # 立即生效
+echo &amp;quot;vm.swappiness=10&amp;quot; | sudo tee -a &amp;#x2F;etc&amp;#x2F;sysctl.conf                # systemd 启动时加载
+sudo tee -a &amp;#x2F;etc&amp;#x2F;wsl.conf &amp;lt;&amp;lt; &amp;#x27;EOF&amp;#x27;                                    # WSL 原生加载
+
+[sysctl]
+vm.swappiness=10
+EOF
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;warning-qing-swap-zhu-yi-wsl2-de-keng&quot;&gt;⚠️ ② 清 swap（注意 WSL2 的坑）&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL2 的 swap 不靠 &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt;，&lt;code&gt;swapon -a&lt;&#x2F;code&gt; 对它无效。&lt;&#x2F;p&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. 先找出谁在占 swap
+for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;${swp:-0}&amp;quot; -gt 10000 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid) (PID=$(basename $(dirname $pid)))&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;输出会列出进程名和 PID，例如 &lt;code&gt;1039088 KB - node-MainThread (PID=1200819)&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 2. 杀掉占大头的进程（替换为上面输出的 PID）
+kill -9 &amp;lt;PID1&amp;gt; &amp;lt;PID2&amp;gt;
+
+# 3. 清空并重建 swap
+sudo swapoff -a                   # 关闭 swap（会擦除签名）
+sudo mkswap &amp;#x2F;dev&amp;#x2F;sdc &amp;amp;&amp;amp; sudo swapon &amp;#x2F;dev&amp;#x2F;sdc   # 重建签名并重新启用
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;qing-li-c-pan-windows-ce&quot;&gt;③ 清理 C 盘（Windows 侧）&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Windows PowerShell 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;rd &amp;#x2F;s &amp;#x2F;q %TEMP%                  # 清临时文件
+powercfg &amp;#x2F;hibernate off          # 关休眠释放 ~16GB
+cleanmgr &amp;#x2F;sagerun:1              # 磁盘清理
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;automemoryreclaim-gai-wei-disabled&quot;&gt;④ autoMemoryReclaim 改为 disabled&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Windows 中编辑 &lt;code&gt;C:\Users\&amp;lt;用户名&amp;gt;\.wslconfig&lt;&#x2F;code&gt;
+（或在 WSL 中编辑 &lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;Users&#x2F;&amp;lt;用户名&amp;gt;&#x2F;.wslconfig&lt;&#x2F;code&gt;）：&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt; 意味着 WSL 释放的内存不会还给 Windows，但不影响 WSL 内部复用——20GB 是上限，不是预留。日常 WSL 只用 2-3GB，即使跑完大推理任务后不归还，剩余物理内存仍足够 Windows 正常使用。代价为零，收益是消掉 gradual 带来的 HYP 中断。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[experimental]
+autoMemoryReclaim=disabled
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;zhong-qi-huo-shou-dong-qing-li-can-liu&quot;&gt;⑤ 重启（或手动清理残留）&lt;&#x2F;h3&gt;
+&lt;p&gt;前三刀修完后键盘仍微卡。发现系统里挂着 26 个陈旧 zsh 会话和 8 个 gitstatusd 守护进程（15 天未重启累积），直接重启了电脑，WSL 随系统重启后所有残留清空。&lt;&#x2F;p&gt;
+&lt;p&gt;也可以不重启，手动处理：&lt;&#x2F;p&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pkill gitstatusd          # 杀陈旧的 git 监控进程
+# 找出 PPID=1 的孤儿 zsh 并杀掉：
+ps -eo pid,ppid,cmd | awk &amp;#x27;$2==1 &amp;amp;&amp;amp; &amp;#x2F;zsh&amp;#x2F; {print $1}&amp;#x27; | xargs kill -9
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;xiu-fu-xiao-guo&quot;&gt;修复效果&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;指标&lt;&#x2F;th&gt;&lt;th&gt;修复前&lt;&#x2F;th&gt;&lt;th&gt;修复后&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;60&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;10&lt;&#x2F;strong&gt;（持久化）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap 使用&lt;&#x2F;td&gt;&lt;td&gt;2.0 GB&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;8.6 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;C 盘&lt;&#x2F;td&gt;&lt;td&gt;81%&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;64%&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap I&#x2F;O&lt;&#x2F;td&gt;&lt;td&gt;持续 &amp;gt; 0&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;输入法&lt;&#x2F;td&gt;&lt;td&gt;明显卡顿&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;跟手&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wan-zheng-pai-cha-guo-cheng&quot;&gt;完整排查过程&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;以下是当时逐层排查的真实记录。如果你有兴趣了解“为什么“或者想学习类似的排查方法，可以往下看。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;zheng-zhuang&quot;&gt;症状&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL2 终端里打中文感觉卡——按下按键到字符出现在屏幕上，有一种粘滞的延迟感。不是完全卡死，而是“不跟手“。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;cai-keng-wo-yi-kai-shi-bu-zhi-dao-wan-zheng-lian-lu&quot;&gt;踩坑：我一开始不知道完整链路&lt;&#x2F;h3&gt;
+&lt;p&gt;输入法卡顿，得从击键到回显的整条路径去想。这条链路是事后根据微软文档查证后整理的（Keyboard Input Overview + TSF + ConPTY 架构）：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;键盘硬件 → [Windows 输入管道] → 终端 → [ConPTY → WSL] → shell → 回显
+               ↑ IME 在这里面
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Windows 输入管道&lt;&#x2F;strong&gt;：键盘驱动→扫描码→键盘布局→TSF&#x2F;IME 处理中文→生成 WM_CHAR 字符消息。IME 不是单独的一步——它挂在输入管道里。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;终端 → ConPTY → WSL&lt;&#x2F;strong&gt;：Windows Terminal 通过 ConPTY（Windows 伪终端）连接到 WSL2 init，init 再转发给 Linux PTY，抵达 zsh。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;但排查时并不知道这些。当时是按“两端排除“的方式一步步摸的——先看 Windows 侧有没有问题，再看 WSL 侧有没有问题。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-yi-bu-windows-ren-wu-guan-li-qi-pai-chu-liao-nei-cun&quot;&gt;第一步：Windows 任务管理器 → 排除了内存&lt;&#x2F;h3&gt;
+&lt;p&gt;第一反应是内存满了。按 &lt;code&gt;Ctrl + Shift + Esc&lt;&#x2F;code&gt; 打开任务管理器，切到「性能」→「内存」——占用正常，不是它的问题。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-er-bu-wsl-ji-ben-zhi-biao-fa-xian-swap-yi-chang&quot;&gt;第二步：WSL 基本指标 → 发现 swap 异常&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;top -bn1 | head          # 负载 0.19，CPU idle 97%
+free -h                  # 空闲内存 18.6GB &amp;#x2F; 总计 20GB
+cat &amp;#x2F;proc&amp;#x2F;meminfo        # Swap 占用了 2.6GB ← 扎眼
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness  # = 60（默认值）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;指标&lt;&#x2F;th&gt;&lt;th&gt;值&lt;&#x2F;th&gt;&lt;th&gt;含义&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;60&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;空闲内存低于 8GB 就开始换出，阈值太宽松&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap 已用&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;2.6 GB&lt;&#x2F;strong&gt; &#x2F; 8 GB&lt;&#x2F;td&gt;&lt;td&gt;历史遗留——之前长会话跑满内存时换出，换出后内核不会主动换回&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;14 天内 swap 总量&lt;&#x2F;td&gt;&lt;td&gt;换入换出各 &lt;strong&gt;5000 万次&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;swap 不是静躺——过去曾大量读写&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Swap 占用（2.6GB）是历史痕迹，swap 抖动才是问题。&lt;&#x2F;strong&gt; 占用本身不卡，卡的是这些页面被断续访问时产生的换入 I&#x2F;O。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-san-bu-shui-zai-zhan-swap&quot;&gt;第三步：谁在占 swap&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;$swp&amp;quot; -gt 0 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid)&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;两个 &lt;code&gt;qwen&lt;&#x2F;code&gt;（通义千问 CLI）孤儿进程占了 1.6GB——各自申请 44GB 虚拟地址空间但 RSS 只有 1-2MB，原终端早关了，进程被 systemd（PID 1）收养。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-si-bu-que-ren-swap-zai-dou-dong&quot;&gt;第四步：确认 swap 在抖动&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;vmstat 1                    # si 列持续 &amp;gt; 0
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;memory   # some avg10=3.48
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;io       # some avg10=3.97
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;di-wu-bu-c-pan-kuai-man-liao&quot;&gt;第五步：C 盘快满了&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F;   # 196G 用了 159G，剩 38G（81%）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;系统盘 81% 满时 Windows IME 的词典读写变迟钝。PowerShell 扫描定位到 &lt;code&gt;AppData\Local\Temp&lt;&#x2F;code&gt;（8GB）和 &lt;code&gt;hiberfil.sys&lt;&#x2F;code&gt;（~16GB）。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gen-yin-dui-hao-ru-zuo&quot;&gt;根因对号入座&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;键盘 → [Windows 输入管道] ← C 盘 81% 满，IME 文件 I&amp;#x2F;O 变慢
+     → 终端               ← 同上
+     → [ConPTY → WSL]    ← autoMemoryReclaim=gradual，VM 被频繁暂停
+     → shell → 回显       ← swap 抖动，PTY 回显被 I&amp;#x2F;O 拖慢
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;单层延迟可能无感，三层叠加刚好在击键到回显这几十毫秒里。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;warning-cai-keng-ji-lu-wsl2-swap-hui-fu&quot;&gt;⚠️ 踩坑记录：WSL2 swap 恢复&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;swapoff -a&lt;&#x2F;code&gt; 之后 &lt;code&gt;swapon -a&lt;&#x2F;code&gt; 无事发生——因为 WSL2 的 swap 不靠 &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt;（fstab 是空的），而是由 init 直接挂载 &lt;code&gt;&#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;。恢复需要 &lt;code&gt;mkswap &#x2F;dev&#x2F;sdc &amp;amp;&amp;amp; swapon &#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xue-dao-de&quot;&gt;学到的&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;从两端排查 WSL2 卡顿&lt;&#x2F;strong&gt;：先排除能直接看到的（任务管理器），再深入平时不注意的（swap、PSI、孤儿进程）。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;空闲内存大 ≠ 不会卡&lt;&#x2F;strong&gt;：swappiness=60 对桌面&#x2F;WSL 场景太激进。降到 10，内存用满之前不碰 swap。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swap 不是“占用“的问题，是“抖动“的问题&lt;&#x2F;strong&gt;：占用 2GB 不卡，每秒小块换入换出才卡。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;孤儿进程的 swap 也是负担&lt;&#x2F;strong&gt;：进程不活跃但各 44GB VSZ 留在 swap 里，会产生持续缺页中断。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;xiang-guan-shu-yu&quot;&gt;相关术语&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果下面这些词不熟悉，一两句读懂就行，不影响照着上面修。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;swappiness&lt;&#x2F;strong&gt;：Linux 内核参数（0-100），控制多积极地把内存换到 swap。默认 60，降到 10 后只在内存真的不够时才换出。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;swap（交换空间）&lt;&#x2F;strong&gt;：磁盘上划出来的一块区域，当物理内存不够时，把暂时不用的内存页暂存到磁盘上。WSL2 的 swap 大小在 &lt;code&gt;.wslconfig&lt;&#x2F;code&gt; 的 &lt;code&gt;swap=8G&lt;&#x2F;code&gt; 中配置。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;PSI（Pressure Stall Information）&lt;&#x2F;strong&gt;：Linux 内核的压力指标。&lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;memory&lt;&#x2F;code&gt; 和 &lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;io&lt;&#x2F;code&gt; 告诉你系统有多少时间被内存或磁盘 I&#x2F;O 卡住。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;HYP 中断&lt;&#x2F;strong&gt;：Hyper-V 回调中断。WSL2 作为 Hyper-V 虚拟机，宿主机（Windows）通过这种中断跟 VM 通信。数量过亿说明交互非常频繁。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;ConPTY&lt;&#x2F;strong&gt;：Windows 的伪终端（Pseudo Console），Windows Terminal 通过它连接到 WSL2 里的 Linux PTY。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;autoMemoryReclaim&lt;&#x2F;strong&gt;：WSL2 实验性功能，控制 WSL 释放的空闲内存是否归还给 Windows。&lt;code&gt;gradual&lt;&#x2F;code&gt; 慢慢还，&lt;code&gt;disabled&lt;&#x2F;code&gt; 不还。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;inputdev&#x2F;about-keyboard-input&quot;&gt;Microsoft Keyboard Input Overview&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;tsf&#x2F;text-services-framework&quot;&gt;Windows Text Services Framework (TSF)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;wsl-config&quot;&gt;WSL2 &lt;code&gt;.wslconfig&lt;&#x2F;code&gt; 配置参考&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;admin-guide&#x2F;sysctl&#x2F;vm.html&quot;&gt;Linux swappiness 说明&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;accounting&#x2F;psi.html&quot;&gt;Linux PSI 文档&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

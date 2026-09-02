@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - AI Agent</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/ai-agent/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sun, 30 Aug 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>PPT Master Skill Deep Dive: SVG Intermediary, Web Annotations, and Native Editable PPTX</title>
+          <pubDate>Sun, 30 Aug 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/ppt-master-skill-internals-en/">&lt;p&gt;Most AI slide generation tools simply paste full-bleed flat images onto slides. While visually appealing initially, &lt;strong&gt;text cannot be edited, shapes cannot be moved, and zooming in results in blurry rasterization&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;ppt-master&lt;&#x2F;code&gt; is an open-source Skill designed for AI Coding Agents (such as Claude Code, Qwen Code, and Codex). Its core value lies in &lt;strong&gt;parsing your documents to produce fully native DrawingML PPTX files where every text box can be edited and every vector shape can be recolored and adjusted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-end-to-end-user-experience&quot;&gt;1. End-to-End User Experience&lt;&#x2F;h2&gt;
+&lt;p&gt;The typical collaboration workflow with this Skill is seamless:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Triggering the Skill&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Explicit Command&lt;&#x2F;strong&gt;: Trigger directly via slash commands (e.g. &lt;code&gt;&#x2F;ppt-master &amp;lt;doc-path&amp;gt;&lt;&#x2F;code&gt;) or variable injection (&lt;code&gt;$ppt-master&lt;&#x2F;code&gt;);&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Natural Language Intent&lt;&#x2F;strong&gt;: Say naturally: &lt;em&gt;“Convert this technical spec into a 10-slide presentation.”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Automated Structuring &amp;amp; Vector Layout&lt;&#x2F;strong&gt;: The AI agent extracts document hierarchy, designs visual outlines, and generates SVG vector code for each slide.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Local Web Preview, In-Place Annotations &amp;amp; Precise Refinement&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;A local Flask server runs at &lt;code&gt;http:&#x2F;&#x2F;127.0.0.1:5050&lt;&#x2F;code&gt; rendering the generated SVGs;&lt;&#x2F;li&gt;
+&lt;li&gt;You can review slides in the browser, &lt;strong&gt;click on any unsatisfying text or shape to add an annotation&lt;&#x2F;strong&gt;, and hit &lt;strong&gt;Submit Annotations&lt;&#x2F;strong&gt; to write changes to disk;&lt;&#x2F;li&gt;
+&lt;li&gt;Return to your terminal and instruct the AI: &lt;em&gt;“Annotations submitted, please refine.”&lt;&#x2F;em&gt; The AI inspects disk annotations via &lt;code&gt;check_annotations.py&lt;&#x2F;code&gt; and regenerates only targeted elements.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Export Native PPTX&lt;&#x2F;strong&gt;: Once satisfied, the final SVGs are compiled locally into a native &lt;code&gt;.pptx&lt;&#x2F;code&gt; file ready for secondary editing in Microsoft Office or WPS.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;ecosystem-comparison&quot;&gt;Ecosystem Comparison&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Skill&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Ecosystem &amp;amp; Characteristics&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Best Use Case&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;anthropics&#x2F;skills@pptx&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Official lightweight script for basic shapes &amp;amp; text&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Quick, simple presentation outlines&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;hugohe3&#x2F;ppt-master&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Community comprehensive toolkit with SVG interactive annotations &amp;amp; deep DrawingML output&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;High-quality, complex technical and business decks&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;claude-office-skills&#x2F;skills@ppt-visual&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Community visual-first layout generator&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Poster-style and graphic-heavy slides&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-architecture-why-are-slides-truly-editable&quot;&gt;2. Architecture: Why Are Slides Truly Editable?&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;the-two-stage-conversion-architecture-svg-drawingml&quot;&gt;The Two-Stage Conversion Architecture (SVG → DrawingML)&lt;&#x2F;h3&gt;
+&lt;p&gt;PowerPoint relies on Microsoft’s &lt;strong&gt;DrawingML&lt;&#x2F;strong&gt; XML specification. Direct generation of DrawingML by LLMs frequently suffers from XML syntax errors and broken files.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;ppt-master&lt;&#x2F;code&gt; resolves this through a two-stage intermediary model:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Source Document → [AI Vector Layout] → SVG Code → [Deterministic Python Script] → DrawingML (PPTX)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Stage 1 (AI Creative Layout)&lt;&#x2F;strong&gt;: LLMs naturally excel at producing clean SVG markup, handling visual layout, palettes, and typography;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Stage 2 (Deterministic Compilation)&lt;&#x2F;strong&gt;: A local Python script (&lt;code&gt;svg_to_pptx.py&lt;&#x2F;code&gt;) maps SVG tags (&lt;code&gt;&amp;lt;text&amp;gt;&lt;&#x2F;code&gt;, &lt;code&gt;&amp;lt;rect&amp;gt;&lt;&#x2F;code&gt;, &lt;code&gt;&amp;lt;path&amp;gt;&lt;&#x2F;code&gt;) directly into native PowerPoint DrawingML XML nodes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-security-audit-zero-api-fallback&quot;&gt;3. Security Audit &amp;amp; Zero-API Fallback&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-security-audit-findings&quot;&gt;1. Security Audit Findings&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Network Isolation&lt;&#x2F;strong&gt;: Local preview binds strictly to &lt;code&gt;127.0.0.1:5050&lt;&#x2F;code&gt; with zero telemetry;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Execution Safety&lt;&#x2F;strong&gt;: Zero &lt;code&gt;eval()&lt;&#x2F;code&gt; or &lt;code&gt;exec()&lt;&#x2F;code&gt; usage; &lt;code&gt;subprocess&lt;&#x2F;code&gt; calls only internal deterministic toolchains;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;File System&lt;&#x2F;strong&gt;: Reads and writes are scoped to project paths with path-traversal safeguards;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Verdict&lt;&#x2F;strong&gt;: &lt;strong&gt;Clean and safe.&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-zero-external-api-dependency-offline-manual-mode&quot;&gt;2. Zero External API Dependency &amp;amp; Offline Manual Mode&lt;&#x2F;h3&gt;
+&lt;p&gt;The core generation pipeline runs &lt;strong&gt;completely offline without commercial APIs&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Pipeline Stage&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;External API Required?&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Execution Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Document Conversion&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ No&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Local Python libraries (PyMuPDF, docx, etc.)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;SVG Generation &amp;amp; PPTX Export&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ No&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Local agent SVG generation + &lt;code&gt;python-pptx&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Browser Preview &amp;amp; Annotations&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ No&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Local Flask (&lt;code&gt;127.0.0.1:5050&lt;&#x2F;code&gt;) + &lt;code&gt;check_annotations.py&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;AI Image Gen &#x2F; Image Search &#x2F; TTS&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;⚠️ Optional&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Configurable across 14+ backends&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Offline Manual Fallback&lt;&#x2F;strong&gt;:
+If no image generation API key is configured, image slots are automatically tagged as &lt;code&gt;Needs-Manual&lt;&#x2F;code&gt; with dashed prompt placeholders, ensuring the PPTX export pipeline finishes without blockers.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-installation-dependency-decoupling&quot;&gt;4. Installation &amp;amp; Dependency Decoupling&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Handling &lt;code&gt;npx skills add&lt;&#x2F;code&gt; Timeouts&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;The repository contains ~99MB of template assets. If the CLI times out, use &lt;code&gt;rsync&lt;&#x2F;code&gt; to backfill &lt;code&gt;scripts&#x2F;&lt;&#x2F;code&gt; (105 Python scripts) from a full clone.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bypassing PEP 668 via &lt;code&gt;uv venv&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;Modern Linux distros block global &lt;code&gt;pip&lt;&#x2F;code&gt; installation. Use &lt;code&gt;uv&lt;&#x2F;code&gt; to establish a clean, isolated virtual environment:&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;uv venv ~&amp;#x2F;.ppt-master&amp;#x2F;venv
+uv pip install -r requirements.txt --python ~&amp;#x2F;.ppt-master&amp;#x2F;venv&amp;#x2F;bin&amp;#x2F;python
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Decoupling &lt;code&gt;pycairo&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;svglib&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;svglib&lt;&#x2F;code&gt; (requiring system &lt;code&gt;libcairo2-dev&lt;&#x2F;code&gt;) is merely an optional fallback for legacy Office rasterization. Core DrawingML export does not require it and runs smoothly with the remaining 88 dependencies.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+      <item>
+          <title>Qwen Code Auto Mode Classifier: Two-Stage LLM Approval Mechanism</title>
+          <pubDate>Wed, 29 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-auto-mode-classifier-en/">&lt;blockquote&gt;
+&lt;p&gt;This article is based on reverse-engineered source code from Qwen Code &lt;code&gt;0.20.1-preview.7215&lt;&#x2F;code&gt;. Preview version internals may change across releases.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Qwen Code offers five approval modes: &lt;code&gt;plan&lt;&#x2F;code&gt;, &lt;code&gt;default&lt;&#x2F;code&gt;, &lt;code&gt;auto-edit&lt;&#x2F;code&gt;, &lt;code&gt;auto&lt;&#x2F;code&gt;, and &lt;code&gt;yolo&lt;&#x2F;code&gt;. In this version, &lt;strong&gt;new installations default to auto mode&lt;&#x2F;strong&gt; — tool calls are automatically approved through a multi-layer filtering system rather than requiring manual confirmation for each one. I also recommend auto mode for daily use; it strikes a good balance between efficiency and safety. This article dissects the mechanism and its configuration.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;architecture-overview&quot;&gt;Architecture Overview&lt;&#x2F;h2&gt;
+&lt;p&gt;Auto mode’s approval mechanism consists of four parts:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Rule layer&lt;&#x2F;strong&gt;: Deterministic rules (tool default permissions, user-defined rules, allowlists, regex blocking) that quickly filter clearly safe or clearly dangerous operations&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;LLM judgment layer&lt;&#x2F;strong&gt;: Two-stage Classifier that handles ambiguous cases the rules can’t cover&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fail-closed&lt;&#x2F;strong&gt;: When the classifier fails (timeout, API error, malformed response), it defaults to blocking — better safe than sorry&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Safety net&lt;&#x2F;strong&gt;: Denial Tracking detects deadlocks between the LLM and classifier, falling back to manual confirmation when thresholds are reached&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;Complete lifecycle of a tool call:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;LLM returns [A, B, C]
+  → Each independently goes through the approval flow:
+    ①-⑤ Rule layer → ⑥ LLM judgment layer
+    → A approved → executes → returns result
+    → B blocked → skipped
+    → C approved → executes → returns result
+  → All results sent back to the LLM together
+  → LLM sees the full picture and decides what to do next
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;rule-layer&quot;&gt;Rule Layer: ①-⑤&lt;&#x2F;h2&gt;
+&lt;p&gt;Before Qwen Code executes a tool call (reading files, running commands, editing code, etc.), it passes through these checkpoints:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Tool call
+  → ① Tool&amp;#x27;s default permission (e.g., read_file is safe by default, shell commands need approval)
+  → ② PermissionManager (user-defined rules)
+  → ③ acceptEdits fast-path (if in acceptEdits mode, workspace edits auto-approved)
+  → ④ Safe-tool allowlist (read_file, grep, glob, etc. auto-approved)
+  → ⑤ Guard (regex blocks dangerous command patterns like git clean, rm -rf — no LLM)
+  → ⑥ LLM Classifier (two-stage LLM judgment, see below)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;② is a user-configurable rules engine with four outcomes:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow&lt;&#x2F;code&gt; → approved immediately (skips ③-⑥)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;deny&lt;&#x2F;code&gt; → blocked immediately&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;ask&lt;&#x2F;code&gt; → prompts the user for manual confirmation&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;default&lt;&#x2F;code&gt; (no matching rule) → continue to ③-⑥&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;two-stage-classifier&quot;&gt;Two-Stage Classifier&lt;&#x2F;h2&gt;
+&lt;p&gt;The first five checkpoints are deterministic rules — fast and free, but they can’t cover every case. The remaining tool calls are handed to an LLM. The classifier receives the tool name, parameters, and current conversation context, then runs in two stages:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;stage-1-fast-judgment&quot;&gt;Stage 1: Fast Judgment&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: fastModel (falls back to main model if not configured)&lt;&#x2F;li&gt;
+&lt;li&gt;Output: &lt;code&gt;{shouldBlock: boolean}&lt;&#x2F;code&gt; only&lt;&#x2F;li&gt;
+&lt;li&gt;Timeout: 10 seconds&lt;&#x2F;li&gt;
+&lt;li&gt;Behavior: allow → approve immediately; block → proceed to Stage 2&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;stage-2-review&quot;&gt;Stage 2: Review&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Model: same as Stage 1&lt;&#x2F;li&gt;
+&lt;li&gt;Output: &lt;code&gt;{thinking, shouldBlock, reason}&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Timeout: 30 seconds&lt;&#x2F;li&gt;
+&lt;li&gt;Behavior: allow → approve; block → reject&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The &lt;code&gt;thinking&lt;&#x2F;code&gt; field in Stage 2’s output is a plain-text explanation written by the model (e.g., “user is only reading a file, safe”), helping developers understand why the classifier made its decision.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fail-closed-better-safe-than-sorry&quot;&gt;Fail-Closed: Better Safe Than Sorry&lt;&#x2F;h3&gt;
+&lt;p&gt;Any non-abort failure (API error, timeout, malformed response) returns &lt;code&gt;shouldBlock: true&lt;&#x2F;code&gt;. This means &lt;strong&gt;when the classifier is down, all approval-required tools are blocked&lt;&#x2F;strong&gt;. This is not a bug — it’s a deliberate security design.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;model-priority&quot;&gt;Model Priority&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;override → config.getFastModel() → config.getModel() → DEFAULT_QWEN_MODEL
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The classifier uses fastModel. Without it, it falls back to the main model — which is typically slower, adding a few hundred milliseconds to a few seconds per Stage 1 judgment, which adds up over a session.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;denial-tracking-preventing-infinite-loops&quot;&gt;Denial Tracking: Preventing Infinite Loops&lt;&#x2F;h2&gt;
+&lt;p&gt;If the classifier persistently blocks (LLM stuck in a dead end), the system won’t loop forever:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Counter&lt;&#x2F;th&gt;&lt;th&gt;Threshold&lt;&#x2F;th&gt;&lt;th&gt;Effect&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Consecutive blocks&lt;&#x2F;td&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Next call skips classifier, goes straight to manual confirmation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Consecutive unavailable&lt;&#x2F;td&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Total denials&lt;&#x2F;td&gt;&lt;td&gt;20&lt;&#x2F;td&gt;&lt;td&gt;Session-wide cap triggered&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;These thresholds are hardcoded and not configurable. All counters reset when switching approval modes.&lt;&#x2F;p&gt;
+&lt;p&gt;Key details:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Counted per tool call&lt;&#x2F;strong&gt;, not per batch — 2 blocked calls in one batch increments by 2&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Fallback happens before the classifier&lt;&#x2F;strong&gt; — after 3 consecutive blocks, the 4th call skips the LLM call entirely and asks the user directly&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Counters reset on user approval&lt;&#x2F;strong&gt;, resuming auto mode; rejection keeps them, so the next call also goes to manual&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Accumulates across turns&lt;&#x2F;strong&gt; — the LLM sees each rejection, tries a different approach, gets blocked again, and after 3 consecutive blocks the system falls back to manual confirmation&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;configuration-recommendations&quot;&gt;Configuration Recommendations&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;fastModel&amp;quot;: &amp;quot;qwen3-coder-plus&amp;quot;,
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;autoMode&amp;quot;: {
+      &amp;quot;classifier&amp;quot;: {
+        &amp;quot;timeouts&amp;quot;: { &amp;quot;stage1Ms&amp;quot;: 10000, &amp;quot;stage2Ms&amp;quot;: 30000 },
+        &amp;quot;thinking&amp;quot;: { &amp;quot;stage2Enabled&amp;quot;: false }
+      }
+    }
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Key setting&lt;&#x2F;strong&gt;: &lt;code&gt;fastModel&lt;&#x2F;code&gt; is the classifier’s core dependency. Without it, the classifier falls back to the main model — which is typically slower, meaning every auto-mode tool call that requires classifier judgment will wait longer.&lt;&#x2F;p&gt;
+&lt;p&gt;For model selection, pick a &lt;strong&gt;fast&lt;&#x2F;strong&gt; model. The classifier only needs to output a boolean or a short text — no deep reasoning required. Non-thinking models (like &lt;code&gt;qwen3-coder-plus&lt;&#x2F;code&gt;) are a natural fit; thinking-capable models (like &lt;code&gt;deepseek-v4-flash&lt;&#x2F;code&gt;) work too — the classifier disables API thinking mode in both stages by default, so the model won’t do extra internal reasoning and stays fast. If you have sufficient local resources, a small local model as fastModel works too — zero API cost and fast response.&lt;&#x2F;p&gt;
+&lt;p&gt;The only models to avoid: those that &lt;strong&gt;force thinking on&lt;&#x2F;strong&gt; (can’t be disabled via parameters) — every judgment would waste time and tokens on unnecessary reasoning. Also, since the classifier sees conversation context and tool parameters, the fastModel’s service provider should be at least as trustworthy as your main model’s.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;stage2Enabled&lt;&#x2F;code&gt; controls whether Stage 2 uses API-level deep reasoning mode (slower, more tokens). The default &lt;code&gt;false&lt;&#x2F;code&gt; is fine — it doesn’t affect the &lt;code&gt;thinking&lt;&#x2F;code&gt; output field, which is just a plain-text explanation the model writes regardless.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code’s auto mode isn’t a simple “execute everything automatically” switch. It’s a carefully designed safety valve: the rule layer filters first, the LLM classifier handles ambiguous cases, fail-closed ensures errors don’t allow dangerous actions, and denial tracking prevents infinite loops. The cost is an extra LLM call (and tokens) for every tool invocation requiring judgment.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Big Model Radar: An AI-Maintained Dashboard for CLI Tool Ecosystems</title>
+          <pubDate>Mon, 13 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/</link>
+          <guid>https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/">&lt;p&gt;The AI Coding Agent space moves fast. Claude Code, Codex, Gemini CLI, Qwen Code, and others generate a constant stream of Issues, PRs, and discussions daily. No one can keep up with all of it.&lt;&#x2F;p&gt;
+&lt;p&gt;I recently discovered &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&quot;&gt;Big Model Radar&lt;&#x2F;a&gt;, a project that uses GitHub Actions to automatically scrape development activity from these tools and generates bilingual (Chinese&#x2F;English) daily reports using LLMs. It has been producing reports steadily every day since July 7, 2026.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;&#x2F;strong&gt;: The Web UI is a snapshot of the old version (content up to 2026-05). For the latest reports, check Issues or Telegram.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-it-tracks&quot;&gt;What It Tracks&lt;&#x2F;h2&gt;
+&lt;p&gt;7 major CLI tools: Claude Code &#x2F; OpenAI Codex &#x2F; Gemini CLI &#x2F; GitHub Copilot CLI &#x2F; Kimi Code CLI &#x2F; OpenCode &#x2F; Qwen Code.&lt;&#x2F;p&gt;
+&lt;p&gt;It generates 5 types of daily reports:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;digest&lt;&#x2F;strong&gt;: Cross-tool community activity comparison&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;hn&lt;&#x2F;strong&gt;: Hacker News AI hot topics&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;trending&lt;&#x2F;strong&gt;: GitHub AI trending repositories&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;web&lt;&#x2F;strong&gt;: Anthropic&#x2F;OpenAI official site updates&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;openclaw&lt;&#x2F;strong&gt;: OpenClaw ecosystem report&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;more-than-just-summaries&quot;&gt;More Than Just Summaries&lt;&#x2F;h2&gt;
+&lt;p&gt;Each tool’s daily report contains 6 sections:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Today’s Overview&lt;&#x2F;strong&gt;: A paragraph summarizing the day’s key signals&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Releases&lt;&#x2F;strong&gt;: New version listings&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Top 10 Hot Issues&lt;&#x2F;strong&gt;: Each with priority + comment count + &lt;strong&gt;significance analysis&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Top 7-10 Important PRs&lt;&#x2F;strong&gt;: Each with feature description + impact assessment&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Feature Request Trends&lt;&#x2F;strong&gt;: Directional insights extracted from Issues&#x2F;PRs&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Developer Focus Areas&lt;&#x2F;strong&gt;: Pain point clustering + high-frequency demand aggregation&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;This isn’t simple Issue forwarding. It’s a hybrid of &lt;strong&gt;AI-generated summaries + trend analysis&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;three-stage-pipeline-production-bridge-consumption&quot;&gt;Three-Stage Pipeline: Production → Bridge → Consumption&lt;&#x2F;h2&gt;
+&lt;p&gt;The project’s architecture is interesting:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Production&lt;&#x2F;strong&gt;: The maintainer pays for LLM tokens. GitHub Actions automatically generates daily reports at 08:00 CST, writing to GitHub Issues + Markdown files&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bridge&lt;&#x2F;strong&gt;: The project provides MCP Server source code. Users deploy their own instance to Cloudflare Workers, exposing query APIs (&lt;code&gt;list_reports&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_latest&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_report&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;search&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Consumption&lt;&#x2F;strong&gt;: Users connect their own Claude Desktop to the MCP Server for queries, consuming their own LLM tokens&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;The essence: &lt;strong&gt;producers pay to generate content, consumers pay to query it&lt;&#x2F;strong&gt;. The MCP Server is a data bridge that lets AI agents consume Issue data directly, instead of humans browsing pages.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;access-methods&quot;&gt;Access Methods&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Web UI&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&quot;&gt;gsscsd.github.io&#x2F;big_model_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Issues&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&#x2F;issues&quot;&gt;loxehate.github.io&#x2F;issues&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;RSS&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&#x2F;feed.xml&quot;&gt;feed.xml&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Telegram&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;t.me&#x2F;agents_radar&quot;&gt;t.me&#x2F;agents_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;MCP Server&lt;&#x2F;strong&gt;: Self-deployed to Cloudflare Workers&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;an-interesting-reality&quot;&gt;An Interesting Reality&lt;&#x2F;h2&gt;
+&lt;p&gt;As of 2026-07-12, there are &lt;strong&gt;zero human comments&lt;&#x2F;strong&gt; across 41 issues.&lt;&#x2F;p&gt;
+&lt;p&gt;Issues in this project serve as persistent storage for AI-generated content, not a discussion forum. All channels are unidirectional — AI generates → humans&#x2F;AI consume. There is no “human feedback to AI” loop.&lt;&#x2F;p&gt;
+&lt;p&gt;An accurate description: &lt;strong&gt;AI generates, AI consumes, humans observe&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;value&quot;&gt;Value&lt;&#x2F;h2&gt;
+&lt;p&gt;Reduces information acquisition costs — from “manually checking 7 repositories daily” to “glancing at a daily report”; enables cross-tool comparison; provides trend awareness; AI analysis offers directional insights.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>How Qwen Code Learns Your Coding Habits: AutoSkill Mechanism Deep Dive</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/">&lt;p&gt;After using Qwen Code for a while, you might notice unfamiliar skills appearing in &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — &lt;code&gt;skill-review&lt;&#x2F;code&gt;, &lt;code&gt;skill-testing&lt;&#x2F;code&gt; — each tagged with &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; in their frontmatter. You didn’t create them. Nobody did manually.&lt;&#x2F;p&gt;
+&lt;p&gt;This is Qwen Code’s &lt;strong&gt;AutoSkill mechanism&lt;&#x2F;strong&gt;: an automatic distillation system for procedural knowledge. This article reverse-engineers the mechanism from source code and design documents, covering its architecture, security model, and academic origins.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-is-autoskill&quot;&gt;What is AutoSkill&lt;&#x2F;h2&gt;
+&lt;p&gt;In one sentence: &lt;strong&gt;after a session ends, Qwen Code automatically evaluates whether your workflow is worth reusing, and if so, saves it as a project-level skill.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;It differs from Auto Memory in focus:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Auto Memory&lt;&#x2F;th&gt;&lt;th&gt;AutoSkill&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Knowledge type&lt;&#x2F;td&gt;&lt;td&gt;Declarative (who you are, project context)&lt;&#x2F;td&gt;&lt;td&gt;Procedural (how you do things)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;Every session end&lt;&#x2F;td&gt;&lt;td&gt;Sessions with ≥ 20 tool calls&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write target&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;memory&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Content&lt;&#x2F;td&gt;&lt;td&gt;User preferences, project context&lt;&#x2F;td&gt;&lt;td&gt;Reusable workflows, best practices&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Memory remembers &lt;em&gt;who you are&lt;&#x2F;em&gt;. AutoSkill remembers &lt;em&gt;how you work&lt;&#x2F;em&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;trigger-conditions&quot;&gt;Trigger Conditions&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Session ends
+  ├─ toolCallCount ≥ 20 ?        &amp;#x2F;&amp;#x2F; Too few calls → skip
+  ├─ skillsModifiedInSession ?   &amp;#x2F;&amp;#x2F; User edited skills this round → skip
+  └─ Both pass → scheduleSkillReview()
+               └─ Fork standalone agent (8-turn limit, 2-min timeout)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The threshold ensures only sessions with substantial tool usage trigger review — avoiding low-quality skills from simple Q&amp;amp;A sessions. The review runs in an independent agent (not a continuation of your conversation), capped at 8 turns and 2 minutes.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;permission-sandbox-the-core-security-design&quot;&gt;Permission Sandbox: The Core Security Design&lt;&#x2F;h2&gt;
+&lt;p&gt;The most elegant part of AutoSkill is its security model. The review agent is locked in a strict sandbox:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Tool&lt;&#x2F;th&gt;&lt;th&gt;Permission&lt;&#x2F;th&gt;&lt;th&gt;Security Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;read_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Prevents reading &lt;code&gt;~&#x2F;.aws&#x2F;credentials&lt;&#x2F;code&gt; and injecting into SKILL.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;ls&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;write_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&amp;lt;name&amp;gt;&#x2F;SKILL.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Can only create &lt;strong&gt;non-existent&lt;&#x2F;strong&gt; files (prevents overwriting)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;edit&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; + target must contain &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Cannot modify user-authored skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Core principle: &lt;strong&gt;auto-skill can only touch what it created — never user-authored skills.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-source-auto-skill-protection&quot;&gt;The &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; Protection&lt;&#x2F;h3&gt;
+&lt;p&gt;Two layers of defense:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Hard constraint (permission manager)&lt;&#x2F;strong&gt;: &lt;code&gt;edit&lt;&#x2F;code&gt; reads frontmatter first; no &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; → rejected&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Soft constraint (system prompt)&lt;&#x2F;strong&gt;: “You may ONLY modify skill files that contain ‘source: auto-skill’”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;If you add &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; to your own skill, you’re opting in to automatic updates by the review agent.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;preventing-name-collision-overwrites&quot;&gt;Preventing Name Collision Overwrites&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; write_file only allows creating new files
+try {
+  await fs.stat(ctx.filePath);
+  return &amp;#x27;deny&amp;#x27;;  &amp;#x2F;&amp;#x2F; File exists → reject
+} catch (err) {
+  if (err.code === &amp;#x27;ENOENT&amp;#x27;) return &amp;#x27;allow&amp;#x27;;  &amp;#x2F;&amp;#x2F; Doesn&amp;#x27;t exist → allow creation
+  return &amp;#x27;deny&amp;#x27;;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Creating a new skill → &lt;code&gt;write_file&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Updating an existing auto-skill → must use &lt;code&gt;edit&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Overwriting any existing file → rejected ❌&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anti-symlink-traversal&quot;&gt;Anti-symlink Traversal&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;assertRealProjectSkillPath()&lt;&#x2F;code&gt; uses &lt;code&gt;fs.realpath()&lt;&#x2F;code&gt; to resolve the actual path, confirming it stays within &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — preventing writes to arbitrary locations via symlinks.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;academic-origins&quot;&gt;Academic Origins&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Trace2Skill paper (arXiv: 2603.25158)
+    ↓
+Hermes Agent (Nous Research, open-source) — original prompt source
+    ↓ Qwen Code design doc: &amp;quot;ported from Hermes _SKILL_REVIEW_PROMPT, minimal adaptation&amp;quot;
+Qwen Code AutoSkill
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The Qwen Code design document explicitly states:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The review agent’s prompt is directly ported from Hermes &lt;code&gt;_SKILL_REVIEW_PROMPT&lt;&#x2F;code&gt; with minimal adaptation.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Hermes’s original prompt is far more detailed — including CLASS-LEVEL skill organization, preference embedding, protected skills, and Do NOT capture lists. Qwen’s version is significantly streamlined, focusing on “non-trivial approaches” and “trial-and-error processes.”&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;hermes-vs-qwen-code&quot;&gt;Hermes vs Qwen Code&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Hermes&lt;&#x2F;th&gt;&lt;th&gt;Qwen Code&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;In-session agent call + post-session review&lt;&#x2F;td&gt;&lt;td&gt;Post-session background fork only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Protection&lt;&#x2F;td&gt;&lt;td&gt;ContextVar tracking + tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; frontmatter + file-level permission manager&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write scope&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.hermes&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (global)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (project-level)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Prompt complexity&lt;&#x2F;td&gt;&lt;td&gt;Detailed (skill organization, preference embedding, etc.)&lt;&#x2F;td&gt;&lt;td&gt;Streamlined (focused on reusable workflows)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;comparison-with-other-agents&quot;&gt;Comparison with Other Agents&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Agent&lt;&#x2F;th&gt;&lt;th&gt;Auto-distills procedural skills&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hermes Agent&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (in-session + post-session)&lt;&#x2F;td&gt;&lt;td&gt;First open-source implementation, with tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Qwen Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (post-session)&lt;&#x2F;td&gt;&lt;td&gt;Ported Hermes prompt + file-level permission sandbox&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Claude Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Auto Memory records declarative knowledge only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Cursor&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills are entirely manual&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills entirely manual, Memory managed manually&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Codex CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Built-in skills + AGENTS.md extension, no auto-distillation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Gemini CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Manual SKILL.md creation, Memory reads GEMINI.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Currently only Hermes and Qwen Code implement automatic procedural skill distillation. All other major AI coding agents remain in manual-management territory.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;blob&#x2F;main&#x2F;docs&#x2F;design&#x2F;skill-nudge&#x2F;skill-nudge.md&quot;&gt;Design doc&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Source: &lt;code&gt;packages&#x2F;core&#x2F;src&#x2F;memory&#x2F;skillReviewAgentPlanner.ts&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;First commit: 2026-05-09 (&lt;code&gt;#3673&lt;&#x2F;code&gt;), enabled by default: 2026-05-27 (&lt;code&gt;#4547&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2603.25158&quot;&gt;Trace2Skill paper&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

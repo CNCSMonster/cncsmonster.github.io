@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - API</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/api/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-19T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/api/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Does DeepSeek Train on API Data? A Policy Investigation</title>
+        <published>2026-05-19T00:00:00+08:00</published>
+        <updated>2026-05-19T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/">&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I use the DeepSeek API. Will my data be used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;The Open Platform Terms are silent — they don’t say yes, and they don’t say no.&lt;&#x2F;strong&gt; Unlike OpenAI or Anthropic, which explicitly commit to not training on API data.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;User Type&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Trains by default?&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Can opt out?&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Web&#x2F;App chat&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Yes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Turn off “Improve the model for everyone”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;⚠️ Unclear&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No toggle&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What Should I Do&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Assume it does train&lt;&#x2F;strong&gt; — if the terms don’t say they won’t, don’t assume they don’t&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Don’t send sensitive data via API&lt;&#x2F;strong&gt; — especially user privacy or trade secrets&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Use local deployment instead&lt;&#x2F;strong&gt; — DeepSeek open-sources model weights (MIT License); run locally to eliminate the risk&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Ask DeepSeek to clarify&lt;&#x2F;strong&gt; — &lt;a href=&quot;mailto:privacy@deepseek.com&quot;&gt;privacy@deepseek.com&lt;&#x2F;a&gt; &#x2F; &lt;a href=&quot;mailto:api-service@deepseek.com&quot;&gt;api-service@deepseek.com&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-general-terms-allow-training-with-opt-out-web-app&quot;&gt;1: General Terms allow training, with opt-out (Web&#x2F;App)&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-terms-of-use.html&quot;&gt;DeepSeek Terms of Use — Section 4.3&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“Under the premise of secure encryption technology processing, strict de-identification rendering, and irreversibility to identify specific individuals, we may, to a minimal extent, use Inputs and Outputs to provide, maintain, operate, develop or improve the Services or the underlying technologies supporting the Services.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“If you refuse to allow us to process the data in the manner described above, you can opt out by turning off ‘Improve the model for everyone’.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ Web&#x2F;App users: data used for training by default, but you can opt out.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-privacy-policy-explicitly-mentions-training&quot;&gt;2: Privacy Policy explicitly mentions training&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-privacy-policy.html&quot;&gt;DeepSeek Privacy Policy&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“To improve and develop the Services and to train and improve our technology, such as our machine learning models and algorithms.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;User right: &lt;em&gt;“the right to opt-out of using your Personal Data for training our models or optimizing our technologies.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ Training use is documented in writing, and opt-out rights are granted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-api-terms-lack-equivalent-commitment-key-finding&quot;&gt;3: API terms lack equivalent commitment (key finding)&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;DeepSeek Open Platform Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;Full-text comparison with the general Terms:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Clause&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;General Terms (Web&#x2F;App)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Open Platform Terms (API)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;States Input&#x2F;Output may be used for training&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Provides opt-out toggle&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ “Improve the model for everyone”&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Developer retains Input ownership&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 4.2&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;References Privacy Policy&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Section 5.5&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ The API terms neither confirm nor deny data use for training. No commitment = untrustworthy.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-industry-comparison-competitors-commit&quot;&gt;4: Industry comparison — competitors commit&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Paid API commits to no training?&lt;&#x2F;th&gt;&lt;th&gt;Source&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit (since March 2023)&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;your-data&quot;&gt;developers.openai.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;privacy.claude.com&#x2F;en&#x2F;articles&#x2F;7996868-is-my-data-used-for-model-training&quot;&gt;privacy.claude.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google Cloud Gemini&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Explicit&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.cloud.google.com&#x2F;gemini&#x2F;docs&#x2F;discover&#x2F;data-governance&quot;&gt;docs.cloud.google.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ Not committed&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;Open Platform Terms&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ DeepSeek’s silence is not industry standard — it lags behind competitors.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

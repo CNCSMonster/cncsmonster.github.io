@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Local Inference</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/local-inference/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-08-08T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/local-inference/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Offline Speech-to-Text: Why I Ultimately Chose Handy</title>
+        <published>2026-08-08T00:00:00+08:00</published>
+        <updated>2026-08-08T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/offline-speech-to-text-handy-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/offline-speech-to-text-handy-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/offline-speech-to-text-handy-en/">&lt;p&gt;Speaking to your AI coding assistant is becoming a natural way to interact. But there’s an often-overlooked question in the speech-to-text pipeline: &lt;strong&gt;who gets your voice data?&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;This article researches cross-platform, fully offline speech-to-text solutions, explains why I ultimately chose &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;handy.computer&quot;&gt;Handy&lt;&#x2F;a&gt;, and documents the complete selection process with real-world measurements.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-speech-to-text-should-run-locally&quot;&gt;Why Speech-to-Text Should Run Locally&lt;&#x2F;h2&gt;
+&lt;p&gt;Local (offline) speech-to-text provides two independent values:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Privacy&lt;&#x2F;strong&gt; — Your voice is a biometric characteristic, and its exposure carries real risks of cloning and abuse. When audio never leaves the device, the risk is closed at the source.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Performance&lt;&#x2F;strong&gt; — No network round-trip of “upload audio → cloud transcription → return text”. For push-to-talk interaction, the latency difference is perceptible.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;the-risk-of-voice-exposure&quot;&gt;The Risk of Voice Exposure&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Voice is a biometric characteristic&lt;&#x2F;strong&gt; (official definitions):&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pages.nist.gov&#x2F;800-63-4&#x2F;sp800-63b.html&quot;&gt;NIST SP 800-63B&lt;&#x2F;a&gt; lists voice prints among biometric characteristics&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.edpb.europa.eu&#x2F;system&#x2F;files&#x2F;2021-03&#x2F;edpb_guidelines_022021_virtual_voice_assistants_adopted-public-consultation_en.pdf&quot;&gt;EDPB Guidelines 02&#x2F;2021&lt;&#x2F;a&gt; (para. 31): “voice data is inherently biometric personal data”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Exposure is a scaled, real-world threat&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Fact&lt;&#x2F;th&gt;&lt;th&gt;Data&lt;&#x2F;th&gt;&lt;th&gt;Source&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Cloning threshold&lt;&#x2F;td&gt;&lt;td&gt;3 seconds of audio → 85% similarity&lt;&#x2F;td&gt;&lt;td&gt;McAfee&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Fraud scale&lt;&#x2F;td&gt;&lt;td&gt;$1.65B deepfake losses in 2025&lt;&#x2F;td&gt;&lt;td&gt;Surfshark&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Reach&lt;&#x2F;td&gt;&lt;td&gt;1 in 4 Americans encountered AI voice scams; 77% of victims lost money&lt;&#x2F;td&gt;&lt;td&gt;Hiya &#x2F; McAfee&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Official recognition&lt;&#x2F;td&gt;&lt;td&gt;FBI’s first AI crime category in 2025, $893M in losses&lt;&#x2F;td&gt;&lt;td&gt;FBI IC3&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Cases in China&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.thepaper.cn&#x2F;newsDetail_forward_30204154&quot;&gt;The Paper 2025-02&lt;&#x2F;a&gt;: AI voice impersonation of a grandson defrauded an elderly person of ¥20,000&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;news.qq.com&#x2F;rain&#x2F;a&#x2F;20260605A070IM00&quot;&gt;Jinshipin 2026-06&lt;&#x2F;a&gt;: AI face-swap + voice impersonation of a friend, ¥4.3M defrauded (5–10 seconds of audio is enough to extract a voiceprint)&lt;&#x2F;li&gt;
+&lt;li&gt;China’s Personal Information Protection Law (PIPL) classifies voiceprints as &lt;strong&gt;sensitive personal information&lt;&#x2F;strong&gt;, consistent with GDPR’s treatment of biometrics&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Implication&lt;&#x2F;strong&gt;: An online speech-to-text service means voluntarily handing your audio to an uncontrollable third party, which decides retention, training, and security. Risk paths:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Cloning and impersonation (deceiving &lt;em&gt;people&lt;&#x2F;em&gt;, not technical systems)&lt;&#x2F;li&gt;
+&lt;li&gt;Entering training datasets (nearly impossible to remove)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;tool-selection-why-handy&quot;&gt;Tool Selection: Why Handy&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Requirements&lt;&#x2F;strong&gt;: Cross-platform &#x2F; fully offline &#x2F; push-to-talk &#x2F; terminal paste compatibility &#x2F; Chinese support&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Handy vs. Shandianshuo&lt;&#x2F;strong&gt; (both local solutions, key difference in terminal adaptation):&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Handy&lt;&#x2F;th&gt;&lt;th&gt;Shandianshuo&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Paste method&lt;&#x2F;td&gt;&lt;td&gt;Configurable: Ctrl+V &#x2F; Ctrl+Shift+V &#x2F; Shift+Insert&lt;&#x2F;td&gt;&lt;td&gt;Fixed Ctrl+V&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Terminal compatibility&lt;&#x2F;td&gt;&lt;td&gt;Windows Terminal etc. ✅&lt;&#x2F;td&gt;&lt;td&gt;Cannot input in Ctrl+Shift+V terminals ❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Linux&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;❌ No Linux version&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Models&lt;&#x2F;td&gt;&lt;td&gt;Switchable (Whisper &#x2F; Parakeet &#x2F; SenseVoice)&lt;&#x2F;td&gt;&lt;td&gt;Fixed&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Two key points&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Terminal paste&lt;&#x2F;strong&gt;: Windows Terminal’s paste shortcut is &lt;code&gt;Ctrl+Shift+V&lt;&#x2F;code&gt;, not &lt;code&gt;Ctrl+V&lt;&#x2F;code&gt;. Shandianshuo only simulates &lt;code&gt;Ctrl+V&lt;&#x2F;code&gt;, so transcribed text cannot be pasted into terminals that require &lt;code&gt;Ctrl+Shift+V&lt;&#x2F;code&gt;. Handy lets you configure the paste method — the only one that works in terminals.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Multiple models&lt;&#x2F;strong&gt;: Handy supports switching between several local models. In testing, &lt;strong&gt;SenseVoice&lt;&#x2F;strong&gt; gave the best Chinese quality, better than Whisper.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;&lt;strong&gt;Other candidates eliminated&lt;&#x2F;strong&gt;: Zhipu Input Method has no Linux version; Voisty is paid.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;measurements-2026-05&quot;&gt;Measurements (2026-05)&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Scenario&lt;&#x2F;strong&gt;: push-to-talk real-time voice input (press to speak, release to get text immediately), where real-time performance is a hard requirement.
+&lt;strong&gt;Hardware baseline&lt;&#x2F;strong&gt;: Intel Core Ultra 7 255H (Arc 140T iGPU, no discrete GPU).
+Model conclusions must be tied to hardware and use case — without these, “which model is better” is meaningless.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Environment&lt;&#x2F;th&gt;&lt;th&gt;Result&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Windows&lt;&#x2F;td&gt;&lt;td&gt;✅ Tested: works out of the box, SenseVoice best for Chinese&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;macOS&lt;&#x2F;td&gt;&lt;td&gt;✅ Officially supported (.dmg for Apple Silicon &#x2F; Intel), not tested&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Ubuntu (Wayland)&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Tested: global hotkey unusable out of the box — a Wayland platform limitation (&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&#x2F;issues&#x2F;1691&quot;&gt;#1691&lt;&#x2F;a&gt;, &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&#x2F;issues&#x2F;140&quot;&gt;#140&lt;&#x2F;a&gt;); fixable with a udev rule for &#x2F;dev&#x2F;uinput permissions + switching to X11 session, verified working&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Model conclusion&lt;&#x2F;strong&gt; (Intel Core Ultra 7 255H + Arc 140T iGPU, push-to-talk scenario):&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;SenseVoice wins&lt;&#x2F;strong&gt;: ~240 MB, &lt;strong&gt;converts 1 minute of speech in under 3 seconds&lt;&#x2F;strong&gt;; simple commands appear instantly&lt;&#x2F;li&gt;
+&lt;li&gt;vs. Whisper large v3 (over 1 GB):
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Better&lt;&#x2F;strong&gt; Chinese quality&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Comparable&lt;&#x2F;strong&gt; for mixed Chinese-English and pure English&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Much faster&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;boundaries&quot;&gt;Boundaries&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Voice input suits natural-language intent; &lt;strong&gt;passwords and full code are unsuitable for voice input&lt;&#x2F;strong&gt; (precision issues)&lt;&#x2F;li&gt;
+&lt;li&gt;Local solutions prevent “audio → third party”; they do &lt;strong&gt;not&lt;&#x2F;strong&gt; prevent recording by a compromised machine or physical eavesdropping&lt;&#x2F;li&gt;
+&lt;li&gt;Transcribed text is still sent to the AI model — local processing protects the audio, not the content itself&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;handy.computer&quot;&gt;Handy website&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&quot;&gt;Handy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&#x2F;issues&#x2F;1691&quot;&gt;Handy issue #1691 (global hotkey unusable in background on Ubuntu 24.04, with workaround)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pages.nist.gov&#x2F;800-63-4&#x2F;sp800-63b.html&quot;&gt;NIST SP 800-63B&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.edpb.europa.eu&#x2F;system&#x2F;files&#x2F;2021-03&#x2F;edpb_guidelines_022021_virtual_voice_assistants_adopted-public-consultation_en.pdf&quot;&gt;EDPB Guidelines 02&#x2F;2021 on Virtual Voice Assistants (PDF, para. 31)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Shimmy: An Ollama Alternative in Rust — Tested on WSL2 + Intel GPU</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/">&lt;p&gt;Looking for a lighter local LLM inference server than Ollama? &lt;strong&gt;Shimmy&lt;&#x2F;strong&gt; is written in Rust, ships as a single binary, offers 100% OpenAI API compatibility, and runs with zero configuration. This post covers what it is, how it compares to Ollama, and what happened when I tested it on WSL2 with Intel integrated graphics.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is Part 1 of a “Local LLM Inference Environment” series. &lt;a href=&quot;&#x2F;posts&#x2F;wsl2-intel-gpu-llm-inference-diagnosis-en&#x2F;&quot;&gt;Part 2: Why Intel GPU Can’t Run LLM Inference in WSL2 →&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;what-is-shimmy&quot;&gt;What is Shimmy&lt;&#x2F;h2&gt;
+&lt;p&gt;One line: &lt;strong&gt;a Rust drop-in replacement for Ollama&lt;&#x2F;strong&gt; — lighter, faster, zero dependencies.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Shimmy&lt;&#x2F;th&gt;&lt;th&gt;Ollama&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Language&lt;&#x2F;td&gt;&lt;td&gt;Rust&lt;&#x2F;td&gt;&lt;td&gt;Go&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Dependencies&lt;&#x2F;td&gt;&lt;td&gt;Single binary, none&lt;&#x2F;td&gt;&lt;td&gt;Requires llama.cpp dynamic libs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;License&lt;&#x2F;td&gt;&lt;td&gt;MIT&lt;&#x2F;td&gt;&lt;td&gt;Non-commercial restrictions&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;GPU support&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Vulkan &#x2F; OpenCL &#x2F; MLX&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Metal&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Model formats&lt;&#x2F;td&gt;&lt;td&gt;GGUF + SafeTensors&lt;&#x2F;td&gt;&lt;td&gt;GGUF&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API compatibility&lt;&#x2F;td&gt;&lt;td&gt;OpenAI 100%&lt;&#x2F;td&gt;&lt;td&gt;OpenAI + custom API&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Port allocation&lt;&#x2F;td&gt;&lt;td&gt;Auto (default 11435)&lt;&#x2F;td&gt;&lt;td&gt;Fixed (11434)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Response caching&lt;&#x2F;td&gt;&lt;td&gt;LRU + TTL, 20-40% speedup&lt;&#x2F;td&gt;&lt;td&gt;None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Project: https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Linux x86_64
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-linux-x86_64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# macOS ARM64 (with MLX for Apple Silicon)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-macos-arm64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# Windows x64 (with CUDA + Vulkan + OpenCL)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-windows-x86_64.exe -o shimmy.exe
+
+# Start
+.&amp;#x2F;shimmy serve --gpu-backend auto
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Zero config: auto-discovers models from HuggingFace cache, Ollama local directories. Hot-swap models without restarting.&lt;&#x2F;p&gt;
+&lt;p&gt;Once running, it exposes an OpenAI-compatible &lt;code&gt;&#x2F;v1&#x2F;chat&#x2F;completions&lt;&#x2F;code&gt; endpoint — existing OpenAI tools work with zero code changes:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;curl http:&amp;#x2F;&amp;#x2F;localhost:11435&amp;#x2F;v1&amp;#x2F;chat&amp;#x2F;completions \
+  -H &amp;quot;Content-Type: application&amp;#x2F;json&amp;quot; \
+  -d &amp;#x27;{&amp;quot;model&amp;quot;:&amp;quot;your-model&amp;quot;,&amp;quot;messages&amp;quot;:[{&amp;quot;role&amp;quot;:&amp;quot;user&amp;quot;,&amp;quot;content&amp;quot;:&amp;quot;hello&amp;quot;}]}&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;architecture&quot;&gt;Architecture&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Rust + Tokio&lt;&#x2F;strong&gt;: Memory-safe, async high performance&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;llama.cpp backend&lt;&#x2F;strong&gt;: Industry-standard GGUF inference&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GPU backend priority&lt;&#x2F;strong&gt;: CUDA → Vulkan → OpenCL → MLX → CPU (fallback)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Dynamic port management&lt;&#x2F;strong&gt;: Zero conflicts, auto-assign&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;real-world-test-wsl2-intel-gpu&quot;&gt;Real-World Test: WSL2 + Intel GPU&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;test-environment&quot;&gt;Test Environment&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Item&lt;&#x2F;th&gt;&lt;th&gt;Value&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Core Ultra 7 255H (12 cores)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;RAM&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;19GB&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Arc 140T (Arrow Lake H)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Env&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;WSL2 (Linux 6.6.87)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Library installed (&lt;code&gt;libvulkan_intel.so&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;v1.9.0 (built from source with &lt;code&gt;llama-vulkan&lt;&#x2F;code&gt; feature)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;test-1-qwen3-5-0-8b-gguf-x-failed&quot;&gt;Test 1: Qwen3.5-0.8B GGUF — ❌ Failed&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;llama_model_load: error loading model: unknown model architecture: &amp;#x27;qwen35&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Shimmy v1.9.0 bundles a llama.cpp version that &lt;strong&gt;doesn’t support Qwen3.5 yet&lt;&#x2F;strong&gt;. Qwen3.5 uses a hybrid SSM (Mamba) + Transformer architecture requiring a newer llama.cpp.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;test-2-qwen2-5-safetensors-warning-loads-no-inference&quot;&gt;Test 2: Qwen2.5 SafeTensors — ⚠️ Loads, no inference&lt;&#x2F;h3&gt;
+&lt;p&gt;SafeTensors models load successfully, but Shimmy reports “Full transformer inference coming soon!” — inference support is still in development.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gpu-backend-results&quot;&gt;GPU Backend Results&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Backend&lt;&#x2F;th&gt;&lt;th&gt;Status&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CUDA&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No NVIDIA GPU&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Initializes but no real GPU&lt;&#x2F;td&gt;&lt;td&gt;WSL2 only exposes &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; software renderer&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenCL&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ Not compiled&lt;&#x2F;td&gt;&lt;td&gt;Enable with &lt;code&gt;--features llama-opencl&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MLX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ macOS only&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Key finding&lt;&#x2F;strong&gt;: &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; is Mesa’s CPU software renderer — it simulates Vulkan GPU using CPU multithreading. Using &lt;code&gt;--gpu-backend vulkan&lt;&#x2F;code&gt; still runs matrix ops on CPU, potentially slower than pure CPU mode due to Vulkan overhead.&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Device: llvmpipe (LLVM 20.1.2, 256 bits)
+Type: CPU  ← Not a real GPU!
+Vendor ID: 0x10005 (Mesa software renderer)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;The failure isn’t Shimmy’s fault — it’s a &lt;strong&gt;WSL2 + Intel GPU environment limitation&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 DXG kernel module incompatible with Intel GPU driver&lt;&#x2F;strong&gt; — dmesg shows persistent ioctl failures&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Intel GPU driver outdated&lt;&#x2F;strong&gt; — current 32.0.101.6554, latest 32.0.101.8801 (2026-05-15)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Windows Insider Preview Canary&lt;&#x2F;strong&gt; — build 26200 is pre-release, unstable compatibility&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;next-steps&quot;&gt;Next Steps&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Priority&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;Update Intel GPU driver to latest&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Exit Insider Preview, return to stable&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;Try Level Zero backend to bypass OpenCL DXG issues&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;who-should-use-shimmy&quot;&gt;Who Should Use Shimmy?&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ &lt;strong&gt;CUDA environment&lt;&#x2F;strong&gt; (NVIDIA GPU): Works out of the box, best performance&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;macOS Apple Silicon&lt;&#x2F;strong&gt;: MLX backend native support&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;Existing toolchains needing OpenAI API compatibility&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;WSL2 + Intel&#x2F;AMD integrated GPU&lt;&#x2F;strong&gt;: Vulkan backend limited, wait for driver updates&lt;&#x2F;li&gt;
+&lt;li&gt;❌ &lt;strong&gt;Pure CPU inference追求极致性能&lt;&#x2F;strong&gt;: Ollama may be more mature&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;shimmy&quot;&gt;Shimmy Crates.io&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics Driver Download&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

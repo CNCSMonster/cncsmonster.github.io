@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Bug</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/bug/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-29T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/bug/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Qwen Code WebFetch&#x27;s SPA Blind Spot: The html-to-text Empty Content Problem</title>
+        <published>2026-07-29T00:00:00+08:00</published>
+        <updated>2026-07-29T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/qwen-code-webfetch-spa-blind-spot-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/qwen-code-webfetch-spa-blind-spot-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/qwen-code-webfetch-spa-blind-spot-en/">&lt;p&gt;When using Qwen Code’s &lt;code&gt;web_fetch&lt;&#x2F;code&gt; tool to scrape SPA (Single Page Application) pages, it frequently returns empty content. This isn’t a network issue — it’s a design gap: &lt;code&gt;html-to-text&lt;&#x2F;code&gt; returns an empty string for pages with empty bodies, and Qwen Code has no fallback mechanism.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;&#x2F;h2&gt;
+&lt;p&gt;SPA pages typically have only a mount point in their body:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;html&quot; class=&quot;language-html &quot;&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&amp;lt;body&amp;gt;
+  &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;div&amp;gt;
+  &amp;lt;script src=&amp;quot;app.js&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;script&amp;gt;
+&amp;lt;&amp;#x2F;body&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;html-to-text&lt;&#x2F;code&gt; parses this HTML and returns an empty string. But &lt;code&gt;curl&lt;&#x2F;code&gt; can retrieve the &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; and &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; — this information lives in &lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt;, not in the body.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;reproduction&quot;&gt;Reproduction&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;URL: https:&amp;#x2F;&amp;#x2F;www.stepfun.com
+web_fetch returns: (empty)
+curl returns: &amp;lt;title&amp;gt;StepFun&amp;lt;&amp;#x2F;title&amp;gt; + &amp;lt;meta description=&amp;quot;...&amp;quot;&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;solutions&quot;&gt;Solutions&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;recommended-use-tavily-extract-instead&quot;&gt;Recommended: Use &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; Instead&lt;&#x2F;h3&gt;
+&lt;p&gt;If you already have Tavily MCP configured (see &lt;a href=&quot;&#x2F;posts&#x2F;qwen-code-tavily-mcp-setup&#x2F;&quot;&gt;Getting Qwen Code to Work with Tavily Search&lt;&#x2F;a&gt;), use the &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; tool instead of &lt;code&gt;web_fetch&lt;&#x2F;code&gt;. Tavily renders JavaScript server-side and handles SPA pages correctly.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;alternative-disable-web-fetch-and-use-other-mcp-fetch-tools&quot;&gt;Alternative: Disable &lt;code&gt;web_fetch&lt;&#x2F;code&gt; and Use Other MCP Fetch Tools&lt;&#x2F;h3&gt;
+&lt;p&gt;Disable the built-in &lt;code&gt;web_fetch&lt;&#x2F;code&gt; in &lt;code&gt;settings.json&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;disabled&amp;quot;: [&amp;quot;web_fetch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP fetch tools come in several types:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Headless browser-based&lt;&#x2F;strong&gt;: Render pages with Playwright&#x2F;Puppeteer, handles SPA&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;API-based&lt;&#x2F;strong&gt;: Like Tavily Extract, server-side rendering returns structured content&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;CLI-based&lt;&#x2F;strong&gt;: Wrappers around curl&#x2F;wget, simple but no JS rendering&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;source-code-facts&quot;&gt;Source Code Facts&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; packages&amp;#x2F;core&amp;#x2F;src&amp;#x2F;tools&amp;#x2F;web-fetch.ts (v0.20.1-preview.7215)
+const textContent = convert(html, {
+  wordwrap: false,
+  selectors: [
+    { selector: &amp;#x27;a&amp;#x27;, options: { ignoreHref: true } },
+    { selector: &amp;#x27;img&amp;#x27;, format: &amp;#x27;skip&amp;#x27; },
+  ],
+}).substring(0, MAX_CONTENT_LENGTH);
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;No fallback logic. &lt;code&gt;html-to-text&lt;&#x2F;code&gt; returns empty → empty string sent directly to the LLM → LLM receives empty content → returns empty or hallucinated output.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;comparison-with-claude-code&quot;&gt;Comparison with Claude Code&lt;&#x2F;h2&gt;
+&lt;p&gt;Claude Code’s WebFetch similarly lacks SPA fallback. Both tools have blind spots in SPA scenarios.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;for-contributors-fix-directions&quot;&gt;For Contributors: Fix Directions&lt;&#x2F;h2&gt;
+&lt;p&gt;If you’re interested in fixing this, here are several approaches (ordered by cost, lowest first):&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; fallback&lt;&#x2F;strong&gt;: When &lt;code&gt;html-to-text&lt;&#x2F;code&gt; returns empty, extract &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; + &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; as a fallback. Minimal change — just add a fallback branch when &lt;code&gt;convert()&lt;&#x2F;code&gt; returns empty.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;SPA detection&lt;&#x2F;strong&gt;: Identify SPA characteristics like &lt;code&gt;&amp;lt;div id=&quot;root&quot;&amp;gt;&lt;&#x2F;code&gt; and alert the user that the page requires JS rendering, suggesting MCP tools instead.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Headless browser integration&lt;&#x2F;strong&gt;: For detected SPA pages, render with a headless browser before extracting content. Best results but heaviest dependencies.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+</feed>

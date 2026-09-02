@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - DrawingML</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/drawingml/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sun, 30 Aug 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>PPT Master Skill 深度调研：从 SVG 中转、网页可视化批注到原生可编辑 PPTX</title>
+          <pubDate>Sun, 30 Aug 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/ppt-master-skill-internals/</link>
+          <guid>https://cncsmonster.github.io/posts/ppt-master-skill-internals/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/ppt-master-skill-internals/">&lt;p&gt;市面上大多数 AI 生成 PPT 的工具，往往是“每页生成一张全屏大图片”贴在幻灯片里——看起来好看，但&lt;strong&gt;文字无法双击修改、图形无法拖动调��，稍微放大还会模糊失真&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;ppt-master&lt;&#x2F;code&gt; 是一个为 AI Coding Agent（如 Claude Code &#x2F; Qwen Code &#x2F; Codex）设计的技能插件。它的核心价值在于：&lt;strong&gt;根据你的文档自动排版，并生成“每个文字都能双击修改、每个图表和形状都能自由拖动调色”的原生完全可编辑 PPTX 演示文稿。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-zen-me-yong-duan-dao-duan-yong-hu-ti-yan&quot;&gt;一、怎么用？端到端用户体验&lt;&#x2F;h2&gt;
+&lt;p&gt;日常使用该技能制作 PPT 的协作流程非常自然：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;技能触发（支持显式指定与自动识别）&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;显式主动调用&lt;&#x2F;strong&gt;：通过斜杠命令（如 &lt;code&gt;&#x2F;ppt-master &amp;lt;文档路径&amp;gt;&lt;&#x2F;code&gt;）或变量符号（如 &lt;code&gt;$ppt-master&lt;&#x2F;code&gt;）显式指定加载该技能；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;隐式自动识别&lt;&#x2F;strong&gt;：直接输入日常自然语言（如：&lt;em&gt;“帮我把这份技术文档做成 10 页精美 PPT”&lt;&#x2F;em&gt;），AI 自动匹配并挂载 &lt;code&gt;ppt-master&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;自动提炼与排版&lt;&#x2F;strong&gt;：AI 自动解析源文档、设计大纲，并在本地生成每一页的矢量排版。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;本地 Web 预览、批注提交与通知修图&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;AI 在后台启动本地预览网页（&lt;code&gt;http:&#x2F;&#x2F;127.0.0.1:5050&lt;&#x2F;code&gt;），供用户在浏览器中查阅渲染效果；&lt;&#x2F;li&gt;
+&lt;li&gt;用户在网页中点击不满意元素输入修改意见，并点击 &lt;strong&gt;「提交批注」&lt;&#x2F;strong&gt; 将修改意见持久化写入磁盘；&lt;&#x2F;li&gt;
+&lt;li&gt;用户回到终端对 AI 说：&lt;em&gt;“已提交批注，请按批注修改”&lt;&#x2F;em&gt;，AI 调用 &lt;code&gt;check_annotations.py&lt;&#x2F;code&gt; 精准重绘被标记的局部元素。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;导出与二次编辑&lt;&#x2F;strong&gt;：满意后，AI 在本地自动输出最终的 &lt;code&gt;.pptx&lt;&#x2F;code&gt; 文件。用 Office 或 WPS 打开即可自由二次编辑所有内容。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;tong-lei-sheng-tai-dui-bi&quot;&gt;同类生态对比&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Skill 标识&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;生态与特点&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;适用场景&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;anthropics&#x2F;skills@pptx&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;官方轻量版，纯脚本生成基础形状与文本&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;适合快速产出简单结构 PPT&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;hugohe3&#x2F;ppt-master&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;社区全能版，支持网页可视化批注与原生 DrawingML 深度排版&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;适合高质量、复杂图文排版的深度演示文稿&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;code&gt;claude-office-skills&#x2F;skills@ppt-visual&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;社区视觉版，偏插图与海报风格&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;适合偏艺术视觉的展示场景&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-shen-ru-di-ceng-ji-li-wei-shen-me-ta-neng-zuo-dao-shuang-ji-gai-zi&quot;&gt;二、深入底层机理：为什么它能做到“双击改字”？&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;jia-gou-zhong-zhuan-she-ji-svg-dao-drawingml&quot;&gt;架构中转设计（SVG 到 DrawingML）&lt;&#x2F;h3&gt;
+&lt;p&gt;PowerPoint 底层使用的是微软专有的 &lt;strong&gt;DrawingML&lt;&#x2F;strong&gt; 矢量图形标记语言。但 DrawingML 语法极其繁琐冗长，如果让大模型直接手写 XML，极易出现语法错乱导致文件损坏。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;ppt-master&lt;&#x2F;code&gt; 采用了一种聪明的&lt;strong&gt;两阶段中转架构&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;源文档 → [AI负责排版创意] → SVG矢量代码 → [Python脚本精准翻译] → DrawingML (PPTX)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;阶段一（AI 发挥排版能力）&lt;&#x2F;strong&gt;：大模型天生擅长编写标准 SVG 矢量代码，负责各页面的视觉构图、色彩搭配和文字布局；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;阶段二（脚本保证格式确定性）&lt;&#x2F;strong&gt;：本地 Python 脚本（&lt;code&gt;svg_to_pptx.py&lt;&#x2F;code&gt;）将 SVG 中的 &lt;code&gt;&amp;lt;text&amp;gt;&lt;&#x2F;code&gt;、&lt;code&gt;&amp;lt;rect&amp;gt;&lt;&#x2F;code&gt;、&lt;code&gt;&amp;lt;path&amp;gt;&lt;&#x2F;code&gt; 等标签一对一精准翻译为 PowerPoint 底层的 DrawingML 形状与文本框节点。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-an-quan-shen-ji-yu-api-yi-lai-fen-xi&quot;&gt;三、安全审计与 API 依赖分析&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-an-quan-shen-ji-jie-lun&quot;&gt;1. 安全审计结论&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;网络隔离&lt;&#x2F;strong&gt;：内置的预览 Web 服务仅监听本地回环地址 &lt;code&gt;127.0.0.1:5050&lt;&#x2F;code&gt;，无任何遥测、埋点或数据外发；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;执行安全&lt;&#x2F;strong&gt;：全库无任意 &lt;code&gt;eval()&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;exec()&lt;&#x2F;code&gt;，&lt;code&gt;subprocess&lt;&#x2F;code&gt; 仅调用内部固定工具链；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;文件与密钥&lt;&#x2F;strong&gt;：读写严格限制在项目目录；无硬编码 Key，按层级加载 &lt;code&gt;.env&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;定性&lt;&#x2F;strong&gt;：&lt;strong&gt;安全，无后门。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-ling-wai-bu-api-yi-lai-yu-chi-xian-shou-dong-jiang-ji&quot;&gt;2. 零外部 API 依赖与离线手动降级&lt;&#x2F;h3&gt;
+&lt;p&gt;核心生成流程&lt;strong&gt;完全不依赖任何外部商业 API&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;环节&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;是否依赖外部 API？&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;实现机制&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;文档解析与格式转换&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ 不需要&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯本地 Python 库（PyMuPDF、docx 等）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;SVG 排版与 PPTX 导出&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ 不需要&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;本地 AI 对话生成 SVG + 本地 &lt;code&gt;python-pptx&lt;&#x2F;code&gt; 转换&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;浏览器本地预览与批注&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ 不需要&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;本地 Flask (&lt;code&gt;127.0.0.1:5050&lt;&#x2F;code&gt;) + &lt;code&gt;check_annotations.py&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;AI 配图 &#x2F; 图片搜索 &#x2F; 语音&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;⚠️ 可选依赖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;支持 14+ 图像后端，未配置时自动降级&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;离线手动降级机制（Offline Manual Mode）&lt;&#x2F;strong&gt;：
+即使未配置任何图像 API Key，系统也不会报错卡死，而是自动将配图标记为 &lt;code&gt;Needs-Manual&lt;&#x2F;code&gt; 并在页面中生成带提示词的虚线占位框，PPTX 导出流程照常进行。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-an-zhuang-cai-keng-yu-yi-lai-jie-ou-shi-lu&quot;&gt;四、安装踩坑与依赖解耦实录&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;执行 &lt;code&gt;npx skills add&lt;&#x2F;code&gt; 安装超时导致脚本缺失&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;原因&lt;&#x2F;strong&gt;：该 Skill 仓库体积较大（包含约 99MB 的 SVG 图标与模板），安装超时��致只下载了外层文档，&lt;code&gt;scripts&#x2F;&lt;&#x2F;code&gt; 脚本目录为空；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：从完整克隆仓库中通过 &lt;code&gt;rsync&lt;&#x2F;code&gt; 补齐 &lt;code&gt;scripts&#x2F;&lt;&#x2F;code&gt;（105 个 &lt;code&gt;.py&lt;&#x2F;code&gt; 脚本）与 &lt;code&gt;templates&#x2F;&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;peps.python.org&#x2F;pep-0668&#x2F;&quot;&gt;PEP 668&lt;&#x2F;a&gt; 拦截全局 pip 安装（&lt;code&gt;externally-managed-environment&lt;&#x2F;code&gt;）&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;背景&lt;&#x2F;strong&gt;：现代 Linux 默认启用 PEP 668，禁止直接向系统 Python 写入第三方包以保护系统级工具栈；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：避免使用危险的 &lt;code&gt;--break-system-packages&lt;&#x2F;code&gt;，改用 &lt;code&gt;uv&lt;&#x2F;code&gt; 创建专用的独立虚拟环境进行隔离：&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;uv venv ~&amp;#x2F;.ppt-master&amp;#x2F;venv
+uv pip install -r requirements.txt --python ~&amp;#x2F;.ppt-master&amp;#x2F;venv&amp;#x2F;bin&amp;#x2F;python
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;pycairo &#x2F; svglib 依赖剔除&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;分析&lt;&#x2F;strong&gt;：&lt;code&gt;svglib&lt;&#x2F;code&gt;（依赖系统级 &lt;code&gt;libcairo2-dev&lt;&#x2F;code&gt;）仅作为旧版 Office 兼容模式下的 SVG 转 PNG 备用后备，核心 DrawingML 转换完全不需要；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：从依赖清单中剔除 &lt;code&gt;svglib&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;reportlab&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;rlpycairo&lt;&#x2F;code&gt;，其余 88 个核心依赖包全部安装成功。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+    </channel>
+</rss>
