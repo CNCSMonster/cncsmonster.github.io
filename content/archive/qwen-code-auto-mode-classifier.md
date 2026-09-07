@@ -2,10 +2,15 @@
 title = "Qwen Code Auto Mode Classifier：两阶段 LLM 审批机制解析"
 date = 2026-07-29T00:00:00+08:00
 slug = "qwen-code-auto-mode-classifier"
+weight = 20
 [taxonomies]
     tags = ["Qwen Code", "AI Agent", "LLM", "安全", "Coding Assistant"]
 +++
 
+> ⚠️ **注意：这篇文章已归档**
+>
+> 本文记录的是 Qwen Code `0.20.1-preview.7215` 的实现，仅供历史参考。当前开源版本的机制分析见：[Qwen Code Auto Mode 深度分析](/posts/qwen-code-auto-mode-deep-dive/)。
+>
 > 本文基于 Qwen Code `0.20.1-preview.7215` 版本的编译源码分析。preview 版本的机制可能随版本变化。
 
 Qwen Code 提供五种审批模式：`plan`（计划）、`default`（默认确认）、`auto-edit`（自动编辑）、`auto`（自动审批）、`yolo`（全部自动）。在这个版本中，**新用户安装后默认就是 auto 模式**——工具调用不需要逐个确认，而是通过多层过滤自动判断每个操作是否安全。我平时使用也推荐 auto 模式，它在效率和安全之间取得了很好的平衡。本文拆解这个机制的工作原理和配置方式。

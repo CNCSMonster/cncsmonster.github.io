@@ -2,10 +2,15 @@
 title = "Qwen Code Auto Mode Classifier: Two-Stage LLM Approval Mechanism"
 date = 2026-07-29T00:00:00+08:00
 slug = "qwen-code-auto-mode-classifier-en"
+weight = 20
 [taxonomies]
     tags = ["Qwen Code", "AI Agent", "LLM", "Security", "Coding Assistant"]
 +++
 
+> ⚠️ **Archived**
+>
+> This article documents Qwen Code `0.20.1-preview.7215` and is retained for historical reference. The replacement article is currently available in Chinese: [Qwen Code Auto Mode 深度分析](/posts/qwen-code-auto-mode-deep-dive/).
+>
 > This article is based on reverse-engineered source code from Qwen Code `0.20.1-preview.7215`. Preview version internals may change across releases.
 
 Qwen Code offers five approval modes: `plan`, `default`, `auto-edit`, `auto`, and `yolo`. In this version, **new installations default to auto mode** — tool calls are automatically approved through a multi-layer filtering system rather than requiring manual confirmation for each one. I also recommend auto mode for daily use; it strikes a good balance between efficiency and safety. This article dissects the mechanism and its configuration.
