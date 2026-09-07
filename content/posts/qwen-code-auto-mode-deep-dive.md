@@ -6,16 +6,13 @@ slug = "qwen-code-auto-mode-deep-dive"
     tags = ["Qwen Code", "AI Agent", "自动审批", "Classifier", "Coding Assistant"]
 +++
 
-> **Auto Mode 是结合规则、Classifier 审查与人工确认的审批模式，目标是在尽量安全的前提下自动审批工具调用。** 确定性规则可直接放行、阻断或要求人工确认；剩余调用交给 Classifier 判断，审查不可用或失败计数达到阈值时转入人工确认流程。
->
-> 本文围绕这一目标分析其核心设计：哪些调用可以直接执行、哪些需要 Classifier 审查、Classifier 如何在安全与效率之间准备上下文和分阶段判断，以及自动审查连续失败时为何转人工确认。文末再给出 Classifier 模型的配置建议。
-> **代码基准**：基于官方开源仓库 [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code) `main` 分支（commit [`9c320cb0c`](https://github.com/QwenLM/qwen-code/commit/9c320cb0cc328dc91b362516b630ae4a3dcdd15d)），文中所有源码位置均以此基准版本的仓库根目录为相对路径。
+> **代码基准**：[QwenLM/qwen-code](https://github.com/QwenLM/qwen-code) `main` 分支的 commit [`9c320cb0c`](https://github.com/QwenLM/qwen-code/commit/9c320cb0cc328dc91b362516b630ae4a3dcdd15d)；文中源码路径均相对此版本仓库根目录。
 
 ---
 
 ## 一、Auto Mode 的整体流程
 
-Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并列；当前选定的模式决定工具调用如何获得执行许可。启用 Auto 模式后，除规则直接处理的调用外，工具调用会先交给 Classifier 使用模型进行自动审批。一个好的自动审批机制不仅要避免高风险调用被误放行，还要尽量减少不必要的人工确认，并控制审批带来的延迟和 Token 成本；同时，用户应能为自己关心的操作收紧确认边界。本文从**安全性、自动化程度、审批延迟与成本、用户可控性**四个角度分析 Auto Mode 的设计。
+**Auto Mode 是 Qwen Code 的一种审批模式**，与 Default、YOLO 等模式并列；当前选定的模式决定工具调用如何获得执行许可。启用 Auto 模式后，除规则直接处理的调用外，工具调用会先交给 **Classifier** 使用模型进行自动审批。一个好的自动审批机制不仅要避免高风险调用被误放行，还要尽量减少不必要的人工确认，并控制审批带来的延迟和 Token 成本；同时，用户应能为自己关心的操作收紧确认边界。本文从**安全性、自动化程度、审批延迟与成本、用户可控性**四个角度分析 Auto Mode 的设计。
 
 下图是这套分流流程的总览，也是后文分析各项设计的基础。它是对源码处理逻辑的归纳，不是项目官方定义的架构层级：
 
@@ -177,7 +174,51 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
   align-items: center;
 }
 
-#qwen-auto-mode-approval-flow .flow-outcome-label {
+#qwen-auto-mode-approval-flow .flow-manual-route {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--flow-border);
+}
+
+#qwen-auto-mode-approval-flow .flow-manual-route-intro {
+  color: var(--vp-c-text-2);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+#qwen-auto-mode-approval-flow .flow-manual-decision {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--flow-border);
+  border-radius: 0.75rem;
+  background: var(--flow-card);
+  box-shadow: var(--vp-shadow-1);
+  font-weight: 600;
+  text-align: center;
+}
+
+#qwen-auto-mode-approval-flow .flow-manual-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+#qwen-auto-mode-approval-flow .flow-manual-branch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+#qwen-auto-mode-approval-flow .flow-manual-branch-arrow {
+  color: var(--flow-line);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+#qwen-auto-mode-approval-flow .flow-manual-branch-label {
   color: var(--vp-c-text-2);
   font-size: 0.82rem;
 }
@@ -222,7 +263,7 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
     <div class="flow-branch">
       <span class="flow-branch-label">是</span>
       <span class="flow-branch-arrow" aria-hidden="true">→</span>
-      <span class="flow-result flow-result--allow">自动放行</span>
+      <span class="flow-result flow-result--allow">放行</span>
     </div>
   </div>
   <div class="flow-next">
@@ -234,7 +275,7 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
     <div class="flow-branch">
       <span class="flow-branch-label">是</span>
       <span class="flow-branch-arrow" aria-hidden="true">→</span>
-      <span class="flow-result flow-result--allow">自动放行</span>
+      <span class="flow-result flow-result--allow">放行</span>
     </div>
   </div>
   <div class="flow-next">
@@ -258,7 +299,7 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
     <div class="flow-branch">
       <span class="flow-branch-label">是</span>
       <span class="flow-branch-arrow" aria-hidden="true">→</span>
-      <span class="flow-result flow-result--manual">人工确认</span>
+      <span class="flow-result flow-result--manual">需要人工确认</span>
     </div>
   </div>
   <div class="flow-next">
@@ -270,7 +311,7 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
     <div class="flow-branch">
       <span class="flow-branch-label">是</span>
       <span class="flow-branch-arrow" aria-hidden="true">→</span>
-      <span class="flow-result flow-result--manual">人工确认</span>
+      <span class="flow-result flow-result--manual">需要人工确认</span>
     </div>
   </div>
   <div class="flow-next">
@@ -282,7 +323,7 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
     <div class="flow-branch">
       <span class="flow-branch-label">是</span>
       <span class="flow-branch-arrow" aria-hidden="true">→</span>
-      <span class="flow-result flow-result--manual">本次调用转人工确认</span>
+      <span class="flow-result flow-result--manual">需要人工确认</span>
     </div>
   </div>
   <div class="flow-next">
@@ -306,7 +347,7 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
   <div class="flow-outcomes">
     <div class="flow-outcome">
       <span class="flow-outcome-label">判定可执行</span>
-      <span class="flow-result flow-result--allow">自动放行</span>
+      <span class="flow-result flow-result--allow">放行</span>
     </div>
     <div class="flow-outcome">
       <span class="flow-outcome-label">明确判定不应执行</span>
@@ -314,7 +355,25 @@ Auto Mode 是 Qwen Code 的一种审批模式，与 Default、YOLO 等模式并�
     </div>
     <div class="flow-outcome">
       <span class="flow-outcome-label">Classifier 不可用</span>
-      <span class="flow-result flow-result--manual">记录故障并转人工确认</span>
+      <span class="flow-result flow-result--manual">需要人工确认</span>
+    </div>
+  </div>
+
+  <div class="flow-manual-route">
+    <div class="flow-manual-route-intro">所有“需要人工确认”的分支在此汇合</div>
+    <div class="flow-connector" aria-hidden="true">↓</div>
+    <div class="flow-manual-decision">是否可交互确认？<small class="flow-section-note">第四节 · 审查不可用时转人工确认</small></div>
+    <div class="flow-manual-branches">
+      <div class="flow-manual-branch">
+        <span class="flow-manual-branch-label">可以（交互式会话）</span>
+        <span class="flow-manual-branch-arrow" aria-hidden="true">↙</span>
+        <span class="flow-result flow-result--manual">弹出确认，交给用户决定</span>
+      </div>
+      <div class="flow-manual-branch">
+        <span class="flow-manual-branch-label">不可以（普通非交互运行）</span>
+        <span class="flow-manual-branch-arrow" aria-hidden="true">↘</span>
+        <span class="flow-result flow-result--block">无法确认，拒绝本次调用</span>
+      </div>
     </div>
   </div>
 </div>

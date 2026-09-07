@@ -6,7 +6,7 @@ slug = "ppt-master-skill-internals"
     tags = ["AI Skill", "PPT Master", "DrawingML", "SVG", "AI Agent", "工具调研"]
 +++
 
-市面上大多数 AI 生成 PPT 的工具，往往是“每页生成一张全屏大图片”贴在幻灯片里——看起来好看，但**文字无法双击修改、图形无法拖动调��，稍微放大还会模糊失真**。
+市面上大多数 AI 生成 PPT 的工具，往往是“每页生成一张全屏大图片”贴在幻灯片里——看起来好看，但**文字无法双击修改、图形无法拖动调整，稍微放大还会模糊失真**。
 
 `ppt-master` 是一个为 AI Coding Agent（如 Claude Code / Qwen Code / Codex）设计的技能插件。它的核心价值在于：**根据你的文档自动排版，并生成“每个文字都能双击修改、每个图表和形状都能自由拖动调色”的原生完全可编辑 PPTX 演示文稿。**
 
@@ -76,7 +76,7 @@ PowerPoint 底层使用的是微软专有的 **DrawingML** 矢量图形标记语
 | **文档解析与格式转换** | ❌ 不需要 | 纯本地 Python 库（PyMuPDF、docx 等） |
 | **SVG 排版与 PPTX 导出** | ❌ 不需要 | 本地 AI 对话生成 SVG + 本地 `python-pptx` 转换 |
 | **浏览器本地预览与批注** | ❌ 不需要 | 本地 Flask (`127.0.0.1:5050`) + `check_annotations.py` |
-| **AI 配图 / 图片搜索 / 语音** | ⚠️ 可选依赖 | 支持 14+ 图像后端，未配置时自动降级 |
+| **AI 配图 / 图片搜索 / 语音** | ⚠️ 可选依赖 | AI 配图支持 14 个图像生成后端，未配置时自动降级 |
 
 **离线手动降级机制（Offline Manual Mode）**：
 即使未配置任何图像 API Key，系统也不会报错卡死，而是自动将配图标记为 `Needs-Manual` 并在页面中生成带提示词的虚线占位框，PPTX 导出流程照常进行。
@@ -87,7 +87,7 @@ PowerPoint 底层使用的是微软专有的 **DrawingML** 矢量图形标记语
 
 1. **执行 `npx skills add` 安装超时导致脚本缺失**：
 
-   - **原因**：该 Skill 仓库体积较大（包含约 99MB 的 SVG 图标与模板），安装超时��致只下载了外层文档，`scripts/` 脚本目录为空；
+   - **原因**：该 Skill 仓库体积较大（包含约 99MB 的 SVG 图标与模板），安装超时导致只下载了外层文档，`scripts/` 脚本目录为空；
    - **解决**：从完整克隆仓库中通过 `rsync` 补齐 `scripts/`（105 个 `.py` 脚本）与 `templates/`。
 
 2. **[PEP 668](https://peps.python.org/pep-0668/) 拦截全局 pip 安装（`externally-managed-environment`）**：

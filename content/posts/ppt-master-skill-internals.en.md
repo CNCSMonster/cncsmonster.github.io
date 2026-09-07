@@ -70,7 +70,7 @@ The core generation pipeline runs **completely offline without commercial APIs**
 | **Document Conversion** | ❌ No | Local Python libraries (PyMuPDF, docx, etc.) |
 | **SVG Generation & PPTX Export** | ❌ No | Local agent SVG generation + `python-pptx` |
 | **Browser Preview & Annotations** | ❌ No | Local Flask (`127.0.0.1:5050`) + `check_annotations.py` |
-| **AI Image Gen / Image Search / TTS** | ⚠️ Optional | Configurable across 14+ backends |
+| **AI Image Gen / Image Search / TTS** | ⚠️ Optional | AI image generation supports 14 image-generation backends and falls back when none is configured |
 
 **Offline Manual Fallback**:
 If no image generation API key is configured, image slots are automatically tagged as `Needs-Manual` with dashed prompt placeholders, ensuring the PPTX export pipeline finishes without blockers.
