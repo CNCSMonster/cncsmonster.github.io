@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>搜索测试</title>
+</head>
+<body>
+    <h1>搜索功能测试</h1>
+    
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="输入搜索词...">
+        <ul id="search-results"></ul>
+    </div>
+    
+    <div id="status"></div>
+    
+    <script>
+    const status = document.getElementById('status');
+    
+    function log(msg) {
+        status.innerHTML += '<p>' + msg + '</p>';
+        console.log(msg);
+    }
+    
+    async function testSearch() {
+        log('1. 开始加载搜索...');
+        
+        // 加载 lunr
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js';
+            script.onload = () => { log('2. lunr.js 加载成功'); resolve(); };
+            script.onerror = () => { log('❌ lunr.js 加载失败'); reject(); };
+            document.head.appendChild(script);
+        });
+        
+        // 加载中文支持
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/lunr-languages@1.14.0/lunr.stemmer.support.min.js';
+            script.onload = () => { log('3. lunr.stemmer.support 加载成功'); resolve(); };
+            script.onerror = () => { log('❌ stemmer 加载失败'); reject(); };
+            document.head.appendChild(script);
+        });
+        
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/lunr-languages@1.14.0/lunr.zh.min.js';
+            script.onload = () => { log('4. lunr.zh 中文分词加载成功'); resolve(); };
+            script.onerror = () => { log('❌ lunr.zh 加载失败'); reject(); };
+            document.head.appendChild(script);
+        });
+        
+        // 加载搜索索引
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'http://127.0.0.1:1111/search_index.zh.js';
+            script.onload = () => { 
+                log('5. search_index.zh.js 加载成功'); 
+                log('6. window.searchIndex 条目数：' + (window.searchIndex ? window.searchIndex.length : 'undefined'));
+                resolve(); 
+            };
+            script.onerror = () => { log('❌ search_index 加载失败'); reject(); };
+            document.head.appendChild(script);
+        });
+        
+        // 构建索引
+        const index = lunr(function() {
+            this.use(lunr.zh);
+            this.ref('id');
+            this.field('title', { boost: 10 });
+            this.field('description');
+            this.field('content');
+            this.field('path');
+            
+            window.searchIndex.forEach((doc, idx) => {
+                this.add({ 
+                    id: idx, 
+                    title: doc.title, 
+                    description: doc.description, 
+                    content: doc.content, 
+                    path: doc.path 
+                });
+            });
+        });
+        
+        log('7. 搜索索引构建成功 ✅');
+        
+        // 绑定搜索
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length === 0) {
+                searchResults.innerHTML = '';
+                return;
+            }
+            
+            const results = index.search(query);
+            log('搜索 "' + query + '" 找到 ' + results.length + ' 个结果');
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<li>未找到结果</li>';
+            } else {
+                searchResults.innerHTML = results.map(r => {
+                    const doc = window.searchIndex[r.ref];
+                    return '<li><a href="' + doc.path + '">' + doc.title + '</a></li>';
+                }).join('');
+            }
+        });
+        
+        log('8. 搜索框已绑定，可以输入测试了 ✅');
+        log('<br><strong>测试建议：输入 "Python"、"LLM"、"编译器" 试试</strong>');
+    }
+    
+    testSearch();
+    </script>
+</body>
+</html>

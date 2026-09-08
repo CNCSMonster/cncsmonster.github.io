@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - 排查</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/pai-cha/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 10 Aug 2026 00:00:00 +0000</lastBuildDate>
+      <item>
+          <title>WSL2 TUN 模块版本脱节：排查与修复</title>
+          <pubDate>Mon, 10 Aug 2026 00:00:00 +0000</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/wsl2-tun-module-version-mismatch/</link>
+          <guid>https://cncsmonster.github.io/posts/wsl2-tun-module-version-mismatch/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/wsl2-tun-module-version-mismatch/">&lt;h1 id=&quot;wsl2-tun-mo-kuai-ban-ben-tuo-jie-pai-cha-yu-xiu-fu&quot;&gt;WSL2 TUN 模块版本脱节：排查与修复&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL2 中 &lt;code&gt;modprobe tun&lt;&#x2F;code&gt; 报错：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;modprobe: ERROR: could not insert &amp;#x27;tun&amp;#x27;: Exec format error
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果你也遇到这个错误，本文的解决方案和排查思路都适用于你。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-jie-jue&quot;&gt;快速解决&lt;&#x2F;h2&gt;
+&lt;p&gt;从新版 WSL 包提取 modules.vhd，替换系统目录的旧版：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# Windows 侧（管理员）
+# 1. 备份旧版
+Copy-Item &amp;quot;C:\Program Files\WSL\tools\modules.vhd&amp;quot; &amp;quot;C:\Users\&amp;lt;user&amp;gt;\Downloads\modules.vhd.bak&amp;quot;
+
+# 2. 从新版 WSL 包提取 modules.vhd（需先解包 msixbundle → msi → 提取）
+# 3. 替换
+Copy-Item &amp;quot;new-modules.vhd&amp;quot; &amp;quot;C:\Program Files\WSL\tools\modules.vhd&amp;quot; -Force
+
+# 4. 重启 WSL
+wsl --shutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# WSL 内验证
+sudo modprobe tun &amp;amp;&amp;amp; echo &amp;quot;MODULE LOAD OK&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;gen-yin&quot;&gt;根因&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;WSL2 内核与模块版本脱节&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;组件&lt;&#x2F;th&gt;&lt;th&gt;版本&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;内核 (kernel)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;6.18.33.2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;手动更新&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;modules.vhd（模块包）&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;6.6.87.2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;漏换，旧版&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;之前更新 WSL2 内核时只替换了 &lt;code&gt;kernel&lt;&#x2F;code&gt; 和 &lt;code&gt;system.vhd&lt;&#x2F;code&gt;，&lt;strong&gt;漏换了 &lt;code&gt;modules.vhd&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;。内核是新版，但 tun.ko 的 vermagic 还是旧版（6.6.87.2），内核拒绝加载——这就是 &lt;code&gt;Exec format error&lt;&#x2F;code&gt; 的真正原因。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;pai-cha-lian&quot;&gt;排查链&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;modprobe tun → Exec format error
+  ↓
+CONFIG_TUN=m → 内核支持 TUN，不是&amp;quot;内核限制&amp;quot;
+  ↓
+modinfo tun.ko → vermagic: 6.6.87.2
+uname -r      → 6.18.33.2
+  ↓ 版本不一致 → vermagic 不匹配
+  ↓
+追溯操作记录：只换了 kernel + system.vhd，漏了 modules.vhd
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;关键洞察&lt;&#x2F;strong&gt;：&lt;code&gt;Exec format error&lt;&#x2F;code&gt; 在内核模块场景 ≠ 文件损坏，是 &lt;strong&gt;vermagic 不匹配&lt;&#x2F;strong&gt;（内核拒绝加载版本不对的 .ko 文件）。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;exec-format-error-pai-cha-kuang-jia&quot;&gt;Exec format error 排查框架&lt;&#x2F;h2&gt;
+&lt;p&gt;遇到 &lt;code&gt;modprobe&lt;&#x2F;code&gt; 报 &lt;code&gt;Exec format error&lt;&#x2F;code&gt; 时，按顺序排除：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;排查门&lt;&#x2F;th&gt;&lt;th&gt;检查方法&lt;&#x2F;th&gt;&lt;th&gt;根因&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;① vermagic 版本号&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;modinfo xxx.ko | grep vermagic&lt;&#x2F;code&gt; vs &lt;code&gt;uname -r&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;内核&#x2F;模块版本不一致（本案）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;② vermagic 后缀&lt;&#x2F;td&gt;&lt;td&gt;比较完整 vermagic 字符串（如 &lt;code&gt;-tegra&lt;&#x2F;code&gt; 后缀）&lt;&#x2F;td&gt;&lt;td&gt;CONFIG_LOCALVERSION 不一致&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;③ 编译源码版本&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;git log&lt;&#x2F;code&gt; vs &lt;code&gt;uname -r&lt;&#x2F;code&gt; 对应版本&lt;&#x2F;td&gt;&lt;td&gt;用了错误版本的源码编译模块&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;④ GCC 版本&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;gcc --version&lt;&#x2F;code&gt; vs 内核编译 GCC&lt;&#x2F;td&gt;&lt;td&gt;多 GCC 共存导致 vermagic 差异&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;⑤ 符号表&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;dmesg | grep &quot;disagrees about version&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;内核 ABI 变了，模块需重新编译&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;⑥ depmod&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo depmod -a&lt;&#x2F;code&gt; 后重试&lt;&#x2F;td&gt;&lt;td&gt;手动安装模块后没更新依赖索引&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wsl2-mo-kuai-jia-zai-ji-zhi&quot;&gt;WSL2 模块加载机制&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL2 6.6+ 内核模块的分发方式：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;模块打包在 &lt;code&gt;modules.vhd&lt;&#x2F;code&gt;（Windows 侧文件）&lt;&#x2F;li&gt;
+&lt;li&gt;启动时挂载为 overlay 的 &lt;strong&gt;lower 层&lt;&#x2F;strong&gt;（只读），路径 &lt;code&gt;&#x2F;modules&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;&#x2F;usr&#x2F;lib&#x2F;modules&#x2F;&amp;lt;ver&amp;gt;&#x2F;&lt;&#x2F;code&gt; 是 overlay 合并视图：&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre&gt;&lt;code&gt;overlay → lower = &amp;#x2F;modules（modules.vhd，只读）
+          upper = &amp;#x2F;lib&amp;#x2F;modules&amp;#x2F;...&amp;#x2F;rw&amp;#x2F;upper（可写，跨重启保留）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;pai-cha-jiao-xun&quot;&gt;排查教训&lt;&#x2F;h2&gt;
+&lt;p&gt;这次排查主要卡在「Exec format error = 文件损坏」的错误假设上，绕了不少弯路。如果一开始就查 vermagic，能节省大量时间。&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Exec format error = vermagic 不匹配&lt;&#x2F;strong&gt;，不是“文件损坏“或“内核不支持“&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 内核更新必须换三个文件&lt;&#x2F;strong&gt;：kernel + system.vhd + &lt;strong&gt;modules.vhd&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;确认“内核不支持“假设时先查 CONFIG_TUN&lt;&#x2F;strong&gt;：&lt;code&gt;grep CONFIG_TUN &#x2F;boot&#x2F;config-$(uname -r)&lt;&#x2F;code&gt;，&lt;code&gt;CONFIG_TUN=m&lt;&#x2F;code&gt; 表示内核支持，只是模块未加载&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+      <item>
+          <title>WSL 内核更新踩坑实录：从 403 错误到 CVE-2026-31431 修复</title>
+          <pubDate>Mon, 29 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/wsl-kernel-update-troubleshooting/</link>
+          <guid>https://cncsmonster.github.io/posts/wsl-kernel-update-troubleshooting/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/wsl-kernel-update-troubleshooting/">&lt;blockquote&gt;
+&lt;p&gt;记录一次 WSL 内核更新的完整排查过程，涵盖 403 错误、MSI 缓存损坏、两层安装路径冲突等问题的定位与解决。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;bei-jing&quot;&gt;背景&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL 内核版本 &lt;strong&gt;6.6.87.2&lt;&#x2F;strong&gt; 存在 &lt;strong&gt;CVE-2026-31431&lt;&#x2F;strong&gt;（Copy Fail）本地提权漏洞，需要更新到 &lt;strong&gt;6.18.x&lt;&#x2F;strong&gt; 以上版本修复（来源：微软安全通告 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;msrc.microsoft.com&#x2F;update-guide&quot;&gt;MSRC Advisory&lt;&#x2F;a&gt; &#x2F; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;nvd.nist.gov&#x2F;vuln&#x2F;detail&#x2F;CVE-2026-31431&quot;&gt;NVD 公告&lt;&#x2F;a&gt;）。&lt;&#x2F;p&gt;
+&lt;p&gt;在执行 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 时遇到 HTTP 403 错误，随后展开了一系列排查。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wen-ti-xian-xiang&quot;&gt;问题现象&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;PS&amp;gt; wsl --update
+正在检查更新。
+已禁止 (403)。
+错误代码: Wsl&amp;#x2F;UpdatePackage&amp;#x2F;0x80190193
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;曾尝试切换不同代理节点，但无论哪个节点，&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 始终返回 403。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;pai-cha-guo-cheng&quot;&gt;排查过程&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;di-yi-bu-jian-cha-dang-qian-zhuang-tai&quot;&gt;第一步：检查当前状态&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# WSL 版本
+PS&amp;gt; wsl --version
+WSL 版本: 2.6.3.0
+内核版本: 6.6.87.2-1
+
+# AppX 包版本（已下载但未生效）
+PS&amp;gt; Get-AppxPackage -Name *WindowsSubsystemForLinux* | Select-Object Version
+Version
+-------
+2.7.3.0
+
+# 注册表中的安装版本
+PS&amp;gt; Get-ItemProperty &amp;quot;HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*&amp;quot; |
+    Where-Object { $_.DisplayName -match &amp;quot;WSL|Linux&amp;quot; } |
+    Select-Object DisplayName, DisplayVersion, InstallDate
+
+DisplayName                 DisplayVersion InstallDate
+-----------                 -------------- -----------
+Windows Subsystem for Linux 2.6.3.0        20260212
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;发现矛盾&lt;&#x2F;strong&gt;：AppX 包显示 2.7.3.0，但实际运行的仍是 2.6.3.0。说明 Store 下载了新版包，但安装过程被阻塞。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-er-bu-cha-zhao-zu-sai-yuan-yin&quot;&gt;第二步：查找阻塞原因&lt;&#x2F;h3&gt;
+&lt;p&gt;检查 MSI 安装日志：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;PS&amp;gt; Get-Content &amp;quot;$env:TEMP\MSIf13a6.LOG&amp;quot;
+Error 1714. The older version of Windows Subsystem for Linux cannot be removed.
+Contact your technical support group. System Error 1612.
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Error 1612&lt;&#x2F;strong&gt; = “安装源不可用”。进一步检查：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 旧版 MSI 缓存文件
+PS&amp;gt; Test-Path &amp;quot;C:\Windows\Installer\12f16c6.msi&amp;quot;
+False  # 文件不存在！
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;根因 1&lt;&#x2F;strong&gt;：旧版 WSL 2.6.3.0 的 MSI 缓存文件 &lt;code&gt;C:\Windows\Installer\12f16c6.msi&lt;&#x2F;code&gt; 被删除了（可能是磁盘清理工具误删），导致 Windows Installer 无法卸载旧版本，新版本无法安装。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-san-bu-fen-xi-403-cuo-wu&quot;&gt;第三步：分析 403 错误&lt;&#x2F;h3&gt;
+&lt;p&gt;检查 Store 日志发现关键线索：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;16:55:21  Network connectivity level changed to 0x0   ← 网络断开
+16:55:15  Task canceled, reason: &amp;#x27;ResourceRevocation&amp;#x27;  ← Store 任务被撤销
+17:14:29  Network connectivity level changed to 0x3   ← 网络恢复
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;请求中的关键参数：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;market=CN
+productId=9NZKPSTSNW4P
+licensing.md.mp.microsoft.com
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;根因 2（初步假设）&lt;&#x2F;strong&gt;：&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 走的是 Microsoft Store 许可验证通道（&lt;code&gt;licensing.md.mp.microsoft.com&lt;&#x2F;code&gt;），怀疑是中国区 Store 服务不稳定导致 403。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;验证过程&lt;&#x2F;strong&gt;：从 GitHub 下载 WSL 安装包完全正常（494MB 成功），说明网络本身没问题。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;进一步排查 — 定位真正根因&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;p&gt;当时环境使用了代理，出口 IP 与账户所在市场区域不一致。Store 许可请求中包含参数 &lt;code&gt;market=CN&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;leaseUri: licensing.md.mp.microsoft.com&amp;#x2F;...&amp;amp;market=CN&amp;amp;...
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;微软 Store 许可服务器会校验请求来源 IP 与市场区域的匹配性。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;出口 IP 区域&lt;&#x2F;th&gt;&lt;th&gt;market&lt;&#x2F;th&gt;&lt;th&gt;结果&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;使用代理&lt;&#x2F;td&gt;&lt;td&gt;非 CN 区域&lt;&#x2F;td&gt;&lt;td&gt;CN&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;403 — IP 与 market 不匹配&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;直连（无代理）&lt;&#x2F;td&gt;&lt;td&gt;CN&lt;&#x2F;td&gt;&lt;td&gt;CN&lt;&#x2F;td&gt;&lt;td&gt;✅ 下载正常开始（不再 403）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;最终确认的根因 2&lt;&#x2F;strong&gt;：代理改变了出口 IP 的地理位置，与 Store 账户的市场区域（CN）不匹配，微软许可服务器返回 403 拒绝请求。关掉代理后 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 能正常开始下载（不再报 403），但后续仍然因网络问题无法完成。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;补充验证&lt;&#x2F;strong&gt;：关掉代理直连后，&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 虽然解决了 403，但下载速度极慢且多次中断：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;第一次：下载到 ~1% 时连接重置（&lt;code&gt;0x80072eff&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;后续：不支持断点续传，每次都需从头开始&lt;&#x2F;li&gt;
+&lt;li&gt;结论：在本文网络环境下，&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 不具备实际可用性&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;di-si-bu-wei-shen-me-xin-ban-zhuang-liao-que-bu-sheng-xiao&quot;&gt;第四步：为什么新版装了却不生效？&lt;&#x2F;h3&gt;
+&lt;p&gt;前面两步解释了 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 为何失败（MSI 缓存缺失、403 错误）。但还有一个问题：&lt;strong&gt;第一步中看到 AppX 2.7.3.0 已经下载了，为什么系统实际运行的还是 2.6.3.0？&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;检查 WSL 的调用链路：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 系统版 wsl.exe（薄壳转发器，负责将命令转发给 WSLService）
+PS&amp;gt; (Get-Item &amp;quot;C:\Windows\System32\wsl.exe&amp;quot;).VersionInfo.ProductVersion
+10.0.26100.8457
+
+# Store 版 wsl.exe（在 WindowsApps 中）
+PS&amp;gt; (Get-Item &amp;quot;C:\Program Files\WindowsApps\...\wsl.exe&amp;quot;).VersionInfo.ProductVersion
+2.7.3.0
+
+# 旧版 MSI 安装的 WSL（实际生效中的版本）
+PS&amp;gt; (Get-Item &amp;quot;C:\Program Files\WSL\wsl.exe&amp;quot;).VersionInfo.ProductVersion
+2.6.3.0
+
+# WSLService 服务指向哪里？
+PS&amp;gt; Get-ItemProperty &amp;quot;HKLM:\SYSTEM\CurrentControlSet\Services\WSLService&amp;quot; |
+    Select-Object ImagePath
+ImagePath : &amp;quot;C:\Program Files\WSL\wslservice.exe&amp;quot;  ← 指向旧版！
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;调用链路如下：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;wsl.exe (System32, 薄壳转发器)
+       │
+       ▼
+WSLService 服务 ──→ C:\Program Files\WSL\wslservice.exe  (2.6.3.0)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;根因 3（补充）&lt;&#x2F;strong&gt;：Store 将新版安装到了 &lt;code&gt;C:\Program Files\WindowsApps\...\&lt;&#x2F;code&gt;，但 WSLService 始终指向 MSI 安装路径 &lt;code&gt;C:\Program Files\WSL\&lt;&#x2F;code&gt;。两者是互不感知的独立路径——即使 Store 更新“安装成功“，WSLService 也不会自动切换过去，系统继续运行旧版本。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zhuan-zhe-guan-cha-wen-jian-jie-gou-zhao-dao-ling-yi-tiao-lu&quot;&gt;转折：观察文件结构，找到另一条路&lt;&#x2F;h2&gt;
+&lt;p&gt;排查到这里，三条路都走不通：&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 被 403 阻断、Store 更新被 MSI 缓存问题卡住、直连下载慢且无断点续传。标准方案全部失效。&lt;&#x2F;p&gt;
+&lt;p&gt;但我们手头有一个东西能用：从 GitHub 下载的完整安装包（msixbundle）。&lt;&#x2F;p&gt;
+&lt;p&gt;解压这个包看看里面有什么：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 先将 msixbundle 中的 MSI 提取出来
+msiexec &amp;#x2F;a &amp;quot;C:\Program Files\WindowsApps\...\wsl.msi&amp;quot; `
+  &amp;#x2F;qb TARGETDIR=&amp;quot;$env:TEMP\wsl_msi_extract&amp;quot;
+
+# 查看提取出的文件结构
+PS&amp;gt; Get-ChildItem &amp;quot;$env:TEMP\wsl_msi_extract\PFiles64\WSL&amp;quot; -Recurse | Select-Object FullName
+
+PFiles64\WSL\wsl.exe
+PFiles64\WSL\wslservice.exe
+PFiles64\WSL\system.vhd          ← 374MB，Linux 内核镜像
+PFiles64\WSL\tools\kernel        ← 17MB，内核引导文件
+PFiles64\WSL\...
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;对比系统上正在运行的 WSL 目录：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;PS&amp;gt; Get-ChildItem &amp;quot;C:\Program Files\WSL&amp;quot; | Select-Object Name
+
+wsl.exe
+wslservice.exe
+system.vhd                       ← 同名文件！
+tools\kernel                     ← 同名文件！
+...
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;关键发现&lt;&#x2F;strong&gt;：&lt;code&gt;PFiles64\WSL\&lt;&#x2F;code&gt; 的文件布局和 &lt;code&gt;C:\Program Files\WSL\&lt;&#x2F;code&gt; 完全一致——前者是 MSI 的安装映射，后者是实际的安装位置。其中 &lt;code&gt;system.vhd&lt;&#x2F;code&gt; 和 &lt;code&gt;tools\kernel&lt;&#x2F;code&gt; 就是内核层的全部文件。&lt;&#x2F;p&gt;
+&lt;p&gt;反观第四步的结论：WSLService 指向 &lt;code&gt;C:\Program Files\WSL\&lt;&#x2F;code&gt;，这里才是内核实际生效的位置。那么：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果把新版 MSI 中提取的 &lt;code&gt;system.vhd&lt;&#x2F;code&gt; 和 &lt;code&gt;tools\kernel&lt;&#x2F;code&gt; 覆盖到 &lt;code&gt;C:\Program Files\WSL\&lt;&#x2F;code&gt;，能不能只更新内核，不动管理程序？&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;WSL 的管理层（wsl.exe &#x2F; wslservice.exe）和内核层（system.vhd + kernel）是独立运作的——管理层负责与 Windows 通信，内核层负责运行 Linux。这正是架构分层带来的可能性：&lt;strong&gt;替换内核层不需要触碰管理层&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;于是决定一试。结果：一次成功，内核从 6.6.87.2 更新到 6.18.33.2，所有数据完好。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jie-jue-fang-an&quot;&gt;解决方案&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;he-xin-si-lu&quot;&gt;核心思路&lt;&#x2F;h3&gt;
+&lt;p&gt;基于上述发现，整理出以下操作步骤。核心思路：&lt;strong&gt;从 GitHub 下载完整包，从中提取内核文件，替换到 WSLService 指向的安装目录&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;&#x2F;strong&gt;：手动替换内核文件是&lt;strong&gt;非官方方法&lt;&#x2F;strong&gt;，依赖 WSL 内部文件结构（微软未在文档中说明此做法）。未来 WSL 更新可能改变文件布局，导致此方法失效。长期应修复网络环境以使用 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 正常更新。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;bu-zou-1-cong-github-xia-zai-wan-zheng-an-zhuang-bao&quot;&gt;步骤 1：从 GitHub 下载完整安装包&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 下载 WSL 2.7.10（约 494MB）
+curl.exe -L -o &amp;quot;$env:TEMP\WSL_2.7.10.msixbundle&amp;quot; `
+  &amp;quot;https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;microsoft&amp;#x2F;WSL&amp;#x2F;releases&amp;#x2F;download&amp;#x2F;2.7.10&amp;#x2F;Microsoft.WSL_2.7.10.0_x64_ARM64.msixbundle&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;bu-zou-2-an-zhuang-appx-bao&quot;&gt;步骤 2：安装 AppX 包&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 先关闭所有 WSL 进程
+wsl --shutdown
+
+# 安装（需要管理员权限）
+Add-AppxPackage -Path &amp;quot;$env:TEMP\WSL_2.7.10.msixbundle&amp;quot; -ForceApplicationShutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;bu-zou-3-cong-msi-zhong-ti-qu-nei-he-wen-jian&quot;&gt;步骤 3：从 MSI 中提取内核文件&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 解压 wsl.msi（管理安装模式，不实际安装）
+msiexec &amp;#x2F;a &amp;quot;C:\Program Files\WindowsApps\MicrosoftCorporationII.WindowsSubsystemForLinux_2.7.10.0_x64__8wekyb3d8bbwe\wsl.msi&amp;quot; `
+  &amp;#x2F;qb TARGETDIR=&amp;quot;$env:TEMP\wsl_msi_extract&amp;quot;
+
+# 提取出的关键文件：
+# - PFiles64\WSL\system.vhd          (374MB, Linux 内核镜像)
+# - PFiles64\WSL\tools\kernel        (17MB, 内核引导文件)
+# - PFiles64\WSL\tools\modules.vhd   (167MB, 内核驱动模块包)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;bu-zou-4-ti-huan-nei-he-wen-jian&quot;&gt;步骤 4：替换内核文件&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 以管理员身份执行
+$extractDir = &amp;quot;$env:TEMP\wsl_msi_extract\PFiles64\WSL&amp;quot;
+$targetDir = &amp;quot;C:\Program Files\WSL&amp;quot;
+
+Copy-Item &amp;quot;$extractDir\system.vhd&amp;quot; &amp;quot;$targetDir\system.vhd&amp;quot; -Force
+Copy-Item &amp;quot;$extractDir\tools\kernel&amp;quot; &amp;quot;$targetDir\tools\kernel&amp;quot; -Force
+Copy-Item &amp;quot;$extractDir\tools\modules.vhd&amp;quot; &amp;quot;$targetDir\tools\modules.vhd&amp;quot; -Force
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;bu-zou-5-yan-zheng&quot;&gt;步骤 5：验证&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# 重启 WSL
+wsl --shutdown
+wsl
+
+# 检查内核版本
+PS&amp;gt; wsl -e uname -r
+6.18.33.2-microsoft-standard-WSL2  ✅
+
+# 检查数据完整性
+PS&amp;gt; wsl -e cat &amp;#x2F;etc&amp;#x2F;os-release
+PRETTY_NAME=&amp;quot;Ubuntu 24.04.4 LTS&amp;quot;  ✅
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;guan-jian-zhi-shi-dian&quot;&gt;关键知识点&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;wsl-jia-gou-fen-ceng&quot;&gt;WSL 架构分层&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;┌─────────────────────────────────────────
+│  用户层 (Ubuntu 系统)                    │
+│  ext4.vhdx — 你的所有文件和数据          │
+├─────────────────────────────────────────┤
+│  内核层 (Linux 内核)                     │
+│  system.vhd + tools&amp;#x2F;kernel + modules.vhd│
+├─────────────────────────────────────────┤
+│  管理层 (Windows 服务)                   │
+│  wslservice.exe &amp;#x2F; wsl.exe               │
+└─────────────────────────────────────────┘
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;数据与内核完全分离&lt;&#x2F;strong&gt;：更新内核不影响任何用户数据。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;nei-he-geng-xin-xu-ti-huan-san-ge-wen-jian&quot;&gt;内核更新需替换三个文件&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;文件&lt;&#x2F;th&gt;&lt;th&gt;位置&lt;&#x2F;th&gt;&lt;th&gt;作用&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;system.vhd&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;C:\Program Files\WSL\&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;包含 Linux 内核镜像&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;tools&#x2F;kernel&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;C:\Program Files\WSL\tools\&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;内核引导文件&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;tools&#x2F;modules.vhd&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;C:\Program Files\WSL\tools\&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;内核驱动模块包（tun.ko 等）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;重要&lt;&#x2F;strong&gt;：三个文件必须版本一致，否则会出现 vermagic 不匹配导致模块加载失败。&lt;&#x2F;p&gt;
+&lt;p&gt;不需要改注册表、不需要改服务配置、不需要卸载重装。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;wsl-update-shi-bai-de-ke-neng-yuan-yin&quot;&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 失败的可能原因&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;错误码&lt;&#x2F;th&gt;&lt;th&gt;含义&lt;&#x2F;th&gt;&lt;th&gt;常见原因&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;0x80190193&lt;&#x2F;code&gt; (403)&lt;&#x2F;td&gt;&lt;td&gt;服务器拒绝&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;代理节点 IP 与 Store market 不匹配&lt;&#x2F;strong&gt;（代理改变出口 IP 后与账户区域不一致）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;0x80072eff&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;连接被重置&lt;&#x2F;td&gt;&lt;td&gt;直连 Store CDN 时网络丢包&#x2F;不稳定，下载中断&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;0x80073D02&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;应用正在使用&lt;&#x2F;td&gt;&lt;td&gt;WSL 进程未完全关闭&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Error 1714&#x2F;1612&lt;&#x2F;td&gt;&lt;td&gt;安装源不可用&lt;&#x2F;td&gt;&lt;td&gt;MSI 缓存文件被删除&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;liang-chong-geng-xin-fang-fa-dui-bi&quot;&gt;两种更新方法对比&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;th&gt;&lt;th&gt;手动替换内核文件&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;官方支持&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 微软官方更新方式&lt;&#x2F;td&gt;&lt;td&gt;❌ 非官方内部行为，依赖文件结构，未来可能不被维护&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;更新范围&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;整个 WSL 包（管理程序 + 内核）&lt;&#x2F;td&gt;&lt;td&gt;只替换内核文件（system.vhd + kernel），管理程序不动&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;下载量&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;完整包（管理程序 + 内核，体积更大）&lt;&#x2F;td&gt;&lt;td&gt;同样下载完整 msixbundle，但只提取内核文件使用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;下载速度&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 极慢，20 秒不到 1%（Store CDN 问题）&lt;&#x2F;td&gt;&lt;td&gt;✅ 快，GitHub CDN ~3 分钟完成&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;失败模式 1&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 403 错误 — 请求直接被拒（代理 IP 与 market 不匹配）&lt;&#x2F;td&gt;&lt;td&gt;✅ 无此问题&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;失败模式 2&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 连接重置 (0x80072eff) — 下载中途断开（网络不稳定）&lt;&#x2F;td&gt;&lt;td&gt;✅ 无此问题&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;断点续传&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 不支持，每次从头开始&lt;&#x2F;td&gt;&lt;td&gt;✅ curl 支持断点续传&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;成功完成时间&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;慢且不稳定，容易中断&lt;&#x2F;td&gt;&lt;td&gt;~5 分钟（下载 3 分钟 + 替换 2 分钟）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;本环境实测结论&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 是本环境下的&lt;strong&gt;首选推荐&lt;&#x2F;strong&gt;方式，但实测速度慢（20 秒不到 1%），容易遇到 403（代理&#x2F;market 不匹配）、0x80072eff（连接重置）等错误导致下载中断，且不支持断点续传&lt;&#x2F;li&gt;
+&lt;li&gt;手动替换内核文件是&lt;strong&gt;非官方的临时应急方案&lt;&#x2F;strong&gt;：依赖 WSL 内部文件结构，微软未在文档中说明或支持此做法，未来版本可能失效。仅在本环境网络条件下 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 确实无法完成时作为备选，&lt;strong&gt;5 分钟内完成&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;长期建议：修复网络环境以使用 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 正常更新&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;zhu-yi-shi-xiang&quot;&gt;注意事项&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;C:\Windows\Installer\&lt;&#x2F;code&gt; 下的文件不要手动删除&lt;&#x2F;strong&gt; — 它们是系统安装&#x2F;卸载&#x2F;修复所必需的&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;磁盘清理工具可能误删 MSI 缓存&lt;&#x2F;strong&gt; — 使用清理工具时需谨慎&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Store 版和 MSI 版不要混用&lt;&#x2F;strong&gt; — 会导致服务指向混乱&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;国内使用 &lt;code&gt;wsl --update&lt;&#x2F;code&gt; 的常见坑&lt;&#x2F;strong&gt;：
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;代理 IP 与 Store market 不匹配&lt;&#x2F;strong&gt; → 403。关掉所有代理&#x2F;加速器即可&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;直连下载慢且易中断&lt;&#x2F;strong&gt; → &lt;code&gt;0x80072eff&lt;&#x2F;code&gt; 连接重置，且不支持断点续传&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;手动替换内核文件是非官方方法&lt;&#x2F;strong&gt;：微软未在文档中说明或支持此做法，依赖的内部文件结构可能在未来版本中变化&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;nvd.nist.gov&#x2F;vuln&#x2F;detail&#x2F;CVE-2026-31431&quot;&gt;CVE-2026-31431 (Copy Fail)&lt;&#x2F;a&gt; — CVSS 7.8 HIGH，已被 CISA 列入已知利用漏洞目录&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;microsoft&#x2F;WSL&#x2F;releases&quot;&gt;WSL GitHub Releases&lt;&#x2F;a&gt; — 完整安装包下载&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;copy.fail&quot;&gt;copy.fail&lt;&#x2F;a&gt; — 漏洞详情网站&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>记一次 WSL2 输入法卡顿排查与修复</title>
+          <pubDate>Fri, 15 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</link>
+          <guid>https://cncsmonster.github.io/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/">&lt;h2 id=&quot;yu-dao-tong-yang-de-wen-ti&quot;&gt;遇到同样的问题？&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL2 终端里打中文“不跟手“——按键到字符出现有粘滞延迟。&lt;&#x2F;p&gt;
+&lt;p&gt;先看下面三行确认是不是同一个问题，然后直接跳到&lt;strong&gt;快速修复&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness   # 默认 60，内存充裕时 &amp;gt; 10 说明阈值太宽松
+free -h | grep Swap           # 空闲内存充裕却占了几百 MB → 疑为历史遗留&amp;#x2F;抖动
+df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F; | tail -1       # 系统盘 &amp;gt; 80% 时 IME 文件 I&amp;#x2F;O 容易受影响
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;yi-ju-hua-gen-yin&quot;&gt;一句话根因&lt;&#x2F;h2&gt;
+&lt;p&gt;三条线同时卡在键盘到回显的路径上：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;键盘 → [Windows 输入管道] ← C 盘满，IME 变慢
+     → 终端               ← 同上
+     → [ConPTY → WSL]    ← autoMemoryReclaim 频繁中断 VM
+     → shell → 回显       ← swap 抖动，pty 回显延迟
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;C 盘满&lt;&#x2F;strong&gt; → Windows 侧的输入法框架和终端渲染都变钝&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swappiness=60（默认值）&lt;&#x2F;strong&gt; → 明明有 18GB 空闲内存，系统却往 swap 里塞进程&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swap 抖动&lt;&#x2F;strong&gt; → 被换出的页面断续被读回，I&#x2F;O 恰好踩在 pty 回显的时间窗口里&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;单独一层不卡，三层叠加刚好在你击键到看见字符这几十毫秒里。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-xiu-fu&quot;&gt;快速修复&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;jiang-swappiness-chi-jiu-hua-li-ke-jian-xiao&quot;&gt;① 降 swappiness + 持久化（立刻见效）&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo sysctl vm.swappiness=10                                          # 立即生效
+echo &amp;quot;vm.swappiness=10&amp;quot; | sudo tee -a &amp;#x2F;etc&amp;#x2F;sysctl.conf                # systemd 启动时加载
+sudo tee -a &amp;#x2F;etc&amp;#x2F;wsl.conf &amp;lt;&amp;lt; &amp;#x27;EOF&amp;#x27;                                    # WSL 原生加载
+
+[sysctl]
+vm.swappiness=10
+EOF
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;warning-qing-swap-zhu-yi-wsl2-de-keng&quot;&gt;⚠️ ② 清 swap（注意 WSL2 的坑）&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL2 的 swap 不靠 &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt;，&lt;code&gt;swapon -a&lt;&#x2F;code&gt; 对它无效。&lt;&#x2F;p&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. 先找出谁在占 swap
+for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;${swp:-0}&amp;quot; -gt 10000 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid) (PID=$(basename $(dirname $pid)))&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;输出会列出进程名和 PID，例如 &lt;code&gt;1039088 KB - node-MainThread (PID=1200819)&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 2. 杀掉占大头的进程（替换为上面输出的 PID）
+kill -9 &amp;lt;PID1&amp;gt; &amp;lt;PID2&amp;gt;
+
+# 3. 清空并重建 swap
+sudo swapoff -a                   # 关闭 swap（会擦除签名）
+sudo mkswap &amp;#x2F;dev&amp;#x2F;sdc &amp;amp;&amp;amp; sudo swapon &amp;#x2F;dev&amp;#x2F;sdc   # 重建签名并重新启用
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;qing-li-c-pan-windows-ce&quot;&gt;③ 清理 C 盘（Windows 侧）&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Windows PowerShell 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;rd &amp;#x2F;s &amp;#x2F;q %TEMP%                  # 清临时文件
+powercfg &amp;#x2F;hibernate off          # 关休眠释放 ~16GB
+cleanmgr &amp;#x2F;sagerun:1              # 磁盘清理
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;automemoryreclaim-gai-wei-disabled&quot;&gt;④ autoMemoryReclaim 改为 disabled&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Windows 中编辑 &lt;code&gt;C:\Users\&amp;lt;用户名&amp;gt;\.wslconfig&lt;&#x2F;code&gt;
+（或在 WSL 中编辑 &lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;Users&#x2F;&amp;lt;用户名&amp;gt;&#x2F;.wslconfig&lt;&#x2F;code&gt;）：&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt; 意味着 WSL 释放的内存不会还给 Windows，但不影响 WSL 内部复用——20GB 是上限，不是预留。日常 WSL 只用 2-3GB，即使跑完大推理任务后不归还，剩余物理内存仍足够 Windows 正常使用。代价为零，收益是消掉 gradual 带来的 HYP 中断。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[experimental]
+autoMemoryReclaim=disabled
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;zhong-qi-huo-shou-dong-qing-li-can-liu&quot;&gt;⑤ 重启（或手动清理残留）&lt;&#x2F;h3&gt;
+&lt;p&gt;前三刀修完后键盘仍微卡。发现系统里挂着 26 个陈旧 zsh 会话和 8 个 gitstatusd 守护进程（15 天未重启累积），直接重启了电脑，WSL 随系统重启后所有残留清空。&lt;&#x2F;p&gt;
+&lt;p&gt;也可以不重启，手动处理：&lt;&#x2F;p&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pkill gitstatusd          # 杀陈旧的 git 监控进程
+# 找出 PPID=1 的孤儿 zsh 并杀掉：
+ps -eo pid,ppid,cmd | awk &amp;#x27;$2==1 &amp;amp;&amp;amp; &amp;#x2F;zsh&amp;#x2F; {print $1}&amp;#x27; | xargs kill -9
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;xiu-fu-xiao-guo&quot;&gt;修复效果&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;指标&lt;&#x2F;th&gt;&lt;th&gt;修复前&lt;&#x2F;th&gt;&lt;th&gt;修复后&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;60&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;10&lt;&#x2F;strong&gt;（持久化）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap 使用&lt;&#x2F;td&gt;&lt;td&gt;2.0 GB&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;8.6 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;C 盘&lt;&#x2F;td&gt;&lt;td&gt;81%&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;64%&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap I&#x2F;O&lt;&#x2F;td&gt;&lt;td&gt;持续 &amp;gt; 0&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;输入法&lt;&#x2F;td&gt;&lt;td&gt;明显卡顿&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;跟手&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wan-zheng-pai-cha-guo-cheng&quot;&gt;完整排查过程&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;以下是当时逐层排查的真实记录。如果你有兴趣了解“为什么“或者想学习类似的排查方法，可以往下看。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;zheng-zhuang&quot;&gt;症状&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL2 终端里打中文感觉卡——按下按键到字符出现在屏幕上，有一种粘滞的延迟感。不是完全卡死，而是“不跟手“。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;cai-keng-wo-yi-kai-shi-bu-zhi-dao-wan-zheng-lian-lu&quot;&gt;踩坑：我一开始不知道完整链路&lt;&#x2F;h3&gt;
+&lt;p&gt;输入法卡顿，得从击键到回显的整条路径去想。这条链路是事后根据微软文档查证后整理的（Keyboard Input Overview + TSF + ConPTY 架构）：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;键盘硬件 → [Windows 输入管道] → 终端 → [ConPTY → WSL] → shell → 回显
+               ↑ IME 在这里面
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Windows 输入管道&lt;&#x2F;strong&gt;：键盘驱动→扫描码→键盘布局→TSF&#x2F;IME 处理中文→生成 WM_CHAR 字符消息。IME 不是单独的一步——它挂在输入管道里。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;终端 → ConPTY → WSL&lt;&#x2F;strong&gt;：Windows Terminal 通过 ConPTY（Windows 伪终端）连接到 WSL2 init，init 再转发给 Linux PTY，抵达 zsh。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;但排查时并不知道这些。当时是按“两端排除“的方式一步步摸的——先看 Windows 侧有没有问题，再看 WSL 侧有没有问题。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-yi-bu-windows-ren-wu-guan-li-qi-pai-chu-liao-nei-cun&quot;&gt;第一步：Windows 任务管理器 → 排除了内存&lt;&#x2F;h3&gt;
+&lt;p&gt;第一反应是内存满了。按 &lt;code&gt;Ctrl + Shift + Esc&lt;&#x2F;code&gt; 打开任务管理器，切到「性能」→「内存」——占用正常，不是它的问题。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-er-bu-wsl-ji-ben-zhi-biao-fa-xian-swap-yi-chang&quot;&gt;第二步：WSL 基本指标 → 发现 swap 异常&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;top -bn1 | head          # 负载 0.19，CPU idle 97%
+free -h                  # 空闲内存 18.6GB &amp;#x2F; 总计 20GB
+cat &amp;#x2F;proc&amp;#x2F;meminfo        # Swap 占用了 2.6GB ← 扎眼
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness  # = 60（默认值）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;指标&lt;&#x2F;th&gt;&lt;th&gt;值&lt;&#x2F;th&gt;&lt;th&gt;含义&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;60&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;空闲内存低于 8GB 就开始换出，阈值太宽松&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap 已用&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;2.6 GB&lt;&#x2F;strong&gt; &#x2F; 8 GB&lt;&#x2F;td&gt;&lt;td&gt;历史遗留——之前长会话跑满内存时换出，换出后内核不会主动换回&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;14 天内 swap 总量&lt;&#x2F;td&gt;&lt;td&gt;换入换出各 &lt;strong&gt;5000 万次&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;swap 不是静躺——过去曾大量读写&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Swap 占用（2.6GB）是历史痕迹，swap 抖动才是问题。&lt;&#x2F;strong&gt; 占用本身不卡，卡的是这些页面被断续访问时产生的换入 I&#x2F;O。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-san-bu-shui-zai-zhan-swap&quot;&gt;第三步：谁在占 swap&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;$swp&amp;quot; -gt 0 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid)&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;两个 &lt;code&gt;qwen&lt;&#x2F;code&gt;（通义千问 CLI）孤儿进程占了 1.6GB——各自申请 44GB 虚拟地址空间但 RSS 只有 1-2MB，原终端早关了，进程被 systemd（PID 1）收养。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;di-si-bu-que-ren-swap-zai-dou-dong&quot;&gt;第四步：确认 swap 在抖动&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;vmstat 1                    # si 列持续 &amp;gt; 0
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;memory   # some avg10=3.48
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;io       # some avg10=3.97
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;di-wu-bu-c-pan-kuai-man-liao&quot;&gt;第五步：C 盘快满了&lt;&#x2F;h3&gt;
+&lt;p&gt;在 WSL 中执行：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F;   # 196G 用了 159G，剩 38G（81%）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;系统盘 81% 满时 Windows IME 的词典读写变迟钝。PowerShell 扫描定位到 &lt;code&gt;AppData\Local\Temp&lt;&#x2F;code&gt;（8GB）和 &lt;code&gt;hiberfil.sys&lt;&#x2F;code&gt;（~16GB）。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gen-yin-dui-hao-ru-zuo&quot;&gt;根因对号入座&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;键盘 → [Windows 输入管道] ← C 盘 81% 满，IME 文件 I&amp;#x2F;O 变慢
+     → 终端               ← 同上
+     → [ConPTY → WSL]    ← autoMemoryReclaim=gradual，VM 被频繁暂停
+     → shell → 回显       ← swap 抖动，PTY 回显被 I&amp;#x2F;O 拖慢
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;单层延迟可能无感，三层叠加刚好在击键到回显这几十毫秒里。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;warning-cai-keng-ji-lu-wsl2-swap-hui-fu&quot;&gt;⚠️ 踩坑记录：WSL2 swap 恢复&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;swapoff -a&lt;&#x2F;code&gt; 之后 &lt;code&gt;swapon -a&lt;&#x2F;code&gt; 无事发生——因为 WSL2 的 swap 不靠 &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt;（fstab 是空的），而是由 init 直接挂载 &lt;code&gt;&#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;。恢复需要 &lt;code&gt;mkswap &#x2F;dev&#x2F;sdc &amp;amp;&amp;amp; swapon &#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xue-dao-de&quot;&gt;学到的&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;从两端排查 WSL2 卡顿&lt;&#x2F;strong&gt;：先排除能直接看到的（任务管理器），再深入平时不注意的（swap、PSI、孤儿进程）。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;空闲内存大 ≠ 不会卡&lt;&#x2F;strong&gt;：swappiness=60 对桌面&#x2F;WSL 场景太激进。降到 10，内存用满之前不碰 swap。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swap 不是“占用“的问题，是“抖动“的问题&lt;&#x2F;strong&gt;：占用 2GB 不卡，每秒小块换入换出才卡。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;孤儿进程的 swap 也是负担&lt;&#x2F;strong&gt;：进程不活跃但各 44GB VSZ 留在 swap 里，会产生持续缺页中断。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;xiang-guan-shu-yu&quot;&gt;相关术语&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果下面这些词不熟悉，一两句读懂就行，不影响照着上面修。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;swappiness&lt;&#x2F;strong&gt;：Linux 内核参数（0-100），控制多积极地把内存换到 swap。默认 60，降到 10 后只在内存真的不够时才换出。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;swap（交换空间）&lt;&#x2F;strong&gt;：磁盘上划出来的一块区域，当物理内存不够时，把暂时不用的内存页暂存到磁盘上。WSL2 的 swap 大小在 &lt;code&gt;.wslconfig&lt;&#x2F;code&gt; 的 &lt;code&gt;swap=8G&lt;&#x2F;code&gt; 中配置。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;PSI（Pressure Stall Information）&lt;&#x2F;strong&gt;：Linux 内核的压力指标。&lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;memory&lt;&#x2F;code&gt; 和 &lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;io&lt;&#x2F;code&gt; 告诉你系统有多少时间被内存或磁盘 I&#x2F;O 卡住。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;HYP 中断&lt;&#x2F;strong&gt;：Hyper-V 回调中断。WSL2 作为 Hyper-V 虚拟机，宿主机（Windows）通过这种中断跟 VM 通信。数量过亿说明交互非常频繁。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;ConPTY&lt;&#x2F;strong&gt;：Windows 的伪终端（Pseudo Console），Windows Terminal 通过它连接到 WSL2 里的 Linux PTY。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;autoMemoryReclaim&lt;&#x2F;strong&gt;：WSL2 实验性功能，控制 WSL 释放的空闲内存是否归还给 Windows。&lt;code&gt;gradual&lt;&#x2F;code&gt; 慢慢还，&lt;code&gt;disabled&lt;&#x2F;code&gt; 不还。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;inputdev&#x2F;about-keyboard-input&quot;&gt;Microsoft Keyboard Input Overview&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;tsf&#x2F;text-services-framework&quot;&gt;Windows Text Services Framework (TSF)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;wsl-config&quot;&gt;WSL2 &lt;code&gt;.wslconfig&lt;&#x2F;code&gt; 配置参考&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;admin-guide&#x2F;sysctl&#x2F;vm.html&quot;&gt;Linux swappiness 说明&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;accounting&#x2F;psi.html&quot;&gt;Linux PSI 文档&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

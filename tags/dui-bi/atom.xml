@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 对比</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/dui-bi/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-02T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/dui-bi/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>LLM Provider 数据训练政策横向对比</title>
+        <published>2026-07-02T00:00:00+08:00</published>
+        <updated>2026-07-02T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/llm-data-policy-comparison/"/>
+        <id>https://cncsmonster.github.io/posts/llm-data-policy-comparison/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/llm-data-policy-comparison/">&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;已调研的 7 家厂商中，&lt;strong&gt;小米最透明&lt;&#x2F;strong&gt;（隐私政策逐字承诺不训练），&lt;strong&gt;智谱团队版和企业合同次之&lt;&#x2F;strong&gt;，&lt;strong&gt;StepFun 和 DeepSeek 最模糊&lt;&#x2F;strong&gt;（条款沉默）。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;quan-mao-yi-lan&quot;&gt;全貌一览&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;API 服务&lt;&#x2F;th&gt;&lt;th&gt;数据训练政策&lt;&#x2F;th&gt;&lt;th&gt;Opt-out&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;可信度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiMo API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;隐私政策逐字承诺 “will not use for training”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;明确承诺不用于训练&lt;&#x2F;strong&gt;（专用条款）&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;个人版 Coding Plan&lt;&#x2F;td&gt;&lt;td&gt;🟡 通用条款允许脱敏后训练&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;按量付费 API&lt;&#x2F;td&gt;&lt;td&gt;🟡 通用条款允许脱敏后训练&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;C 端订阅 &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;🔶 &lt;strong&gt;中文版默认训练&lt;&#x2F;strong&gt;，英文版可邮件 opt-out&lt;&#x2F;td&gt;&lt;td&gt;🌐 英文可&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API（国际）&lt;&#x2F;td&gt;&lt;td&gt;🟡 &lt;strong&gt;ToS 授权改进服务&lt;&#x2F;strong&gt;，未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API（国内）&lt;&#x2F;td&gt;&lt;td&gt;🟡 未明确声明用于训练，但未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;条款沉默&lt;&#x2F;strong&gt;，没说会也没说不会&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Step Plan &#x2F; API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;条款沉默&lt;&#x2F;strong&gt;，保留 “improve the Services”&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Gemini API（Cloud 付费）&lt;&#x2F;td&gt;&lt;td&gt;🟢 &lt;strong&gt;不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Gemini API（免费&#x2F;消费者）&lt;&#x2F;td&gt;&lt;td&gt;🔶 &lt;strong&gt;默认训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;an-ti-dui-fen-zu&quot;&gt;按梯队分组&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;green-circle-ke-xin-lai-ming-que-cheng-nuo-bu-xun-lian&quot;&gt;🟢 可信赖（明确承诺不训练）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;承诺形式&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;小米 MiMo&lt;&#x2F;td&gt;&lt;td&gt;隐私政策逐字承诺&lt;&#x2F;td&gt;&lt;td&gt;国内版：“未经您的事先同意不会用于训练”；国际版：“will not use for training or any other purposes”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;智谱 团队版&lt;&#x2F;td&gt;&lt;td&gt;套餐购买协议专用条款&lt;&#x2F;td&gt;&lt;td&gt;“数据默认不用于模型训练”，具有合同法律效力&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Cloud 管道&lt;&#x2F;td&gt;&lt;td&gt;企业条款&lt;&#x2F;td&gt;&lt;td&gt;开了 Cloud Billing 的 API &#x2F; Vertex AI 不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;yellow-circle-mo-hu-di-dai-wei-ming-que-pai-chu&quot;&gt;🟡 模糊地带（未明确排除）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;风险点&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;智谱 个人版&#x2F;按量付费&lt;&#x2F;td&gt;&lt;td&gt;通用协议授权“永久不可撤销“数据使用权 + 脱敏后可用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiniMax&lt;&#x2F;td&gt;&lt;td&gt;国际版 ToS 保留 “improve the Services”；国内版条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 英文版&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练，但可邮件 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;red-circle-gao-feng-xian-mo-ren-xun-lian-huo-chen-mo&quot;&gt;🔴 高风险（默认训练或沉默）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;风险点&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 中文版&lt;&#x2F;td&gt;&lt;td&gt;C 端和 API 都默认用于训练，无 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek API&lt;&#x2F;td&gt;&lt;td&gt;条款完全沉默，未承诺不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;StepFun API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;英文 ToS 保留 “improve the Services”，国内条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google 免费&#x2F;消费者管道&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;guan-jian-chai-yi-wei-du&quot;&gt;关键差异维度&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;opt-out-neng-li&quot;&gt;Opt-out 能力&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ 可 opt-out&lt;&#x2F;th&gt;&lt;th&gt;❌ 无 opt-out&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kimi 英文版（邮件）&lt;&#x2F;td&gt;&lt;td&gt;智谱（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek Web&#x2F;App（开关）&lt;&#x2F;td&gt;&lt;td&gt;Kimi 中文版（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;MiniMax（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;StepFun（所有产品）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;guo-ji-ban-vs-guo-nei-ban-chai-yi&quot;&gt;国际版 vs 国内版差异&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;差异&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;国际版 z.ai 对 API 客户声称不存储（DPA），国内版授权永久使用权&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Kimi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;英文版可邮件 opt-out，中文版无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MiniMax&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;国际版 ToS 明确授权训练，国内版条款沉默&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;两版措辞类似，国际版覆盖更广（“content” 含多模态）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;fang-fa-lun-shuo-ming&quot;&gt;方法论说明&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;所有结论基于各厂商的&lt;strong&gt;公开协议原文&lt;&#x2F;strong&gt;，不是营销文案或客服口径&lt;&#x2F;li&gt;
+&lt;li&gt;效力层级：专用合同 &amp;gt; 服务专用条款 &amp;gt; 通用用户协议 &amp;gt; 隐私政策&lt;&#x2F;li&gt;
+&lt;li&gt;“条款沉默” = 协议中找不到明确排除训练的表述&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;ge-han-shang-xiang-xi-diao-yan&quot;&gt;各厂商详细调研&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;完整调研&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;小米 MiMo&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;xiaomi-mimo-token-plan-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;智谱 GLM&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;zhipu-glm-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;google-model-service-data-privacy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;DeepSeek&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;deepseek-api-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;StepFun&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;stepfun-step-plan-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;MiniMax&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;minimax-api-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Kimi&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;kimi-data-training-policy&#x2F;&quot;&gt;查看&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+</content>
+        
+    </entry>
+</feed>

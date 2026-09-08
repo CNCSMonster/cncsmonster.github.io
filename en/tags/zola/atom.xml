@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Zola</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/zola/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2024-01-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/zola/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Adding Mermaid Diagrams to Your Zola Blog</title>
+        <published>2024-01-01T00:00:00+08:00</published>
+        <updated>2024-01-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/"/>
+        <id>https://cncsmonster.github.io/en/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/mermaid-liu-cheng-tu-shi-yong-zhi-nan/">&lt;p&gt;How to add Mermaid diagram rendering to a Zola static blog.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-approach&quot;&gt;The Approach&lt;&#x2F;h2&gt;
+&lt;p&gt;Mermaid renders diagrams client-side in the browser — no backend required. The architecture:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Markdown → Zola build → Static HTML → Browser loads Mermaid.js → Renders diagrams
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;The core idea:&lt;&#x2F;strong&gt; load Mermaid.js on the page and have it automatically render &lt;code&gt;language-mermaid&lt;&#x2F;code&gt; code blocks.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;setup-steps&quot;&gt;Setup Steps&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;step-1-create-the-mermaid-script&quot;&gt;Step 1: Create the Mermaid Script&lt;&#x2F;h3&gt;
+&lt;p&gt;Create &lt;code&gt;static&#x2F;js&#x2F;mermaid.js&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;javascript&quot; class=&quot;language-javascript &quot;&gt;&lt;code class=&quot;language-javascript&quot; data-lang=&quot;javascript&quot;&gt;document.addEventListener(&amp;#x27;DOMContentLoaded&amp;#x27;, function() {
+    const mermaidBlocks = document.querySelectorAll(&amp;#x27;pre code.language-mermaid&amp;#x27;);
+    if (mermaidBlocks.length === 0) return;
+    
+    const script = document.createElement(&amp;#x27;script&amp;#x27;);
+    script.src = &amp;#x27;https:&amp;#x2F;&amp;#x2F;cdn.jsdelivr.net&amp;#x2F;npm&amp;#x2F;mermaid@10&amp;#x2F;dist&amp;#x2F;mermaid.min.js&amp;#x27;;
+    
+    script.onload = function() {
+        mermaid.initialize({ startOnLoad: false, theme: &amp;#x27;default&amp;#x27; });
+        
+        mermaidBlocks.forEach((block, index) =&amp;gt; {
+            const pre = block.parentElement;
+            const code = block.textContent.trim();
+            const container = document.createElement(&amp;#x27;div&amp;#x27;);
+            container.className = &amp;#x27;mermaid-container&amp;#x27;;
+            container.id = `mermaid-${index}`;
+            
+            pre.parentElement.insertBefore(container, pre);
+            pre.remove();
+            
+            mermaid.render(`mermaid-${index}`, code).then(({ svg }) =&amp;gt; {
+                container.innerHTML = svg;
+            });
+        });
+    };
+    document.head.appendChild(script);
+});
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;step-2-load-the-script-in-the-template&quot;&gt;Step 2: Load the Script in the Template&lt;&#x2F;h3&gt;
+&lt;p&gt;Add a script tag in &lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt; before &lt;code&gt;&amp;lt;&#x2F;body&amp;gt;&lt;&#x2F;code&gt; to load &lt;code&gt;mermaid.js&lt;&#x2F;code&gt;, using Zola’s &lt;code&gt;get_url&lt;&#x2F;code&gt; function to generate the correct path.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;See &lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt; in this project for the actual implementation.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-3-add-styles&quot;&gt;Step 3: Add Styles&lt;&#x2F;h3&gt;
+&lt;p&gt;Add Mermaid container styles to &lt;code&gt;static&#x2F;sass&#x2F;main.scss&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;scss&quot; class=&quot;language-scss &quot;&gt;&lt;code class=&quot;language-scss&quot; data-lang=&quot;scss&quot;&gt;.mermaid-container {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    text-align: center;
+    overflow-x: auto;
+    
+    svg {
+        max-width: 100%;
+        height: auto;
+    }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;usage&quot;&gt;Usage&lt;&#x2F;h2&gt;
+&lt;p&gt;Use fenced &lt;code&gt;mermaid&lt;&#x2F;code&gt; code blocks in Markdown:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;mermaid&quot; class=&quot;language-mermaid &quot;&gt;&lt;code class=&quot;language-mermaid&quot; data-lang=&quot;mermaid&quot;&gt;graph TD
+    A[Start] --&amp;gt; B{Condition}
+    B --&amp;gt;|Yes| C[Run A]
+    B --&amp;gt;|No| D[Run B]
+    C --&amp;gt; E[End]
+    D --&amp;gt; E
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;key-file-reference&quot;&gt;Key File Reference&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;File&lt;&#x2F;th&gt;&lt;th&gt;Path&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Mermaid script&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;static&#x2F;js&#x2F;mermaid.js&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Template&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;templates&#x2F;base.html&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Stylesheet&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;static&#x2F;sass&#x2F;main.scss&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Example post&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;content&#x2F;posts&#x2F;mermaid 流程图使用指南.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Resource&lt;&#x2F;th&gt;&lt;th&gt;Link&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Mermaid docs&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;mermaid.js.org&#x2F;&quot;&gt;mermaid.js.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Live editor&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;mermaid.live&#x2F;&quot;&gt;mermaid.live&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Zola static files&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;content&#x2F;static-files&#x2F;&quot;&gt;getzola.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Zola templates&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;templates&#x2F;&quot;&gt;getzola.org&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;notes&quot;&gt;Notes&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Mermaid loads from CDN — requires internet access&lt;&#x2F;li&gt;
+&lt;li&gt;For offline use, download &lt;code&gt;mermaid.min.js&lt;&#x2F;code&gt; to &lt;code&gt;static&#x2F;js&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Supports flowcharts, sequence diagrams, class diagrams, state diagrams, pie charts, Gantt charts, and more&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

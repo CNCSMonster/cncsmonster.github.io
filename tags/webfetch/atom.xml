@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - WebFetch</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/webfetch/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-29T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/webfetch/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Qwen Code WebFetch 的 SPA 盲区：html-to-text 空内容问题</title>
+        <published>2026-07-29T00:00:00+08:00</published>
+        <updated>2026-07-29T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-webfetch-spa-blind-spot/">&lt;p&gt;使用 Qwen Code 的 &lt;code&gt;web_fetch&lt;&#x2F;code&gt; 工具抓取 SPA（单页应用）页面时，经常会返回空内容。这不是网络问题，而是一个设计 gap：&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 对空 body 页面返回空字符串，但 Qwen Code 没有任何 fallback 机制。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;SPA 页面的 body 通常只有一个挂载点：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;html&quot; class=&quot;language-html &quot;&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&amp;lt;body&amp;gt;
+  &amp;lt;div id=&amp;quot;root&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;div&amp;gt;
+  &amp;lt;script src=&amp;quot;app.js&amp;quot;&amp;gt;&amp;lt;&amp;#x2F;script&amp;gt;
+&amp;lt;&amp;#x2F;body&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 解析这段 HTML 后返回空字符串。但 curl 能拿到 &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; 和 &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt;——这些信息在 &lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; 里，不是 body 的一部分。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fu-xian&quot;&gt;复现&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;URL: https:&amp;#x2F;&amp;#x2F;www.stepfun.com
+web_fetch 返回: （空）
+curl 返回: &amp;lt;title&amp;gt;阶跃星辰&amp;lt;&amp;#x2F;title&amp;gt; + &amp;lt;meta description=&amp;quot;...&amp;quot;&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;jie-jue-fang-an&quot;&gt;解决方案&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;tui-jian-yong-tavily-extract-ti-dai&quot;&gt;推荐：用 &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; 替代&lt;&#x2F;h3&gt;
+&lt;p&gt;如果你已配置 Tavily MCP（参考 &lt;a href=&quot;&#x2F;posts&#x2F;qwen-code-tavily-mcp-setup&#x2F;&quot;&gt;Qwen Code 接入 Tavily 搜索&lt;&#x2F;a&gt;），直接使用 &lt;code&gt;tavily-extract&lt;&#x2F;code&gt; 工具替代 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;。Tavily 在服务端渲染 JavaScript，能正确处理 SPA 页面。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;bei-xuan-jin-yong-web-fetch-pei-zhi-qi-ta-mcp-fetch-gong-ju&quot;&gt;备选：禁用 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;，配置其他 MCP fetch 工具&lt;&#x2F;h3&gt;
+&lt;p&gt;在 &lt;code&gt;settings.json&lt;&#x2F;code&gt; 中禁用内置 &lt;code&gt;web_fetch&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;tools&amp;quot;: {
+    &amp;quot;disabled&amp;quot;: [&amp;quot;web_fetch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP fetch 工具有多种类型：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;无头浏览器类&lt;&#x2F;strong&gt;：用 Playwright&#x2F;Puppeteer 渲染页面，能处理 SPA&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;API 类&lt;&#x2F;strong&gt;：如 Tavily Extract，服务端渲染后返回结构化内容&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;命令行类&lt;&#x2F;strong&gt;：封装 curl&#x2F;wget 等工具，简单直接但不渲染 JS&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;yuan-ma-shi-shi&quot;&gt;源码事实&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; packages&amp;#x2F;core&amp;#x2F;src&amp;#x2F;tools&amp;#x2F;web-fetch.ts (v0.20.1-preview.7215)
+const textContent = convert(html, {
+  wordwrap: false,
+  selectors: [
+    { selector: &amp;#x27;a&amp;#x27;, options: { ignoreHref: true } },
+    { selector: &amp;#x27;img&amp;#x27;, format: &amp;#x27;skip&amp;#x27; },
+  ],
+}).substring(0, MAX_CONTENT_LENGTH);
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;没有 fallback 逻辑。&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 返回空 → 直接送空字符串给 LLM → LLM 拿到空内容 → 返回空或胡编。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yu-claude-code-de-dui-bi&quot;&gt;与 Claude Code 的对比&lt;&#x2F;h2&gt;
+&lt;p&gt;Claude Code 的 WebFetch 同样没有 SPA fallback。两者在 SPA 场景下都有盲区。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;gei-gong-xian-zhe-de-xiu-fu-si-lu&quot;&gt;给贡献者的修复思路&lt;&#x2F;h2&gt;
+&lt;p&gt;如果你有兴趣修复这个问题，以下是几个方向（按成本从低到高）：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;&amp;lt;head&amp;gt;&lt;&#x2F;code&gt; fallback&lt;&#x2F;strong&gt;：&lt;code&gt;html-to-text&lt;&#x2F;code&gt; 返回空时，提取 &lt;code&gt;&amp;lt;title&amp;gt;&lt;&#x2F;code&gt; + &lt;code&gt;&amp;lt;meta description&amp;gt;&lt;&#x2F;code&gt; 作为兜底。改动最小，只需在 &lt;code&gt;convert()&lt;&#x2F;code&gt; 返回空时加一个 fallback 分支。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;SPA 检测&lt;&#x2F;strong&gt;：识别 &lt;code&gt;&amp;lt;div id=&quot;root&quot;&amp;gt;&lt;&#x2F;code&gt; 等特征，提示用户该页面需要 JS 渲染，建议使用 MCP 工具。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;无头浏览器集成&lt;&#x2F;strong&gt;：对检测到的 SPA 页面，用无头浏览器渲染后再提取内容。效果最好但引入重依赖。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Claude Code WebFetch 修复：跳过 preflight 解决站点抓取失败</title>
+        <published>2026-05-07T00:00:00+08:00</published>
+        <updated>2026-05-07T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/claude-code-fix-webfetch-preflight/"/>
+        <id>https://cncsmonster.github.io/posts/claude-code-fix-webfetch-preflight/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/claude-code-fix-webfetch-preflight/">&lt;h2 id=&quot;bei-jing&quot;&gt;背景&lt;&#x2F;h2&gt;
+&lt;p&gt;使用三方 LLM provider（智谱等 Anthropic 兼容 API）时，Claude Code 的原生网络工具存在问题：WebSearch 不可用，WebFetch 看似被国内站点拒绝。经过 Claude Code 源码分析和实测验证，找到了根因和修复方案。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yuan-ma-shi-shi-claude-code-2-x&quot;&gt;源码事实（Claude Code 2.x）&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;源码位置：&lt;code&gt;claude-code-haha&#x2F;src&#x2F;tools&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;webfetch-jia-gou&quot;&gt;WebFetch 架构&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;调用链：
+  ① preflight 域名安全检查 → POST https:&amp;#x2F;&amp;#x2F;api.anthropic.com&amp;#x2F;api&amp;#x2F;web&amp;#x2F;domain_info
+     硬编码，不受 ANTHROPIC_BASE_URL 控制
+  ② 本地 HTTP 抓取 → axios.get(url)，从用户机器直接发出
+  ③ 内容摘要 → ANTHROPIC_BASE_URL (Haiku)，走用户的 provider
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;关键文件：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;WebFetchTool.ts&lt;&#x2F;code&gt; — 工具定义和权限检查&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;utils.ts&lt;&#x2F;code&gt; — &lt;code&gt;getWithPermittedRedirects()&lt;&#x2F;code&gt; 通过 &lt;code&gt;axios.get()&lt;&#x2F;code&gt; 本地抓取（262行）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;utils.ts&lt;&#x2F;code&gt; — &lt;code&gt;checkDomainBlocklist()&lt;&#x2F;code&gt; preflight 检查（176行）&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;websearch-jia-gou&quot;&gt;WebSearch 架构&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;调用链：
+  构造 server_tool_use schema (type: web_search_20250305)
+  → 注入到 Messages API 请求中
+  → Anthropic 服务端执行搜索
+  → 客户端消费流式返回的 web_search_tool_result
+  全程服务端执行，客户端不发起搜索 HTTP 请求
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;关键文件：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WebSearchTool&#x2F;WebSearchTool.ts&lt;&#x2F;code&gt; — &lt;code&gt;isEnabled()&lt;&#x2F;code&gt; 只允许 firstParty&#x2F;vertex&#x2F;foundry（168行）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebSearchTool&#x2F;prompt.ts&lt;&#x2F;code&gt; — 明确说明 “Searches are performed automatically within a single API call”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anthropic-base-url-de-zuo-yong-fan-wei&quot;&gt;ANTHROPIC_BASE_URL 的作用范围&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;受影响&lt;&#x2F;th&gt;&lt;th&gt;不受影响&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Chat Completions API&lt;&#x2F;td&gt;&lt;td&gt;WebFetch preflight（硬编码 api.anthropic.com）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;WebFetch 内容摘要（Haiku）&lt;&#x2F;td&gt;&lt;td&gt;WebFetch 本地抓取（axios.get）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;WebSearch 不可用（三方 provider 不实现）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;xiu-fu-fang-an&quot;&gt;修复方案&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-tiao-pei-zhi-jie-jue-webfetch&quot;&gt;一条配置解决 WebFetch&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&amp;#x2F;&amp;#x2F; .claude&amp;#x2F;settings.local.json
+{
+  &amp;quot;skipWebFetchPreflight&amp;quot;: true
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;原理&lt;&#x2F;strong&gt;：跳过 &lt;code&gt;checkDomainBlocklist()&lt;&#x2F;code&gt; 的 API 调用。本地 &lt;code&gt;axios.get()&lt;&#x2F;code&gt; 直接抓取，不经过 Anthropic 安全检查。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;shi-ce-yan-zheng&quot;&gt;实测验证&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;测试目标&lt;&#x2F;th&gt;&lt;th&gt;skipWebFetchPreflight=false&lt;&#x2F;th&gt;&lt;th&gt;skipWebFetchPreflight=true&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;deepseek.com&lt;&#x2F;td&gt;&lt;td&gt;❌ Unable to verify…&lt;&#x2F;td&gt;&lt;td&gt;✅ DeepSeek | 深度求索&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;docs.bigmodel.cn&lt;&#x2F;td&gt;&lt;td&gt;❌ Unable to verify…&lt;&#x2F;td&gt;&lt;td&gt;✅ (验证通过)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;websearch-wu-jie&quot;&gt;WebSearch 无解&lt;&#x2F;h3&gt;
+&lt;p&gt;三方 provider 不实现 Anthropic 的 server_tool 协议。&lt;code&gt;isEnabled()&lt;&#x2F;code&gt; 直接返回 false，工具不注册。&lt;strong&gt;不是配置问题，是 provider 能力限制&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;mcp-sou-suo-zuo-wei-bu-chong&quot;&gt;MCP 搜索作为补充&lt;&#x2F;h3&gt;
+&lt;p&gt;WebFetch 修复后已是主要抓取工具。以下 MCP 工具提供搜索能力（搜索引擎 vs 单页抓取是不同能力）：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;定位&lt;&#x2F;th&gt;&lt;th&gt;免费额度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Tavily MCP&lt;&#x2F;td&gt;&lt;td&gt;技术文档搜索最优&lt;&#x2F;td&gt;&lt;td&gt;1000次&#x2F;月&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Brave Search MCP&lt;&#x2F;td&gt;&lt;td&gt;通用搜索 + 独立索引&lt;&#x2F;td&gt;&lt;td&gt;2000次&#x2F;月&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;zui-zhong-pei-zhi&quot;&gt;最终配置&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;skipWebFetchPreflight&amp;quot;: true,
+  &amp;quot;permissions&amp;quot;: {
+    &amp;quot;allow&amp;quot;: [
+      &amp;quot;WebFetch&amp;quot;,
+      &amp;quot;Bash(curl:*)&amp;quot;,
+      &amp;quot;Bash(claude mcp *)&amp;quot;,
+      &amp;quot;Bash(python3 *)&amp;quot;
+    ],
+    &amp;quot;deny&amp;quot;: [&amp;quot;WebSearch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;wang-luo-gong-ju-neng-li-ju-zhen-xiu-fu-hou&quot;&gt;网络工具能力矩阵（修复后）&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;th&gt;原理&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;WebFetch&lt;&#x2F;td&gt;&lt;td&gt;✅ 已修复&lt;&#x2F;td&gt;&lt;td&gt;本地 axios.get()，跳过 Anthropic preflight&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;WebSearch&lt;&#x2F;td&gt;&lt;td&gt;❌ deny&lt;&#x2F;td&gt;&lt;td&gt;三方 provider 不实现 server_tool&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Brave MCP&lt;&#x2F;td&gt;&lt;td&gt;已装&lt;&#x2F;td&gt;&lt;td&gt;本地进程，需 API Key&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Tavily MCP&lt;&#x2F;td&gt;&lt;td&gt;已装&lt;&#x2F;td&gt;&lt;td&gt;本地进程，需 API Key&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;curl&lt;&#x2F;td&gt;&lt;td&gt;✅ 兜底&lt;&#x2F;td&gt;&lt;td&gt;无依赖&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;you-xian-ji-ce-lue&quot;&gt;优先级策略&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;查特定网页内容     → WebFetch（已修复，无额度限制）
+查技术文档&amp;#x2F;API     → Tavily MCP（搜索质量最优）
+通用搜索          → Brave Search MCP（独立索引）
+已知文档站快速获取  → llms.txt + curl（零 token 消耗）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;guan-jian-jiao-xun&quot;&gt;关键教训&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;报错信息具有误导性&lt;&#x2F;strong&gt;：&lt;code&gt;&quot;unable to verify domain is safe&quot;&lt;&#x2F;code&gt; 看起来像目标站拒绝，实则是 Anthropic preflight 在不通知的情况下拦截&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;源码验证优于推测&lt;&#x2F;strong&gt;：最初推测 WebFetch 从 Anthropic 服务器抓取，源码证明是本地 axios&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;一行配置解决大问题&lt;&#x2F;strong&gt;：整个探索过程中最有效的措施是 &lt;code&gt;skipWebFetchPreflight: true&lt;&#x2F;code&gt;，之前折腾 MCP 是因为不知道这个配置存在&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+</feed>

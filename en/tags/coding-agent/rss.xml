@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Coding Agent</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/coding-agent/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 13 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Big Model Radar: An AI-Maintained Dashboard for CLI Tool Ecosystems</title>
+          <pubDate>Mon, 13 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/</link>
+          <guid>https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/">&lt;p&gt;The AI Coding Agent space moves fast. Claude Code, Codex, Gemini CLI, Qwen Code, and others generate a constant stream of Issues, PRs, and discussions daily. No one can keep up with all of it.&lt;&#x2F;p&gt;
+&lt;p&gt;I recently discovered &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&quot;&gt;Big Model Radar&lt;&#x2F;a&gt;, a project that uses GitHub Actions to automatically scrape development activity from these tools and generates bilingual (Chinese&#x2F;English) daily reports using LLMs. It has been producing reports steadily every day since July 7, 2026.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;&#x2F;strong&gt;: The Web UI is a snapshot of the old version (content up to 2026-05). For the latest reports, check Issues or Telegram.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-it-tracks&quot;&gt;What It Tracks&lt;&#x2F;h2&gt;
+&lt;p&gt;7 major CLI tools: Claude Code &#x2F; OpenAI Codex &#x2F; Gemini CLI &#x2F; GitHub Copilot CLI &#x2F; Kimi Code CLI &#x2F; OpenCode &#x2F; Qwen Code.&lt;&#x2F;p&gt;
+&lt;p&gt;It generates 5 types of daily reports:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;digest&lt;&#x2F;strong&gt;: Cross-tool community activity comparison&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;hn&lt;&#x2F;strong&gt;: Hacker News AI hot topics&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;trending&lt;&#x2F;strong&gt;: GitHub AI trending repositories&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;web&lt;&#x2F;strong&gt;: Anthropic&#x2F;OpenAI official site updates&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;openclaw&lt;&#x2F;strong&gt;: OpenClaw ecosystem report&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;more-than-just-summaries&quot;&gt;More Than Just Summaries&lt;&#x2F;h2&gt;
+&lt;p&gt;Each tool’s daily report contains 6 sections:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Today’s Overview&lt;&#x2F;strong&gt;: A paragraph summarizing the day’s key signals&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Releases&lt;&#x2F;strong&gt;: New version listings&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Top 10 Hot Issues&lt;&#x2F;strong&gt;: Each with priority + comment count + &lt;strong&gt;significance analysis&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Top 7-10 Important PRs&lt;&#x2F;strong&gt;: Each with feature description + impact assessment&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Feature Request Trends&lt;&#x2F;strong&gt;: Directional insights extracted from Issues&#x2F;PRs&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Developer Focus Areas&lt;&#x2F;strong&gt;: Pain point clustering + high-frequency demand aggregation&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;This isn’t simple Issue forwarding. It’s a hybrid of &lt;strong&gt;AI-generated summaries + trend analysis&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;three-stage-pipeline-production-bridge-consumption&quot;&gt;Three-Stage Pipeline: Production → Bridge → Consumption&lt;&#x2F;h2&gt;
+&lt;p&gt;The project’s architecture is interesting:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Production&lt;&#x2F;strong&gt;: The maintainer pays for LLM tokens. GitHub Actions automatically generates daily reports at 08:00 CST, writing to GitHub Issues + Markdown files&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bridge&lt;&#x2F;strong&gt;: The project provides MCP Server source code. Users deploy their own instance to Cloudflare Workers, exposing query APIs (&lt;code&gt;list_reports&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_latest&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_report&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;search&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Consumption&lt;&#x2F;strong&gt;: Users connect their own Claude Desktop to the MCP Server for queries, consuming their own LLM tokens&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;The essence: &lt;strong&gt;producers pay to generate content, consumers pay to query it&lt;&#x2F;strong&gt;. The MCP Server is a data bridge that lets AI agents consume Issue data directly, instead of humans browsing pages.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;access-methods&quot;&gt;Access Methods&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Web UI&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&quot;&gt;gsscsd.github.io&#x2F;big_model_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Issues&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&#x2F;issues&quot;&gt;loxehate.github.io&#x2F;issues&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;RSS&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&#x2F;feed.xml&quot;&gt;feed.xml&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Telegram&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;t.me&#x2F;agents_radar&quot;&gt;t.me&#x2F;agents_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;MCP Server&lt;&#x2F;strong&gt;: Self-deployed to Cloudflare Workers&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;an-interesting-reality&quot;&gt;An Interesting Reality&lt;&#x2F;h2&gt;
+&lt;p&gt;As of 2026-07-12, there are &lt;strong&gt;zero human comments&lt;&#x2F;strong&gt; across 41 issues.&lt;&#x2F;p&gt;
+&lt;p&gt;Issues in this project serve as persistent storage for AI-generated content, not a discussion forum. All channels are unidirectional — AI generates → humans&#x2F;AI consume. There is no “human feedback to AI” loop.&lt;&#x2F;p&gt;
+&lt;p&gt;An accurate description: &lt;strong&gt;AI generates, AI consumes, humans observe&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;value&quot;&gt;Value&lt;&#x2F;h2&gt;
+&lt;p&gt;Reduces information acquisition costs — from “manually checking 7 repositories daily” to “glancing at a daily report”; enables cross-tool comparison; provides trend awareness; AI analysis offers directional insights.&lt;&#x2F;p&gt;
+</description>
+      </item>
+    </channel>
+</rss>

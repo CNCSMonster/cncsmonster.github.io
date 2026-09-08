@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Coding Agent</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/coding-agent/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-13T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/coding-agent/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Big Model Radar：一个 AI 自动维护的 CLI 工具生态仪表盘</title>
+        <published>2026-07-13T00:00:00+08:00</published>
+        <updated>2026-07-13T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/"/>
+        <id>https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/">&lt;p&gt;AI Coding Agent 领域变化极快——Claude Code、Codex、Gemini CLI、Qwen Code 等工具每天都在产生大量 Issues、PR 和讨论。一个人根本看不过来。&lt;&#x2F;p&gt;
+&lt;p&gt;最近发现了一个叫 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&quot;&gt;Big Model Radar&lt;&#x2F;a&gt; 的项目，它用 GitHub Actions 每天自动抓取这些工具的开发动态，用 LLM 生成中英双语日报。从 2026 年 7 月 7 日至今，每天稳定产出，从未中断。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;&#x2F;strong&gt;：Web UI 是旧版快照（内容截至 2026-05），看最新内容建议看 Issues 或 Telegram。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ta-zhui-zong-shen-me&quot;&gt;它追踪什么&lt;&#x2F;h2&gt;
+&lt;p&gt;7 个主流 CLI 工具：Claude Code &#x2F; OpenAI Codex &#x2F; Gemini CLI &#x2F; GitHub Copilot CLI &#x2F; Kimi Code CLI &#x2F; OpenCode &#x2F; Qwen Code。&lt;&#x2F;p&gt;
+&lt;p&gt;每天生成 5 类报告：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;digest&lt;&#x2F;strong&gt;：CLI 工具社区动态横向对比&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;hn&lt;&#x2F;strong&gt;：Hacker News AI 热帖&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;trending&lt;&#x2F;strong&gt;：GitHub AI 趋势仓库&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;web&lt;&#x2F;strong&gt;：Anthropic&#x2F;OpenAI 官网更新&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;openclaw&lt;&#x2F;strong&gt;：OpenClaw 生态日报&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;ri-bao-bu-shi-chun-zhai-yao&quot;&gt;日报不是纯摘要&lt;&#x2F;h2&gt;
+&lt;p&gt;每个工具的日报包含 6 个板块：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;今日速览&lt;&#x2F;strong&gt;：一段话概括当天重点&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;版本发布&lt;&#x2F;strong&gt;：新版本列表&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;社区热点 Issues (Top 10)&lt;&#x2F;strong&gt;：每条含优先级 + 评论数 + &lt;strong&gt;重要性分析&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;重要 PR 进展 (Top 7-10)&lt;&#x2F;strong&gt;：每条含功能说明 + 影响评估&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;功能需求趋势&lt;&#x2F;strong&gt;：从 Issues&#x2F;PR 中提炼的方向性判断&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;开发者关注点&lt;&#x2F;strong&gt;：痛点聚类 + 高频需求归纳&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;不是简单的 Issue 搬运，而是 &lt;strong&gt;AI 生成的摘要 + 趋势分析&lt;&#x2F;strong&gt; 混合体。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;san-duan-lian-lu-sheng-chan-qiao-jie-xiao-fei&quot;&gt;三段链路：生产 → 桥接 → 消费&lt;&#x2F;h2&gt;
+&lt;p&gt;这个项目的架构很有意思：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;生产&lt;&#x2F;strong&gt;：维护者付费 LLM token，GitHub Actions 每天 08:00 CST 自动生成日报，写入 GitHub Issues + Markdown 文件&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;桥接&lt;&#x2F;strong&gt;：项目提供 MCP Server 源码，用户自己部署到 Cloudflare Workers，暴露查询 API（&lt;code&gt;list_reports&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_latest&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_report&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;search&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;消费&lt;&#x2F;strong&gt;：用户自己的 Claude Desktop 连接 MCP Server 查询，消耗用户自己的 LLM token&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;本质是：&lt;strong&gt;生产者付费生成内容，消费者自费查询&lt;&#x2F;strong&gt;。MCP Server 是数据桥，让 AI agent 能直接消费 Issue 数据，而不是人去翻页面。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fang-wen-fang-shi&quot;&gt;访问方式&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Web UI&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&quot;&gt;gsscsd.github.io&#x2F;big_model_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Issues&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&#x2F;issues&quot;&gt;loxehate.github.io&#x2F;issues&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;RSS&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&#x2F;feed.xml&quot;&gt;feed.xml&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Telegram&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;t.me&#x2F;agents_radar&quot;&gt;t.me&#x2F;agents_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;MCP Server&lt;&#x2F;strong&gt;：用户自部署到 Cloudflare Workers&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;yi-ge-you-qu-de-xian-shi&quot;&gt;一个有趣的现实&lt;&#x2F;h2&gt;
+&lt;p&gt;截至 2026-07-12，41 个 issue 中&lt;strong&gt;零条人类评论&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;Issue 在这个项目里是 AI 生成内容的持久化存储，不是讨论区。所有通道都是单向的——AI 生成 → 人&#x2F;AI 消费。没有“人类反馈回 AI“的闭环。&lt;&#x2F;p&gt;
+&lt;p&gt;准确描述：&lt;strong&gt;AI 生成、AI 消费、人类旁观&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jia-zhi&quot;&gt;价值&lt;&#x2F;h2&gt;
+&lt;p&gt;降低信息获取成本——从“每天手动刷 7 个仓库“变成“看一眼日报“；跨工具横向对比；趋势感知；AI 分析提供方向性判断。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

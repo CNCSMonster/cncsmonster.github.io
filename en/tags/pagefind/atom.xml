@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Pagefind</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/pagefind/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/pagefind/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Static Site Generators for Personal Knowledge Bases: Live Reload, Search Internals, and Selection Guide</title>
+        <published>2026-08-30T00:00:00+08:00</published>
+        <updated>2026-08-30T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/static-doc-tools-selection-and-pitfalls-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/static-doc-tools-selection-and-pitfalls-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/static-doc-tools-selection-and-pitfalls-en/">&lt;p&gt;When building a local preview and static publishing workflow for personal knowledge bases containing hundreds of Markdown notes, developers often face two primary friction points:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Development Friction&lt;&#x2F;strong&gt;: Slow live reload where adding or renaming files requires manual service restarts or file touches;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Search Determinism Risk&lt;&#x2F;strong&gt;: Flawed tokenization or wildcard injection in client-side search engines that silently miss existing notes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;Drawing from practical migration experience across 640+ notes, this article breaks down the architectural differences between legacy and modern static doc frameworks regarding &lt;strong&gt;build lifecycles, HMR engines, and client-side search internals&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-client-side-search-engine-internals-core-foundation&quot;&gt;1. Client-Side Search Engine Internals (Core Foundation)&lt;&#x2F;h2&gt;
+&lt;p&gt;Search determinism is dictated by the architectural design of the search engine:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Search Engine&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Working Mechanism&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Key Advantages&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Trade-offs &amp;amp; Boundaries&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Lunr.js&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Legacy default, e.g. MkDocs)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure JS client-side execution, full single-file index download&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Broad legacy ecosystem, lightweight&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Stemming easily conflicts with instant search wildcard hacks (Typeahead); lacks paragraph-level precision.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;MiniSearch&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(VitePress default)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure TypeScript, native prefix &amp;amp; Levenshtein fuzzy matching&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;7KB tiny bundle, native prefix search avoiding wildcard bugs, sub-millisecond query response for small-to-medium vaults&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Full index JSON downloaded upfront; memory and initial bandwidth grow on huge repositories (&amp;gt;3000 docs).&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Pagefind&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Starlight &#x2F; Modern standard)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Rust-powered, post-build static indexer with chunked loading&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Strict symmetric indexing, paragraph-level targeting, minimal bandwidth on large sites&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Relies on static build artifacts on disk; does not automatically reindex on in-memory dev servers.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-live-reload-hmr-vs-legacy-batch-processing&quot;&gt;2. Live Reload (HMR) vs Legacy Batch Processing&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Aspect&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Legacy Architecture (e.g. MkDocs)&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Modern Architecture (e.g. VitePress &#x2F; Starlight)&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Build Model&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Python synchronous scripts + Watchdog file watcher&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Modern bundlers (Vite ESM &#x2F; Turbopack) fine-grained HMR&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;New File Detection&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ &lt;strong&gt;Batch Processing Limitation&lt;&#x2F;strong&gt;: Incremental reload only tracks modifications of existing pages; creating new files requires touching existing files to trigger full rebuilds.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;Sub-millisecond Full Pipeline Awareness&lt;&#x2F;strong&gt;: Adding, editing, or renaming any &lt;code&gt;.md&lt;&#x2F;code&gt; file updates the page and sidebar tree automatically in milliseconds.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Dev vs Prod Parity&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;⚠️ In-memory dev server exhibits lifecycle differences compared to static build artifacts.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;High Parity&lt;&#x2F;strong&gt;: Local dev and static builds share identical AST parsing and routing models.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-modern-static-knowledge-base-tools-comparison&quot;&gt;3. Modern Static Knowledge Base Tools Comparison&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Tool&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Core Positioning &amp;amp; Tech Base&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Frontend Component &amp;amp; Syntax Support&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Best Use Case&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;VitePress&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Adopted here)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Minimalist architecture based on Vite + Vue 3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Native support for &lt;strong&gt;Vue 3 SFC components in Markdown&lt;&#x2F;strong&gt; (no JSX&#x2F;MDX)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Fast HMR, built-in MiniSearch with zero plugin overhead; ideal for personal knowledge bases seeking simplicity and minimal maintenance.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Astro Starlight&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Modern industrial benchmark via Vite + Astro + Pagefind&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Native support for &lt;strong&gt;Standard MDX&lt;&#x2F;strong&gt; (with cross-framework React&#x2F;Vue&#x2F;Svelte via Astro Integrations)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Built-in Pagefind engine; ideal for large multilingual technical portals, team docs, and rich interactive components.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Quartz 4.0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Tailored for Obsidian &#x2F; networked notes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Obsidian-flavored Markdown extensions&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Wikilinks &lt;code&gt;[[link]]&lt;&#x2F;code&gt;, hover preview cards, interactive graph view; ideal for digital gardens relying on bidirectional links.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-engineering-practice-personal-takeaways&quot;&gt;4. Engineering Practice &amp;amp; Personal Takeaways&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;[Personal Opinion] Content &amp;amp; Directory Over Marketing Hero Pages&lt;&#x2F;strong&gt;: While commercial products benefit from promotional landing pages, personal knowledge bases are better served by immediate access to directory navigation and content; ensuring clean tree-view navigation remains the primary goal.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Explicit Rewrites for Unified Routing&lt;&#x2F;strong&gt;: For vaults organizing folder summaries in &lt;code&gt;readme.md&lt;&#x2F;code&gt;, modern routing rewrites (such as VitePress &lt;code&gt;rewrites&lt;&#x2F;code&gt;) map them directly to directory index routes, eliminating the need to maintain redundant &lt;code&gt;index.md&lt;&#x2F;code&gt; files.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Troubleshooting MkDocs (Material Theme) Search: Why Do New Files and English Words Get Missed?</title>
+        <published>2026-08-08T00:00:00+08:00</published>
+        <updated>2026-08-08T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/mkdocs-material-search-issue-troubleshooting-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/mkdocs-material-search-issue-troubleshooting-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/mkdocs-material-search-issue-troubleshooting-en/">&lt;p&gt;When using &lt;strong&gt;MkDocs + Material theme&lt;&#x2F;strong&gt; for personal knowledge bases or documentation sites, you may encounter two counter-intuitive search failure behaviors:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Newly created notes are completely invisible in the search bar&lt;&#x2F;strong&gt;, even though the webpage renders fine (HTTP 200);&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;A note clearly contains &lt;code&gt;Handy&lt;&#x2F;code&gt; in its title and content, but searching for the full word &lt;code&gt;handy&lt;&#x2F;code&gt; yields zero results, while typing only &lt;code&gt;hand&lt;&#x2F;code&gt; finds it immediately&lt;&#x2F;strong&gt;.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;These issues combined often lead authors to believe their notes were lost or misremembered. Based on source code and lifecycle analysis, this post breaks down the root causes of both defects and offers immediate mitigation strategies and modern tooling alternatives.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;core-qualification-the-dual-layer-defect-overlay&quot;&gt;Core Qualification: The Dual-Layer Defect Overlay&lt;&#x2F;h2&gt;
+&lt;p&gt;These behaviors do not stem from a single component, but from two independent defects across &lt;strong&gt;MkDocs Core&lt;&#x2F;strong&gt; and the &lt;strong&gt;Material Theme&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Issue&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Responsible Party&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Defect Layer&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Underlying Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;New files not indexed&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;MkDocs Core&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Backend build pipeline &amp;amp; Dev Server lifecycle&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Incremental reload only tracks modifications of existing files; new file creation does not trigger memory index recalculation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;handy&lt;&#x2F;code&gt; cannot be found&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Material Theme&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Frontend query preprocessing &amp;amp; Typeahead implementation&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Injected wildcard &lt;code&gt;*&lt;&#x2F;code&gt; to simulate instant search, breaking Lunr.js stemming pipeline&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;issue-1-new-files-not-found-mkdocs-core-lifecycle-defect&quot;&gt;Issue 1: New Files Not Found (MkDocs Core Lifecycle Defect)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;symptom-empirical-verification&quot;&gt;Symptom &amp;amp; Empirical Verification&lt;&#x2F;h3&gt;
+&lt;p&gt;While &lt;code&gt;mkdocs serve&lt;&#x2F;code&gt; is running, adding a new Markdown note allows browsing the page, but the top search bar returns nothing.&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Test A&lt;&#x2F;strong&gt;: Modifying an &lt;strong&gt;existing&lt;&#x2F;strong&gt; file $\to$ search index updates immediately;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Test B&lt;&#x2F;strong&gt;: Creating a &lt;strong&gt;new&lt;&#x2F;strong&gt; file $\to$ search index stays stale until an existing file modification triggers a full rebuild.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h3&gt;
+&lt;p&gt;MkDocs is a pure Static Site Generator (SSG). Its local dev server follows a one-way batch processing model. To keep simplicity, it does not maintain a fine-grained incremental state machine in memory. Adding a file only triggers single-page rendering without re-running search index compilation.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;workaround&quot;&gt;Workaround&lt;&#x2F;h3&gt;
+&lt;p&gt;During local development, &lt;code&gt;touch&lt;&#x2F;code&gt; any existing file to trigger a full rebuild, or restart the dev server.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;issue-2-searching-handy-fails-but-searching-hand-succeeds-material-theme-query-defect&quot;&gt;Issue 2: Searching &lt;code&gt;handy&lt;&#x2F;code&gt; Fails, But Searching &lt;code&gt;hand&lt;&#x2F;code&gt; Succeeds (Material Theme Query Defect)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;symptom&quot;&gt;Symptom&lt;&#x2F;h3&gt;
+&lt;p&gt;A note explicitly contains &lt;code&gt;Handy&lt;&#x2F;code&gt;. Searching for &lt;code&gt;handy&lt;&#x2F;code&gt; returns no matches, but typing &lt;code&gt;hand&lt;&#x2F;code&gt; matches immediately.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;root-cause-pipeline-mismatch-between-indexing-and-querying&quot;&gt;Root Cause: Pipeline Mismatch Between Indexing and Querying&lt;&#x2F;h3&gt;
+&lt;p&gt;This is a classic defect caused by an &lt;strong&gt;asymmetric processing pipeline&lt;&#x2F;strong&gt; between indexing and searching:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Indexing Pipeline (Exported by MkDocs Core)&lt;&#x2F;strong&gt;:
+English words pass through the Porter Stemmer. For &lt;code&gt;Handy&lt;&#x2F;code&gt;, following the rule “consonant + y becomes i”, the root stored in the index is &lt;code&gt;handi&lt;&#x2F;code&gt;.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Query Pipeline (Controlled by Material Theme)&lt;&#x2F;strong&gt;:
+To implement Typeahead (instant search as you type), Material theme’s frontend JS forcibly appends a trailing wildcard &lt;code&gt;term*&lt;&#x2F;code&gt; to every query term. However, Lunr.js explicitly specifies: &lt;strong&gt;any term containing &lt;code&gt;*&lt;&#x2F;code&gt; bypasses the stemmer pipeline entirely&lt;&#x2F;strong&gt;.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;The Mismatch Conflict&lt;&#x2F;strong&gt;:
+&lt;ul&gt;
+&lt;li&gt;Query &lt;code&gt;handy&lt;&#x2F;code&gt; $\to$ Converted to &lt;code&gt;handy*&lt;&#x2F;code&gt; (bypasses stemmer) $\to$ Searches index for terms starting with &lt;code&gt;handy&lt;&#x2F;code&gt; $\to$ Index only has &lt;code&gt;handi&lt;&#x2F;code&gt; $\to$ &lt;strong&gt;Match Failed ❌&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Query &lt;code&gt;hand&lt;&#x2F;code&gt; $\to$ Converted to &lt;code&gt;hand*&lt;&#x2F;code&gt; (bypasses stemmer) $\to$ Searches index for terms starting with &lt;code&gt;hand&lt;&#x2F;code&gt; $\to$ Successfully prefix-matches &lt;code&gt;handi&lt;&#x2F;code&gt; $\to$ &lt;strong&gt;Match Succeeded ✅&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;All English words ending with a consonant plus &lt;code&gt;y&lt;&#x2F;code&gt; (such as &lt;code&gt;study&lt;&#x2F;code&gt;, &lt;code&gt;happy&lt;&#x2F;code&gt;, &lt;code&gt;handy&lt;&#x2F;code&gt;) suffer from this bug under Material’s default search.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;trade-offs-and-architecture-reflection&quot;&gt;Trade-offs and Architecture Reflection&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-can-switching-to-another-mkdocs-theme-solve-this&quot;&gt;1. Can Switching to Another MkDocs Theme Solve This?&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;What it solves&lt;&#x2F;strong&gt;: Basic built-in themes (&lt;code&gt;mkdocs&lt;&#x2F;code&gt;, &lt;code&gt;readthedocs&lt;&#x2F;code&gt;) do not inject wildcard hacks, so stemming works properly.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;The cost&lt;&#x2F;strong&gt;: Loses Material’s polished UI, non-blocking Web Worker indexing, and keyboard shortcuts. Furthermore, the “new files not indexed” issue is built into MkDocs core and remains unresolved.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-can-we-integrate-modern-search-via-plugins-e-g-mkdocs-pagefind&quot;&gt;2. Can We Integrate Modern Search via Plugins (e.g. &lt;code&gt;mkdocs-pagefind&lt;&#x2F;code&gt;)?&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;For Production Builds (&lt;code&gt;mkdocs build&lt;&#x2F;code&gt;)&lt;&#x2F;strong&gt;: Highly effective. Pagefind provides symmetric multilingual tokenization and paragraph-level indexing.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;For Local Development (&lt;code&gt;mkdocs serve&lt;&#x2F;code&gt;)&lt;&#x2F;strong&gt;: Broken experience. Pagefind is a post-build indexer that relies on static HTML on disk, conflicting with &lt;code&gt;serve&lt;&#x2F;code&gt;’s memory-only rendering model.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;best-practices-and-recommendations&quot;&gt;Best Practices and Recommendations&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-immediate-mitigation-for-mkdocs-users&quot;&gt;1. Immediate Mitigation for MkDocs Users&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Disable English Stemming&lt;&#x2F;strong&gt;: Disable the English stemmer pipeline in &lt;code&gt;mkdocs.yml&lt;&#x2F;code&gt; search plugin configuration. Trading off morphological expansion is better than missing exact word queries;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Be Mindful of Incremental Boundaries&lt;&#x2F;strong&gt;: Restart &lt;code&gt;serve&lt;&#x2F;code&gt; or touch an existing file whenever adding new files.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-modern-architectural-alternatives&quot;&gt;2. Modern Architectural Alternatives&lt;&#x2F;h3&gt;
+&lt;p&gt;While MkDocs and Material are maintained actively, their foundation remains tied to Python synchronous batch processing and the legacy Lunr.js engine. For new knowledge bases or doc sites, modern alternatives offer superior guarantees:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Adopt Modern Static Search Engines (like Pagefind)&lt;&#x2F;strong&gt;: Written in Rust with symmetric multilingual indexing. Modern frameworks (such as &lt;strong&gt;Astro Starlight&lt;&#x2F;strong&gt; out-of-the-box, or &lt;strong&gt;VitePress&lt;&#x2F;strong&gt; via plugins) adopt this natively;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Modern Bundlers with Fine-Grained HMR&lt;&#x2F;strong&gt;: Vite&#x2F;Turbopack-based setups instantly reflect file creations and removals without dev server state inconsistencies.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

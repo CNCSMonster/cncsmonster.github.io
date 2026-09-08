@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - 编程助手</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/bian-cheng-zhu-shou/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-06-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/bian-cheng-zhu-shou/atom.xml</id>
+    <entry xml:lang="en">
+        <title>How Qwen Code Learns Your Coding Habits: AutoSkill Mechanism Deep Dive</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/qwen-code-autoskill-deep-dive-en/">&lt;p&gt;After using Qwen Code for a while, you might notice unfamiliar skills appearing in &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — &lt;code&gt;skill-review&lt;&#x2F;code&gt;, &lt;code&gt;skill-testing&lt;&#x2F;code&gt; — each tagged with &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; in their frontmatter. You didn’t create them. Nobody did manually.&lt;&#x2F;p&gt;
+&lt;p&gt;This is Qwen Code’s &lt;strong&gt;AutoSkill mechanism&lt;&#x2F;strong&gt;: an automatic distillation system for procedural knowledge. This article reverse-engineers the mechanism from source code and design documents, covering its architecture, security model, and academic origins.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-is-autoskill&quot;&gt;What is AutoSkill&lt;&#x2F;h2&gt;
+&lt;p&gt;In one sentence: &lt;strong&gt;after a session ends, Qwen Code automatically evaluates whether your workflow is worth reusing, and if so, saves it as a project-level skill.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;It differs from Auto Memory in focus:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Auto Memory&lt;&#x2F;th&gt;&lt;th&gt;AutoSkill&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Knowledge type&lt;&#x2F;td&gt;&lt;td&gt;Declarative (who you are, project context)&lt;&#x2F;td&gt;&lt;td&gt;Procedural (how you do things)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;Every session end&lt;&#x2F;td&gt;&lt;td&gt;Sessions with ≥ 20 tool calls&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write target&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;memory&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Content&lt;&#x2F;td&gt;&lt;td&gt;User preferences, project context&lt;&#x2F;td&gt;&lt;td&gt;Reusable workflows, best practices&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Memory remembers &lt;em&gt;who you are&lt;&#x2F;em&gt;. AutoSkill remembers &lt;em&gt;how you work&lt;&#x2F;em&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;trigger-conditions&quot;&gt;Trigger Conditions&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Session ends
+  ├─ toolCallCount ≥ 20 ?        &amp;#x2F;&amp;#x2F; Too few calls → skip
+  ├─ skillsModifiedInSession ?   &amp;#x2F;&amp;#x2F; User edited skills this round → skip
+  └─ Both pass → scheduleSkillReview()
+               └─ Fork standalone agent (8-turn limit, 2-min timeout)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The threshold ensures only sessions with substantial tool usage trigger review — avoiding low-quality skills from simple Q&amp;amp;A sessions. The review runs in an independent agent (not a continuation of your conversation), capped at 8 turns and 2 minutes.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;permission-sandbox-the-core-security-design&quot;&gt;Permission Sandbox: The Core Security Design&lt;&#x2F;h2&gt;
+&lt;p&gt;The most elegant part of AutoSkill is its security model. The review agent is locked in a strict sandbox:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Tool&lt;&#x2F;th&gt;&lt;th&gt;Permission&lt;&#x2F;th&gt;&lt;th&gt;Security Mechanism&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;read_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Prevents reading &lt;code&gt;~&#x2F;.aws&#x2F;credentials&lt;&#x2F;code&gt; and injecting into SKILL.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;ls&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Within project root&lt;&#x2F;td&gt;&lt;td&gt;Same as above&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;write_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&amp;lt;name&amp;gt;&#x2F;SKILL.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Can only create &lt;strong&gt;non-existent&lt;&#x2F;strong&gt; files (prevents overwriting)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;edit&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Only &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; + target must contain &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Cannot modify user-authored skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Core principle: &lt;strong&gt;auto-skill can only touch what it created — never user-authored skills.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-source-auto-skill-protection&quot;&gt;The &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; Protection&lt;&#x2F;h3&gt;
+&lt;p&gt;Two layers of defense:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Hard constraint (permission manager)&lt;&#x2F;strong&gt;: &lt;code&gt;edit&lt;&#x2F;code&gt; reads frontmatter first; no &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; → rejected&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Soft constraint (system prompt)&lt;&#x2F;strong&gt;: “You may ONLY modify skill files that contain ‘source: auto-skill’”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;If you add &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; to your own skill, you’re opting in to automatic updates by the review agent.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;preventing-name-collision-overwrites&quot;&gt;Preventing Name Collision Overwrites&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; write_file only allows creating new files
+try {
+  await fs.stat(ctx.filePath);
+  return &amp;#x27;deny&amp;#x27;;  &amp;#x2F;&amp;#x2F; File exists → reject
+} catch (err) {
+  if (err.code === &amp;#x27;ENOENT&amp;#x27;) return &amp;#x27;allow&amp;#x27;;  &amp;#x2F;&amp;#x2F; Doesn&amp;#x27;t exist → allow creation
+  return &amp;#x27;deny&amp;#x27;;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;Creating a new skill → &lt;code&gt;write_file&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Updating an existing auto-skill → must use &lt;code&gt;edit&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;Overwriting any existing file → rejected ❌&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anti-symlink-traversal&quot;&gt;Anti-symlink Traversal&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;assertRealProjectSkillPath()&lt;&#x2F;code&gt; uses &lt;code&gt;fs.realpath()&lt;&#x2F;code&gt; to resolve the actual path, confirming it stays within &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; — preventing writes to arbitrary locations via symlinks.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;academic-origins&quot;&gt;Academic Origins&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Trace2Skill paper (arXiv: 2603.25158)
+    ↓
+Hermes Agent (Nous Research, open-source) — original prompt source
+    ↓ Qwen Code design doc: &amp;quot;ported from Hermes _SKILL_REVIEW_PROMPT, minimal adaptation&amp;quot;
+Qwen Code AutoSkill
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The Qwen Code design document explicitly states:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;The review agent’s prompt is directly ported from Hermes &lt;code&gt;_SKILL_REVIEW_PROMPT&lt;&#x2F;code&gt; with minimal adaptation.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Hermes’s original prompt is far more detailed — including CLASS-LEVEL skill organization, preference embedding, protected skills, and Do NOT capture lists. Qwen’s version is significantly streamlined, focusing on “non-trivial approaches” and “trial-and-error processes.”&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;hermes-vs-qwen-code&quot;&gt;Hermes vs Qwen Code&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Hermes&lt;&#x2F;th&gt;&lt;th&gt;Qwen Code&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Trigger&lt;&#x2F;td&gt;&lt;td&gt;In-session agent call + post-session review&lt;&#x2F;td&gt;&lt;td&gt;Post-session background fork only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Protection&lt;&#x2F;td&gt;&lt;td&gt;ContextVar tracking + tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; frontmatter + file-level permission manager&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Write scope&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.hermes&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (global)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; (project-level)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Prompt complexity&lt;&#x2F;td&gt;&lt;td&gt;Detailed (skill organization, preference embedding, etc.)&lt;&#x2F;td&gt;&lt;td&gt;Streamlined (focused on reusable workflows)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;comparison-with-other-agents&quot;&gt;Comparison with Other Agents&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Agent&lt;&#x2F;th&gt;&lt;th&gt;Auto-distills procedural skills&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hermes Agent&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (in-session + post-session)&lt;&#x2F;td&gt;&lt;td&gt;First open-source implementation, with tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Qwen Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Yes (post-session)&lt;&#x2F;td&gt;&lt;td&gt;Ported Hermes prompt + file-level permission sandbox&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Claude Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Auto Memory records declarative knowledge only&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Cursor&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills are entirely manual&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Skills entirely manual, Memory managed manually&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Codex CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Built-in skills + AGENTS.md extension, no auto-distillation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Gemini CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No&lt;&#x2F;td&gt;&lt;td&gt;Manual SKILL.md creation, Memory reads GEMINI.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Currently only Hermes and Qwen Code implement automatic procedural skill distillation. All other major AI coding agents remain in manual-management territory.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;blob&#x2F;main&#x2F;docs&#x2F;design&#x2F;skill-nudge&#x2F;skill-nudge.md&quot;&gt;Design doc&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Source: &lt;code&gt;packages&#x2F;core&#x2F;src&#x2F;memory&#x2F;skillReviewAgentPlanner.ts&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;First commit: 2026-05-09 (&lt;code&gt;#3673&lt;&#x2F;code&gt;), enabled by default: 2026-05-27 (&lt;code&gt;#4547&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2603.25158&quot;&gt;Trace2Skill paper&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

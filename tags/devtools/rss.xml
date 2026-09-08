@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - DevTools</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/devtools/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Fri, 13 Dec 2024 21:15:54 +0800</lastBuildDate>
+      <item>
+          <title>使用 Mise 替换 FGM</title>
+          <pubDate>Fri, 13 Dec 2024 21:15:54 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/shi-yong-mise-ti-huan-fgm/</link>
+          <guid>https://cncsmonster.github.io/posts/shi-yong-mise-ti-huan-fgm/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/shi-yong-mise-ti-huan-fgm/">&lt;p&gt;Mise 能够完全覆盖 FGM 的功能和使用场景，而且不仅仅能够用来管理 Golang 工具链，还能够用来管理其他语言的工具链，比如 Node.js、Neovim、Java 等等。
+甚至我们还能够用 Mise 来替换 direnv，实现管理进入退出目录时的环境变量加载和卸载。&lt;&#x2F;p&gt;
+&lt;p&gt;下面将从三方面带你感受笔者使用 Mise 的体验：&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yi-xia-zai-mise&quot;&gt;一、下载 Mise&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;方式 1&lt;&#x2F;strong&gt;: 通过包安装管理器安装 Mise&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# 需要先安装 cargo-binstall 和 Rust 工具链
+cargo binstall mise
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;方式 2&lt;&#x2F;strong&gt;: 从仓库预编译版本下载资源列表中下载，解压缩后把 mise 可执行文件放到可执行文件目录即可&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;jdx&#x2F;mise&#x2F;releases&quot;&gt;jdx&#x2F;mise Releases&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;er-pei-zhi-mise&quot;&gt;二、配置 Mise&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;2-1-chu-shi-hua-shell&quot;&gt;2.1 初始化 Shell&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# 对于 bash
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate bash)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.bashrc
+
+# 对于 zsh
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate zsh)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.zshrc
+
+# 对于 fish
+echo &amp;#x27;~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate fish | source&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.config&amp;#x2F;fish&amp;#x2F;config.fish
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-2-pei-zhi-wen-jian&quot;&gt;2.2 配置文件&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise 的配置文件是 &lt;code&gt;.mise.toml&lt;&#x2F;code&gt;,可以放在项目根目录或者家目录。&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# ~&amp;#x2F;.mise.toml
+[tools]
+go = &amp;quot;1.21&amp;quot;
+node = &amp;quot;20&amp;quot;
+python = &amp;quot;3.12&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;san-shi-yong-mise&quot;&gt;三、使用 Mise&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# 安装工具
+mise install go@1.21
+mise install node@20
+
+# 设置全局版本
+mise use --global go@1.21
+
+# 设置项目版本 (会自动创建 .mise.toml)
+mise use go@1.21
+
+# 列出已安装版本
+mise ls
+
+# 卸载
+mise uninstall go@1.21
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;si-gao-ji-gong-neng&quot;&gt;四、高级功能&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;4-1-huan-jing-bian-liang-guan-li&quot;&gt;4.1 环境变量管理&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[env]
+_.path = [&amp;quot;.&amp;#x2F;bin&amp;quot;, &amp;quot;{{config_root}}&amp;#x2F;scripts&amp;quot;]
+API_KEY = &amp;quot;secret&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-2-task-yun-xing-qi&quot;&gt;4.2 Task 运行器&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[tasks.build]
+description = &amp;quot;Build the project&amp;quot;
+run = &amp;quot;make build&amp;quot;
+
+[tasks.test]
+description = &amp;quot;Run tests&amp;quot;
+run = &amp;quot;go test .&amp;#x2F;...&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-3-ti-huan-direnv&quot;&gt;4.3 替换 direnv&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise 支持 &lt;code&gt;.envrc&lt;&#x2F;code&gt; 文件，可以完全替换 direnv:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;mise activate direnv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;然后在 &lt;code&gt;.envrc&lt;&#x2F;code&gt; 中:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;use go
+use node
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;zong-jie&quot;&gt;总结&lt;&#x2F;h2&gt;
+&lt;p&gt;Mise 是一个功能强大的工具链管理器，具有以下优势:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ 支持多种语言 (Go, Node.js, Python, Java, Rust 等)&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 支持项目级别和全局配置&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 支持环境变量管理&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 内置 Task 运行器&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 兼容 asdf 插件生态&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 性能优秀 (Rust 编写)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

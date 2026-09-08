@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - swappiness</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/swappiness/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Fri, 15 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>How I Fixed WSL2 Input Method Lag — A Debugging Story</title>
+          <pubDate>Fri, 15 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</link>
+          <guid>https://cncsmonster.github.io/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/">&lt;h2 id=&quot;running-into-the-same-problem&quot;&gt;Running into the Same Problem?&lt;&#x2F;h2&gt;
+&lt;p&gt;Typing Chinese in a WSL2 terminal feels “sluggish” — a sticky delay between keystroke and character appearing on screen.&lt;&#x2F;p&gt;
+&lt;p&gt;Run these three lines first to confirm it’s the same issue, then jump straight to &lt;strong&gt;Quick Fix&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness   # Default 60. &amp;gt;10 with plenty of free RAM → threshold too loose
+free -h | grep Swap           # Plenty of free RAM but hundreds of MB in swap → likely legacy&amp;#x2F;thrashing
+df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F; | tail -1       # System drive &amp;gt;80% → IME file I&amp;#x2F;O affected
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause-in-one-sentence&quot;&gt;Root Cause in One Sentence&lt;&#x2F;h2&gt;
+&lt;p&gt;Three separate lines all bottlenecked on the keystroke-to-echo path:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Keystroke → [Windows Input Pipeline] ← C: drive full, IME sluggish
+          → Terminal                ← same as above
+          → [ConPTY → WSL]         ← autoMemoryReclaim interrupts VM frequently
+          → shell → echo           ← swap thrashing, PTY echo delayed
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;C: drive near full&lt;&#x2F;strong&gt; → Windows input method framework and terminal rendering both slow down&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swappiness=60 (default)&lt;&#x2F;strong&gt; → system pushes processes into swap despite 18 GB of free RAM&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;swap thrashing&lt;&#x2F;strong&gt; → swapped-out pages are intermittently read back, I&#x2F;O lands right in the PTY echo window&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;One layer alone wouldn’t be noticeable. Three layers stacked, landing in the tens of milliseconds between keystroke and echo.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-fix&quot;&gt;Quick Fix&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;lower-swappiness-persist-immediate-effect&quot;&gt;① Lower swappiness + persist (immediate effect)&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo sysctl vm.swappiness=10                                          # Takes effect immediately
+echo &amp;quot;vm.swappiness=10&amp;quot; | sudo tee -a &amp;#x2F;etc&amp;#x2F;sysctl.conf                # Loaded by systemd on boot
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ Before editing &lt;code&gt;&#x2F;etc&#x2F;sysctl.conf&lt;&#x2F;code&gt;, check if a &lt;code&gt;vm.swappiness&lt;&#x2F;code&gt; entry already exists — modify it if present, append if not. Avoid duplicate lines.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;warning-clear-swap-watch-out-for-wsl2-specifics&quot;&gt;⚠️ ② Clear swap (watch out for WSL2 specifics)&lt;&#x2F;h3&gt;
+&lt;p&gt;WSL2’s swap isn’t managed by &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt; — &lt;code&gt;swapon -a&lt;&#x2F;code&gt; does nothing for it.&lt;&#x2F;p&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. Find what&amp;#x27;s occupying swap
+for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;${swp:-0}&amp;quot; -gt 10000 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid) (PID=$(basename $(dirname $pid)))&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This lists process names and PIDs, e.g. &lt;code&gt;1039088 KB - node-MainThread (PID=1200819)&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 2. Kill the biggest offenders (replace with actual PIDs from the output above)
+kill -9 &amp;lt;PID1&amp;gt; &amp;lt;PID2&amp;gt;
+
+# 3. Wipe and rebuild swap
+sudo swapoff -a                   # Deactivate swap (clears the signature)
+sudo mkswap &amp;#x2F;dev&amp;#x2F;sdc &amp;amp;&amp;amp; sudo swapon &amp;#x2F;dev&amp;#x2F;sdc   # Rebuild signature and re-enable
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;clean-up-the-c-drive-windows-side&quot;&gt;③ Clean up the C: drive (Windows side)&lt;&#x2F;h3&gt;
+&lt;p&gt;In Windows PowerShell:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;rd &amp;#x2F;s &amp;#x2F;q %TEMP%                  # Clear temp files
+powercfg &amp;#x2F;hibernate off          # Disable hibernation, frees ~16 GB
+cleanmgr &amp;#x2F;sagerun:1              # Disk cleanup
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;set-automemoryreclaim-to-disabled&quot;&gt;④ Set autoMemoryReclaim to disabled&lt;&#x2F;h3&gt;
+&lt;p&gt;Edit &lt;code&gt;C:\Users\&amp;lt;username&amp;gt;\.wslconfig&lt;&#x2F;code&gt; on Windows (or &lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;Users&#x2F;&amp;lt;username&amp;gt;&#x2F;.wslconfig&lt;&#x2F;code&gt; inside WSL):&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt; means WSL won’t return freed memory to Windows, but internal WSL reuse is unaffected — 20 GB is a cap, not a reservation. Actual memory usage depends entirely on your workload. The benefit of &lt;code&gt;disabled&lt;&#x2F;code&gt; is eliminating the HYP interrupts caused by &lt;code&gt;gradual&lt;&#x2F;code&gt;, making WSL more stable. The only cost: freed idle memory inside WSL won’t be immediately returned to Windows (internal reuse remains unaffected).&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[experimental]
+autoMemoryReclaim=disabled
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;reboot-or-manually-clean-up-leftover-processes&quot;&gt;⑤ Reboot (or manually clean up leftover processes)&lt;&#x2F;h3&gt;
+&lt;p&gt;After the first four fixes, the keyboard still felt slightly off. Turned out there were 26 stale zsh sessions and 8 gitstatusd daemons accumulated over 15 days without a reboot. A full system reboot cleared everything with WSL restarting.&lt;&#x2F;p&gt;
+&lt;p&gt;Or, without rebooting, manually handle it inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pkill gitstatusd          # Kill stale git monitoring processes
+# Find orphan zsh sessions (PPID=1) and kill them:
+ps -eo pid,ppid,cmd | awk &amp;#x27;$2==1 &amp;amp;&amp;amp; &amp;#x2F;zsh&amp;#x2F; {print $1}&amp;#x27; | xargs kill -9
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;results&quot;&gt;Results&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;&#x2F;th&gt;&lt;th&gt;Before&lt;&#x2F;th&gt;&lt;th&gt;After&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;60&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;10&lt;&#x2F;strong&gt; (persisted)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap used&lt;&#x2F;td&gt;&lt;td&gt;2.0 GB&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;8.6 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;C: drive&lt;&#x2F;td&gt;&lt;td&gt;81%&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;64%&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap I&#x2F;O&lt;&#x2F;td&gt;&lt;td&gt;constant &amp;gt; 0&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Input method&lt;&#x2F;td&gt;&lt;td&gt;noticeably laggy&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;responsive&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;full-troubleshooting-log&quot;&gt;Full Troubleshooting Log&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;What follows is the real-time record of the layer-by-layer investigation. Read on if you’re curious about the “why” or want to learn the debugging approach.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;symptoms&quot;&gt;Symptoms&lt;&#x2F;h3&gt;
+&lt;p&gt;Typing Chinese in a WSL2 terminal felt laggy — a sticky, delayed sensation between pressing a key and seeing the character appear. Not a full freeze, just “not responsive.”&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;pitfall-i-didn-t-know-the-full-pipeline-at-first&quot;&gt;Pitfall: I didn’t know the full pipeline at first&lt;&#x2F;h3&gt;
+&lt;p&gt;IME lag requires tracing the entire keystroke-to-echo path. I reconstructed this pipeline after the fact using Microsoft documentation (Keyboard Input Overview + TSF + ConPTY architecture):&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Keyboard hardware → [Windows Input Pipeline] → Terminal → [ConPTY → WSL] → shell → echo
+                          ↑ IME lives here
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Windows Input Pipeline&lt;&#x2F;strong&gt;: keyboard driver → scan codes → keyboard layout → TSF&#x2F;IME processes Chinese → generates WM_CHAR character messages. IME isn’t a standalone step — it’s embedded in the input pipeline.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Terminal → ConPTY → WSL&lt;&#x2F;strong&gt;: Windows Terminal connects to WSL2 init via ConPTY (Windows Pseudo Console), which forwards to the Linux PTY, arriving at zsh.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;But I didn’t know any of this during the investigation. I approached it by checking both ends — Windows side, then WSL side.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-1-windows-task-manager-ruled-out-ram&quot;&gt;Step 1: Windows Task Manager → ruled out RAM&lt;&#x2F;h3&gt;
+&lt;p&gt;First instinct was memory pressure. &lt;code&gt;Ctrl + Shift + Esc&lt;&#x2F;code&gt; → Performance → Memory — usage was normal. Not the problem.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-2-wsl-basic-metrics-found-swap-anomaly&quot;&gt;Step 2: WSL basic metrics → found swap anomaly&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;top -bn1 | head          # Load 0.19, CPU idle 97%
+free -h                  # Free RAM 18.6 GB &amp;#x2F; Total 20 GB
+cat &amp;#x2F;proc&amp;#x2F;meminfo        # Swap used: 2.6 GB ← red flag
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness  # = 60 (default)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Metric&lt;&#x2F;th&gt;&lt;th&gt;Value&lt;&#x2F;th&gt;&lt;th&gt;Meaning&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;swappiness&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;60&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Swapping starts when free RAM drops below ~8 GB — threshold too loose&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Swap used&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;2.6 GB&lt;&#x2F;strong&gt; &#x2F; 8 GB&lt;&#x2F;td&gt;&lt;td&gt;Historical — swapped out during earlier long sessions when RAM was full; kernel doesn’t proactively swap back&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;14-day swap activity&lt;&#x2F;td&gt;&lt;td&gt;~50M page-ins, ~50M page-outs&lt;&#x2F;td&gt;&lt;td&gt;Swap wasn’t sitting idle — massive historical read&#x2F;write volume&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Swap usage (2.6 GB) is historical. Swap thrashing is the problem.&lt;&#x2F;strong&gt; The usage itself doesn’t cause lag. The intermittent page-in I&#x2F;O from thrashing does.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-3-who-s-in-swap&quot;&gt;Step 3: Who’s in swap&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;for pid in &amp;#x2F;proc&amp;#x2F;*&amp;#x2F;status; do
+  swp=$(grep VmSwap $pid | awk &amp;#x27;{print $2}&amp;#x27;)
+  [ &amp;quot;$swp&amp;quot; -gt 0 ] &amp;amp;&amp;amp; echo &amp;quot;$swp KB - $(grep Name $pid)&amp;quot;
+done | sort -rn
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Two orphan &lt;code&gt;qwen&lt;&#x2F;code&gt; (Tongyi Qianwen CLI) processes held 1.6 GB — each had allocated 44 GB of virtual address space but only 1–2 MB RSS. Their original terminals were long gone; the processes were adopted by systemd (PID 1).&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;step-4-confirmed-swap-thrashing&quot;&gt;Step 4: Confirmed swap thrashing&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;vmstat 1                    # si column consistently &amp;gt; 0
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;memory   # some avg10=3.48
+cat &amp;#x2F;proc&amp;#x2F;pressure&amp;#x2F;io       # some avg10=3.97
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;step-5-c-drive-nearly-full&quot;&gt;Step 5: C: drive nearly full&lt;&#x2F;h3&gt;
+&lt;p&gt;Inside WSL:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;df -h &amp;#x2F;mnt&amp;#x2F;c&amp;#x2F;   # 196 GB capacity, 159 GB used, 38 GB free (81%)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;At 81% full, Windows IME’s dictionary reads and writes become sluggish. PowerShell scanning identified &lt;code&gt;AppData\Local\Temp&lt;&#x2F;code&gt; (8 GB) and &lt;code&gt;hiberfil.sys&lt;&#x2F;code&gt; (~16 GB) as the main culprits.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;root-cause-mapping&quot;&gt;Root Cause Mapping&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;Keystroke → [Windows Input Pipeline] ← C: drive 81% full, IME file I&amp;#x2F;O slowed
+          → Terminal                ← same as above
+          → [ConPTY → WSL]         ← autoMemoryReclaim=gradual, VM frequently paused
+          → shell → echo           ← swap thrashing, PTY echo delayed by I&amp;#x2F;O
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;A single layer’s delay might be imperceptible. All three stacked, landing in the few dozen milliseconds between keystroke and echo.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;warning-pitfall-wsl2-swap-recovery&quot;&gt;⚠️ Pitfall: WSL2 swap recovery&lt;&#x2F;h3&gt;
+&lt;p&gt;After &lt;code&gt;swapoff -a&lt;&#x2F;code&gt;, &lt;code&gt;swapon -a&lt;&#x2F;code&gt; does nothing — because WSL2’s swap isn’t managed by &lt;code&gt;&#x2F;etc&#x2F;fstab&lt;&#x2F;code&gt; (fstab is empty). Instead, WSL2 init directly mounts &lt;code&gt;&#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;. Recovery requires &lt;code&gt;mkswap &#x2F;dev&#x2F;sdc &amp;amp;&amp;amp; swapon &#x2F;dev&#x2F;sdc&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Debug WSL2 lag from both ends&lt;&#x2F;strong&gt;: rule out the obvious (Task Manager) first, then dig into what you normally overlook (swap, PSI, orphan processes).&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Large free RAM ≠ no lag&lt;&#x2F;strong&gt;: swappiness=60 is too aggressive for desktop&#x2F;WSL use. Lower it to 10 — don’t touch swap until RAM is truly needed.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Swap is about thrashing, not usage&lt;&#x2F;strong&gt;: 2 GB of swap usage doesn’t cause lag. Small, frequent page-in&#x2F;page-out bursts do.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Orphan process swap is a liability too&lt;&#x2F;strong&gt;: inactive processes with 44 GB VSZ each in swap generate continuous page faults.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;glossary&quot;&gt;Glossary&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Skim these if unfamiliar — not required to follow the fix above.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;swappiness&lt;&#x2F;strong&gt;: Linux kernel parameter (0–100) controlling how aggressively memory is swapped out. Default is 60. At 10, the kernel only swaps when RAM is truly scarce.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;swap (swap space)&lt;&#x2F;strong&gt; : a disk partition used as overflow when physical RAM runs low. WSL2 swap size is configured via &lt;code&gt;swap=8G&lt;&#x2F;code&gt; in &lt;code&gt;.wslconfig&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;PSI (Pressure Stall Information)&lt;&#x2F;strong&gt; : Linux kernel pressure metrics. &lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;memory&lt;&#x2F;code&gt; and &lt;code&gt;&#x2F;proc&#x2F;pressure&#x2F;io&lt;&#x2F;code&gt; show how much time the system spends stalled on memory or disk I&#x2F;O.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;HYP interrupt&lt;&#x2F;strong&gt;: Hyper-V callback interrupt. WSL2 runs as a Hyper-V VM, and the host (Windows) communicates with the VM through these interrupts. A count in the hundreds of millions indicates extremely frequent interaction.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;ConPTY&lt;&#x2F;strong&gt;: Windows Pseudo Console — Windows Terminal connects to the Linux PTY inside WSL2 through this.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;autoMemoryReclaim&lt;&#x2F;strong&gt;: WSL2 experimental feature controlling whether freed WSL memory is returned to Windows. &lt;code&gt;gradual&lt;&#x2F;code&gt; returns it slowly; &lt;code&gt;disabled&lt;&#x2F;code&gt; never returns it.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;inputdev&#x2F;about-keyboard-input&quot;&gt;Microsoft Keyboard Input Overview&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;win32&#x2F;tsf&#x2F;text-services-framework&quot;&gt;Windows Text Services Framework (TSF)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;wsl-config&quot;&gt;WSL2 &lt;code&gt;.wslconfig&lt;&#x2F;code&gt; Reference&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;admin-guide&#x2F;sysctl&#x2F;vm.html&quot;&gt;Linux swappiness Documentation&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.kernel.org&#x2F;accounting&#x2F;psi.html&quot;&gt;Linux PSI Documentation&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

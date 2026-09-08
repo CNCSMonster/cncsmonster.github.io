@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - 工程规范</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/gong-cheng-gui-fan/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-25T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/gong-cheng-gui-fan/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Engineering Discipline Skills Compared: Addy Osmani vs Matt Pocock</title>
+        <published>2026-05-25T00:00:00+08:00</published>
+        <updated>2026-05-25T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/matt-pocock-vs-addy-osmani-skills/"/>
+        <id>https://cncsmonster.github.io/en/posts/matt-pocock-vs-addy-osmani-skills/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/matt-pocock-vs-addy-osmani-skills/">&lt;h2 id=&quot;what-this-solves&quot;&gt;What This Solves&lt;&#x2F;h2&gt;
+&lt;p&gt;You’re already using Addy Osmani’s agent-skills (or their Pi ecosystem equivalents). Matt Pocock’s skills repo just exploded (100K+ stars at verification time) and looks similar.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;They’re the same type of thing: engineering discipline skills.&lt;&#x2F;strong&gt; Not for adding new capabilities (search, deploy, draw), but for constraining how the agent works (align on requirements, write tests, review code). The difference is packaging: Addy embeds discipline into a process pipeline, Matt breaks it into discrete manual commands.&lt;&#x2F;p&gt;
+&lt;p&gt;Should you invest time? Will they conflict? Can you use both?&lt;&#x2F;p&gt;
+&lt;p&gt;By the end: &lt;strong&gt;install, skip, or selectively install.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;bottom-line&quot;&gt;Bottom Line&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;No conflict. Best used together.&lt;&#x2F;strong&gt; Addy covers process completeness. Matt fills two gaps Addy doesn’t go deep enough on: adversarial requirement grilling (&lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; — goes beyond spec questioning by cross-referencing your domain model) and proactive architecture inspection (&lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt;). Both handle pre-work alignment, but at different depths.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;q1-they-look-similar-what-s-the-real-difference&quot;&gt;Q1: They look similar — what’s the real difference?&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;addyosmani&#x2F;agent-skills&quot;&gt;Addy Osmani&lt;&#x2F;a&gt;&lt;&#x2F;th&gt;&lt;th&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;mattpocock&#x2F;skills&quot;&gt;Matt Pocock&lt;&#x2F;a&gt;&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;What&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;A complete pipeline: idea → production&lt;&#x2F;td&gt;&lt;td&gt;A toolkit: surgical strikes on vibe coding failures&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Usage&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;By engineering phase: spec → plan → build → test → review → ship&lt;&#x2F;td&gt;&lt;td&gt;On-demand: &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; &lt;code&gt;&#x2F;tdd&lt;&#x2F;code&gt; &lt;code&gt;&#x2F;diagnose&lt;&#x2F;code&gt; …&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Count&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;23 skills&lt;&#x2F;td&gt;&lt;td&gt;10 engineering skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Author&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Director, Google Cloud AI&lt;&#x2F;td&gt;&lt;td&gt;TypeScript educator, ex-Vercel&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;For&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Teams needing process rigor&lt;&#x2F;td&gt;&lt;td&gt;Individuals&#x2F;small teams needing “don’t write crap code”&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Fundamentally different design philosophies:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Addy = Pipeline
+  Assumes you&amp;#x27;re walking the full path → a skill for every step
+
+Matt = Toolkit
+  Assumes you fail at specific points → each skill fixes one failure mode
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This is not just my interpretation. The two READMEs state their positioning directly:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Addy Osmani &#x2F; agent-skills&lt;&#x2F;strong&gt;: “Skills encode the workflows, quality gates, and best practices that senior engineers use when building software. These ones are packaged so AI agents follow them consistently across every phase of development.”&lt;&#x2F;p&gt;
+&lt;p&gt;The key words are &lt;strong&gt;workflows &#x2F; quality gates &#x2F; every phase of development&lt;&#x2F;strong&gt;. That explains why Addy covers code review, frontend, security, CI&#x2F;CD, and shipping.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Matt Pocock &#x2F; skills&lt;&#x2F;strong&gt;: “These skills are designed to be small, easy to adapt, and composable.” And: “I built these skills as a way to fix common failure modes I see with Claude Code, Codex, and other coding agents.”&lt;&#x2F;p&gt;
+&lt;p&gt;The key words are &lt;strong&gt;small &#x2F; composable &#x2F; common failure modes&lt;&#x2F;strong&gt;. Matt is closer to a set of patches for common agent failure modes than a full software delivery lifecycle framework.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;q2-how-much-overlap-is-what-i-have-enough&quot;&gt;Q2: How much overlap? Is what I have enough?&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;What you need&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Addy&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Matt&lt;&#x2F;th&gt;&lt;th&gt;Verdict&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Write PRD&#x2F;specs&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ spec-driven-development&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &#x2F;to-prd&lt;&#x2F;td&gt;&lt;td&gt;Either works&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;TDD&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ test-driven-development&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &#x2F;tdd&lt;&#x2F;td&gt;&lt;td&gt;Either works&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Debugging&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ debugging-and-error-recovery&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &#x2F;diagnose&lt;&#x2F;td&gt;&lt;td&gt;Either works&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Code review&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ code-review-and-quality&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;UI&#x2F;frontend&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ frontend-ui-engineering&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;CI&#x2F;CD&#x2F;shipping&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ ci-cd, shipping-and-launch&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Security&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ security-and-hardening&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;Use Addy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pre-work alignment&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ spec-driven-development (ask → produce spec)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; (challenge → produce glossary + ADRs)&lt;&#x2F;td&gt;&lt;td&gt;Both, different approaches&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Proactive architecture check&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ code-review is a gate, not an inspection&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Matt exclusive&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Issue triage&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;triage&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Matt exclusive&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Rapid prototyping&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ &lt;code&gt;&#x2F;prototype&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Matt exclusive&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Note: Matt does not include code review, frontend, CI&#x2F;CD, or security because those areas are unimportant. He omits them because his repo is not trying to cover the entire software delivery lifecycle. It is a toolkit for fixing common agent failure modes. Those production-grade quality gates still belong with Addy. &lt;strong&gt;So the conclusion is not “replace Addy with Matt” — it is “use Addy as the backbone and Matt as an enhancement layer.”&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;Both require the agent to ask questions, but in opposite directions:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Addy spec-driven-development&lt;&#x2F;th&gt;&lt;th&gt;Matt grill-with-docs&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Starting point&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;“Surface your assumptions” → fill spec template&lt;&#x2F;td&gt;&lt;td&gt;“Explore the codebase first” → read CONTEXT.md &#x2F; ADRs &#x2F; code&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Question style&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;“What do you want? What are the constraints?” → fill 6-section template&lt;&#x2F;td&gt;&lt;td&gt;“Your glossary says X but you seem to mean Y?” “Your code contradicts what you said — which is right?” → drill down&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Direction&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Blank slate → spec (greenfield)&lt;&#x2F;td&gt;&lt;td&gt;Existing code&#x2F;docs → aligned understanding (brownfield)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Output&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;A structured spec document&lt;&#x2F;td&gt;&lt;td&gt;CONTEXT.md updates + ADRs + aligned understanding&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;End condition&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Spec approved by human&lt;&#x2F;td&gt;&lt;td&gt;Shared understanding reached&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Conclusion: Both cover the basics, including pre-work alignment.&lt;&#x2F;strong&gt; Matt’s exclusives are &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; for adversarial grilling (challenging you with domain model and code, not just filling a template) and &lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt; for proactive inspection. These are what vibe coding misses most.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;q3-will-they-conflict-is-one-enough&quot;&gt;Q3: Will they conflict? Is one enough?&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;No conflict.&lt;&#x2F;strong&gt; Different naming, different triggering, complementary philosophies.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;One is enough.&lt;&#x2F;strong&gt; If you already have Addy’s pipeline, you’re covered for daily work — you’re only missing the grilling and inspection capabilities. If you have no engineering discipline skills, start with Matt for a lighter footprint. Together is best: Addy as process backbone, Matt filling the critical gaps.&lt;&#x2F;p&gt;
+&lt;p&gt;Recommended combined usage: follow Addy’s pipeline normally, switch to Matt for requirement alignment and code quality — &lt;code&gt;&#x2F;grill-with-docs&lt;&#x2F;code&gt; as a deeper questioning layer (can replace &lt;code&gt;spec-driven-development&lt;&#x2F;code&gt;’s Specify phase, or complement it), &lt;code&gt;&#x2F;improve-codebase-architecture&lt;&#x2F;code&gt; to supplement &lt;code&gt;code-review-and-quality&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;ai-native-usage-hand-this-article-to-your-agent&quot;&gt;AI-Native Usage: Hand This Article to Your Agent&lt;&#x2F;h2&gt;
+&lt;p&gt;If you already use AI heavily, don’t copy commands manually. A better pattern is to treat this article as &lt;strong&gt;configuration context&lt;&#x2F;strong&gt;: give it to your coding agent, ask it to inspect the current environment, then let it decide what to install.&lt;&#x2F;p&gt;
+&lt;p&gt;Use a prompt like this:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Read this article and configure Agent Skills according to its conclusion:
+
+1. First check which engineering discipline skills are already installed.
+2. If Addy Osmani &amp;#x2F; Pi-equivalent skills are already present, do not duplicate Matt&amp;#x27;s &amp;#x2F;tdd or &amp;#x2F;diagnose.
+3. Only add Matt&amp;#x27;s complementary skills: grill-with-docs, improve-codebase-architecture, triage, and setup-matt-pocock-skills if needed.
+4. Before installing, tell me which directories will be modified.
+5. Do not modify project AGENTS.md &amp;#x2F; CLAUDE.md &amp;#x2F; docs&amp;#x2F;agents unless I explicitly confirm.
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you already have Addy &#x2F; Pi-style engineering skills, the minimal install is:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;skills add mattpocock&amp;#x2F;skills -g -y   --skill setup-matt-pocock-skills grill-with-docs improve-codebase-architecture triage
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;After installation, you can keep using AI to choose the right workflow:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;I&amp;#x27;m starting a new feature. Based on this repo, decide:
+- Should we run grill-with-docs before implementation?
+- Should CONTEXT.md or ADRs be updated?
+- Which Addy&amp;#x2F;Pi skills should still be used for spec, test, review, and ship?
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In other words, this article is not only a human-readable installation guide. It is also an AI-readable configuration brief. Give it to a new agent environment and it should understand: &lt;strong&gt;Addy is the backbone; Matt is an enhancement layer. This is not either&#x2F;or, and not install-everything blindly.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;practical-advice&quot;&gt;Practical Advice&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;What to install:
+  ✅ &amp;#x2F;grill-with-docs       — Most important. Pre-work grilling + glossary building
+  ✅ &amp;#x2F;improve-codebase-architecture  — Run every few days
+  ✅ &amp;#x2F;triage                — If you use GitHub issues
+  ⚡ &amp;#x2F;tdd &amp;#x2F;diagnose         — Addy already covers these, optional
+
+How to use together:
+  1. New requirement → &amp;#x2F;grill-with-docs (not &amp;#x2F;spec)
+  2. Development → Addy pipeline as usual
+  3. Regularly → &amp;#x2F;improve-codebase-architecture
+  4. Wrap-up → Addy&amp;#x27;s &amp;#x2F;review → &amp;#x2F;ship
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;appendix-why-matt-pocock-went-viral&quot;&gt;Appendix: Why Matt Pocock Went Viral&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Created 2026-02-03; verified on 2026-05-25 at 103K+ stars &#x2F; 9.1K+ forks&lt;&#x2F;li&gt;
+&lt;li&gt;~60K newsletter subscribers, TypeScript educator, ex-Vercel&lt;&#x2F;li&gt;
+&lt;li&gt;Reasons: anti-vibe-coding stance + small and composable + personal brand trust&lt;&#x2F;li&gt;
+&lt;li&gt;Community: Reddit (r&#x2F;vibecoding, r&#x2F;ClaudeAI, r&#x2F;codex), Hacker News, Juejin, CSDN&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;mattpocock&#x2F;skills&quot;&gt;mattpocock&#x2F;skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;addyosmani&#x2F;agent-skills&quot;&gt;addyosmani&#x2F;agent-skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;api.github.com&#x2F;repos&#x2F;mattpocock&#x2F;skills&quot;&gt;GitHub API - Matt Pocock&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;api.github.com&#x2F;repos&#x2F;addyosmani&#x2F;agent-skills&quot;&gt;GitHub API - Addy Osmani&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;addyosmani.com&#x2F;&quot;&gt;Addy Osmani Homepage&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;explainx.ai&#x2F;blog&#x2F;matt-pocock-agent-skills-real-engineers&quot;&gt;ExplainaX: Matt Pocock’s agent skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;codex&#x2F;comments&#x2F;1s8xlja&#x2F;i_tried_the_grillme_skill_and_it_completely&#x2F;&quot;&gt;r&#x2F;codex: I tried the grill-me skill&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;ClaudeAI&#x2F;comments&#x2F;1sw6rss&#x2F;i_deleted_most_of_my_claude_skills_last_week&#x2F;&quot;&gt;r&#x2F;ClaudeAI: I deleted most of my Claude skills&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;juejin.cn&#x2F;post&#x2F;7633240840346271795&quot;&gt;Juejin: TypeScript Master’s AI Coding Secrets&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gitcode.csdn.net&#x2F;69f367f20a2f6a37c5a71245.html&quot;&gt;CSDN: The Skills Repo That Went Viral&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.knightli.com&#x2F;en&#x2F;2026&#x2F;05&#x2F;01&#x2F;mattpocock-skills-ai-agent-coding-workflows&#x2F;&quot;&gt;Knight Li: mattpocock&#x2F;skills overview&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;medium.com&#x2F;@anup.karanjkar08&#x2F;stop-treating-matt-pococks-skills-as-prompts-that-s-why-yours-aren-t-working-708f2c74edfc&quot;&gt;Medium: Stop Treating as Prompts&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</content>
+        
+    </entry>
+</feed>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 扩展</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/kuo-zhan/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-24T00:00:00+00:00</updated>
+    <id>https://cncsmonster.github.io/tags/kuo-zhan/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>你的 AI 编程助手看不到图？这个扩展让它能读文字</title>
+        <published>2026-05-24T00:00:00+00:00</published>
+        <updated>2026-05-24T00:00:00+00:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/pi-local-ocr-promotion/"/>
+        <id>https://cncsmonster.github.io/posts/pi-local-ocr-promotion/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/pi-local-ocr-promotion/">&lt;blockquote&gt;
+&lt;p&gt;如果你的 Pi 模型不支持 vision，试试 &lt;code&gt;pi-local-ocr&lt;&#x2F;code&gt; — 两条命令，让模型能读取图片中的文字和表格。完全本地运行，零 API 费用。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;把截图中的文字&#x2F;表格转成 Markdown，让无 vision 模型的 agent 能继续分析。不替代 vision 模型，只做一件事：&lt;strong&gt;读出图上的字&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;neng-zuo-shen-me&quot;&gt;能做什么&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅&lt;&#x2F;th&gt;&lt;th&gt;❌&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;截图文字提取（中文 + 英文）&lt;&#x2F;td&gt;&lt;td&gt;描述照片里有什么物体&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;表格截图 → Markdown 表格&lt;&#x2F;td&gt;&lt;td&gt;理解图表趋势&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;报错弹窗 → 文本&lt;&#x2F;td&gt;&lt;td&gt;复杂跨行跨列表格&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;an-zhuang&quot;&gt;安装&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pi install git:github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-local-ocr
+bash ~&amp;#x2F;.pi&amp;#x2F;agent&amp;#x2F;git&amp;#x2F;github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-local-ocr&amp;#x2F;scripts&amp;#x2F;setup.sh
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;shi-yong&quot;&gt;使用&lt;&#x2F;h2&gt;
+&lt;p&gt;安装后把图片路径丢给 agent：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;text&quot; class=&quot;language-text &quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;请读取 &amp;#x2F;tmp&amp;#x2F;screenshot.png 里的表格
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;模型会自动调用 &lt;code&gt;ocr_image(path, mode, lang)&lt;&#x2F;code&gt;，支持 &lt;code&gt;auto&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;text&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;table&lt;&#x2F;code&gt; 三种模式。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;shi-ce&quot;&gt;实测&lt;&#x2F;h2&gt;
+&lt;p&gt;证券持仓截图（6 行 × 3 列），2.3 秒 CPU 跑完，全部字段正确。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wei-shen-me-shi-ben-di&quot;&gt;为什么是本地&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;方便，零配置。&lt;&#x2F;strong&gt; 不用找 OCR API、不用注册、不用管 key —— 装上就能用。&lt;&#x2F;p&gt;
+&lt;p&gt;如果你搭配本地模型使用，还能做到完全隐私：截图里的内部系统、报错日志、账户信息全程不出本机。&lt;&#x2F;p&gt;
+&lt;p&gt;GitHub: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;pi-local-ocr&quot;&gt;CNCSMonster&#x2F;pi-local-ocr&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

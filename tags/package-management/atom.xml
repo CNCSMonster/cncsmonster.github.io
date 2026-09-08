@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Package Management</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/package-management/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2025-01-03T00:22:09+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/package-management/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>使用 UV 管理 Python 包</title>
+        <published>2025-01-03T00:22:09+08:00</published>
+        <updated>2025-01-03T00:22:09+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/shi-yong-uv-guan-li-python-bao/"/>
+        <id>https://cncsmonster.github.io/posts/shi-yong-uv-guan-li-python-bao/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/shi-yong-uv-guan-li-python-bao/">&lt;p&gt;UV 是一个用 Rust 编写的极速 Python 包管理器和项目管理器。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao-zi-liao&quot;&gt;参考资料&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;astral-sh&#x2F;uv&quot;&gt;astral-sh&#x2F;uv&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;an-zhuang-uv&quot;&gt;安装 UV&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 使用 pip
+pip install uv
+
+# 或者使用 standalone installer
+curl -LsSf https:&amp;#x2F;&amp;#x2F;astral.sh&amp;#x2F;uv&amp;#x2F;install.sh | sh
+
+# 或者使用 cargo
+cargo install uv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;shi-yong-uv-yun-xing-python-xiang-mu&quot;&gt;使用 UV 运行 Python 项目&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 首先进入项目根目录
+# 初始化 UV 工程配置
+uv init
+
+# 加入所需依赖
+uv add &amp;lt;python 包名&amp;gt;
+
+# 运行 Python 脚本
+uv run python script.py
+
+# 运行任意命令
+uv run &amp;lt;command&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;chang-yong-ming-ling&quot;&gt;常用命令&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 创建虚拟环境
+uv venv
+
+# 安装包
+uv pip install &amp;lt;package&amp;gt;
+
+# 导出依赖
+uv pip compile requirements.in -o requirements.txt
+
+# 同步依赖
+uv pip sync requirements.txt
+
+# 显示依赖树
+uv pip tree
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;you-shi&quot;&gt;优势&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;🚀 &lt;strong&gt;极速&lt;&#x2F;strong&gt;: 比 pip 快 10-100 倍&lt;&#x2F;li&gt;
+&lt;li&gt;📦 &lt;strong&gt;兼容&lt;&#x2F;strong&gt;: 完全兼容 pip 和 requirements.txt&lt;&#x2F;li&gt;
+&lt;li&gt;🔧 &lt;strong&gt;一体&lt;&#x2F;strong&gt;: 包含 venv、pip、pip-tools 的功能&lt;&#x2F;li&gt;
+&lt;li&gt;🦀 &lt;strong&gt;Rust&lt;&#x2F;strong&gt;: 用 Rust 编写，稳定可靠&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

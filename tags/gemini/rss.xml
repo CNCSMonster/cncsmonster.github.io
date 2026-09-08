@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Gemini</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/gemini/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Fri, 17 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Google Antigravity 会用我的代码训练模型吗？条款分析</title>
+          <pubDate>Fri, 17 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/google-antigravity-data-training-policy/</link>
+          <guid>https://cncsmonster.github.io/posts/google-antigravity-data-training-policy/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/google-antigravity-data-training-policy/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;一句话：个人用户（含 AI Pro 订阅）默认按“可能用于训练“处理。条款明确写了用于机器学习技术，Telemetry 开关的法律效力有争议。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我通过 Google Antigravity CLI（命令 &lt;code&gt;agy&lt;&#x2F;code&gt;）或 Antigravity IDE 使用 Gemini 模型写代码，我的代码、提示词和交互数据会不会被用于训练模型？&lt;&#x2F;p&gt;
+&lt;p&gt;这是 2026 年 5 月新发布的工具，替代了之前的 Gemini CLI。它走的是消费者管道（Google 账号 OAuth 登录），不是 Gemini API 管道——所以之前“开 Cloud Billing 就不训练“的结论&lt;strong&gt;不适用&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xian-kan-jie-lun&quot;&gt;先看结论&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;用户身份&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;数据会被收集吗？&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;会被用于训练吗？&lt;&#x2F;th&gt;&lt;th&gt;Opt-out 机制&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;个人 Google 账户（免费&#x2F;AI Pro）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 默认收集&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 可能用于训练&lt;&#x2F;td&gt;&lt;td&gt;无明确机制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;个人 Google 账户 + Telemetry 关闭&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 声称停止收集&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 声称不会&lt;&#x2F;td&gt;&lt;td&gt;设置面板关闭（有争议）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Workspace（标准付费）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 收集（安全监控）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 明确承诺不训练&lt;&#x2F;td&gt;&lt;td&gt;无需操作&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Workspace AI Ultra for Business&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 收集（安全监控）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 明确不训练&lt;&#x2F;td&gt;&lt;td&gt;无需操作&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;实用建议：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;个人用户：按“会训练“处理。&lt;&#x2F;strong&gt; 条款明确写了用于机器学习技术，Telemetry 开关的法律效力有争议。敏感代码不要输入。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业用户：走 Workspace。&lt;&#x2F;strong&gt; 标准付费即可享受“不训练“承诺。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;需要 API 调用：用 Gemini API + Cloud Billing。&lt;&#x2F;strong&gt; 条款明确不用于改进产品。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;tiao-kuan-zen-me-shuo&quot;&gt;条款怎么说&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;antigravity-fu-jia-tiao-kuan-ming-que-xie-liao-yong-yu-ml&quot;&gt;Antigravity 附加条款：明确写了用于 ML&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;antigravity.google&#x2F;terms&quot;&gt;Google Antigravity Additional Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“When you use the Service, we record and store your user data, interaction data pertaining to your usage of the Service, related metadata connected to the Service, and any feedback you provide (‘Interactions’).”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We use Interactions to evaluate, develop, and improve Google and Alphabet research, products, services and &lt;strong&gt;machine learning technologies&lt;&#x2F;strong&gt;.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;条款明确说了用于“机器学习技术“。“Interactions“包括提示词、代码、代码库上下文、元数据。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;telemetry-kai-guan-wei-yi-de-opt-out-ji-zhi-dan-you-zheng-yi&quot;&gt;Telemetry 开关：唯一的 opt-out 机制，但有争议&lt;&#x2F;h3&gt;
+&lt;p&gt;条款页面的 opt-out 表述：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“If you don’t want your Interactions used in this way, &lt;strong&gt;navigate to settings&lt;&#x2F;strong&gt; to change your preference on how such data is used.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;注意：条款原文只说了“navigate to settings“，没有提到“Enable Telemetry“这个具体名称。有论坛用户在&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;urgent-data-deletion-opt-out-request-ignored-missing-privacy-settings&#x2F;121602&quot;&gt;讨论帖&lt;&#x2F;a&gt;中引用了 Abhijit Pramanik 的回复：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“The primary mechanism for managing usage data collection is the ‘Enable telemetry’ setting. When this option is disabled, it stops the collection of interactions data…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;（注：Abhijit Pramanik 是论坛活跃用户，其回复不代表 Google 官方立场。）&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;但社区质疑这个逻辑：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;条款说的是“开启时会收集“（When toggled on, collects…），但&lt;strong&gt;没有明确说&lt;&#x2F;strong&gt;“关闭时不收集”。“开启时做 X” 不等于 “关闭时不做 X”——这是一个法律效力的缺口。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;antigravity-data-training-opt-out&#x2F;125236&quot;&gt;Google Antigravity 论坛 - Telemetry opt-out 讨论&lt;&#x2F;a&gt;、&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;how-can-i-completely-opt-out-of-the-use-of-my-data-for-model-training&#x2F;168429&quot;&gt;完全 opt-out 讨论&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;workspace-yong-hu-ming-que-bu-xun-lian&quot;&gt;Workspace 用户：明确不训练&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;knowledge.workspace.google.com&#x2F;admin&#x2F;gemini&#x2F;generative-ai-in-google-workspace-privacy-hub&quot;&gt;Generative AI in Google Workspace Privacy Hub&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“No. User prompts are considered customer data under the Cloud Data Processing Addendum. Workspace does not use customer data to train models without prior customer permission or direction.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Workspace 标准付费版就有这个保护，不需要额外的 Ultra 订阅。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yu-gemini-api-de-guan-dao-dui-bi&quot;&gt;与 Gemini API 的管道对比&lt;&#x2F;h2&gt;
+&lt;p&gt;Antigravity CLI 走的是&lt;strong&gt;消费者管道&lt;&#x2F;strong&gt;（Google 账号 OAuth 登录），不是 Gemini API 管道。这意味着它&lt;strong&gt;不适用&lt;&#x2F;strong&gt; Gemini API 的 Paid&#x2F;Unpaid 二分法。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;管道&lt;&#x2F;th&gt;&lt;th&gt;适用条款&lt;&#x2F;th&gt;&lt;th&gt;数据训练&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API + Cloud Billing&lt;&#x2F;td&gt;&lt;td&gt;Gemini API Paid Services 条款&lt;&#x2F;td&gt;&lt;td&gt;❌ 不用于改进产品&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API 免费 Key&lt;&#x2F;td&gt;&lt;td&gt;Gemini API Unpaid Services 条款&lt;&#x2F;td&gt;&lt;td&gt;✅ 用于改进产品&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Antigravity CLI&#x2F;IDE（consumer）&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Antigravity 附加条款&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;⚠️ 可能用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini App（网页&#x2F;手机）&lt;&#x2F;td&gt;&lt;td&gt;Google 普通隐私政策 + Gemini Apps Activity&lt;&#x2F;td&gt;&lt;td&gt;取决于 Keep Activity 开关&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;anthropic-ce-de-e-wai-bao-hu&quot;&gt;Anthropic 侧的额外保护&lt;&#x2F;h2&gt;
+&lt;p&gt;Antigravity 后端也使用 Claude 模型（Claude Sonnet 4.6、Claude Opus 4.6）。Anthropic 的商业条款提供额外保护层：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“Anthropic may not train models on Customer Content from Services.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“Customer Content is Customer’s Confidential Information.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;这意味着当 Antigravity 路由到 Claude 模型时，Anthropic 侧承诺不训练。但 Google 侧的数据收集仍受 Antigravity 条款管辖。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;tou-ming-du-que-kou&quot;&gt;透明度缺口&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;问题&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;严重程度&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Telemetry 开关的法律效力不明确&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🔴 高&lt;&#x2F;td&gt;&lt;td&gt;“开启时收集” ≠ “关闭时不收集”，Google 未明确修正&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;“Interactions” 是否包含本地代码库&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 中&lt;&#x2F;td&gt;&lt;td&gt;社区要求澄清，Google 未正面回答&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;数据留存期限&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 中&lt;&#x2F;td&gt;&lt;td&gt;条款说“可以删除“，但未说自动保留多久&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;安装时强制同意&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 中&lt;&#x2F;td&gt;&lt;td&gt;安装 Antigravity 2.0 时必须同意数据收集才能继续&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;默认按“会训练“处理&lt;&#x2F;strong&gt; — 条款明确写了用于机器学习技术，Telemetry 开关的法律效力有争议。在未确认 opt-out 生效前，不要假设数据是安全的&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;敏感代码：不要输入&lt;&#x2F;strong&gt; — 涉及商业机密&#x2F;私有仓库的代码不要通过 Antigravity consumer 入口处理&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;关闭 Telemetry（聊胜于无）&lt;&#x2F;strong&gt; — 设置面板 → Account → Enable Telemetry → 关闭。法律效力有争议，但可能是账号级 opt-out 的触发入口&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业用户：走 Workspace&lt;&#x2F;strong&gt; — Workspace 账户有明确的“不训练“承诺（标准付费即可）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;替代方案：Gemini API + Cloud Billing&lt;&#x2F;strong&gt; — 如果只需要 API 调用，在 Google Cloud 开 Billing 后用 Gemini API，条款明确不用于改进产品&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;antigravity.google&#x2F;terms&quot;&gt;Google Antigravity Additional Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;policies.google.com&#x2F;terms&quot;&gt;Google Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;policies.google.com&#x2F;privacy&quot;&gt;Google Privacy Policy&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;ai.google.dev&#x2F;gemini-api&#x2F;terms&quot;&gt;Gemini API Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;knowledge.workspace.google.com&#x2F;admin&#x2F;gemini&#x2F;generative-ai-in-google-workspace-privacy-hub&quot;&gt;Generative AI in Google Workspace Privacy Hub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;workspace.google.com&#x2F;blog&#x2F;product-announcements&#x2F;google-ai-ultra-for-business&quot;&gt;Google Workspace Blog - AI Ultra for Business 公告&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.anthropic.com&#x2F;legal&#x2F;commercial-terms&quot;&gt;Anthropic Commercial Terms&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;discuss.ai.google.dev&#x2F;t&#x2F;antigravity-data-training-opt-out&#x2F;125236&quot;&gt;Google Antigravity 论坛 - Telemetry opt-out 讨论&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;&lt;em&gt;本文是 &lt;a href=&quot;..&#x2F;google-model-service-data-privacy&quot;&gt;Google 模型服务数据隐私调研&lt;&#x2F;a&gt; 的补充，聚焦 Antigravity CLI&#x2F;IDE 这个新管道。&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Google 模型服务数据隐私调研</title>
+          <pubDate>Thu, 21 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/google-model-service-data-privacy/</link>
+          <guid>https://cncsmonster.github.io/posts/google-model-service-data-privacy/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/google-model-service-data-privacy/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;一句话：数据是否被训练，不看你是不是会员&#x2F;订阅，只看走的哪条管道——Google Cloud 管道有隐私保护，消费者管道没有。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;hui-bei-xun-lian-vs-bu-hui-xun-lian&quot;&gt;会被训练 vs 不会训练&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;hui-bei-xun-lian&quot;&gt;会被训练&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;为什么&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Gemini App（网页&#x2F;手机）&lt;&#x2F;td&gt;&lt;td&gt;免费和 Pro&#x2F;Ultra 会员隐私条款相同，都允许训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google AI Studio（网页聊天）&lt;&#x2F;td&gt;&lt;td&gt;官方列在「非付费服务」下（未开 Billing 时）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API 免费 Key&lt;&#x2F;td&gt;&lt;td&gt;没开 Cloud Billing 的 Key 走「非付费服务」条款&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini CLI（Google 账号登录）&lt;&#x2F;td&gt;&lt;td&gt;走 Google 普通隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini Code Assist 个人免费&lt;&#x2F;td&gt;&lt;td&gt;IDE 插件免费版&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;bu-hui-xun-lian&quot;&gt;不会训练&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;为什么&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Gemini API + Cloud Billing&lt;&#x2F;td&gt;&lt;td&gt;开 Billing 后所有 API&#x2F;AI Studio 使用自动按付费处理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Vertex AI&lt;&#x2F;td&gt;&lt;td&gt;Google Cloud 企业平台，条款明确不训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Gemini Code Assist Standard&#x2F;Enterprise&lt;&#x2F;td&gt;&lt;td&gt;走 Google Cloud 企业条款&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Workspace Gemini（企业版）&lt;&#x2F;td&gt;&lt;td&gt;Gmail&#x2F;Docs 里的 AI&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;NotebookLM&lt;&#x2F;td&gt;&lt;td&gt;条款明确上传文档不用于训练&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;EEA&#x2F;UK&#x2F;CH 用户的 API&lt;&#x2F;td&gt;&lt;td&gt;地区法律强制，免费 API 也按付费标准&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-ge-guan-jian-fa-xian&quot;&gt;三个关键发现&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-hui-yuan-api-fu-fei&quot;&gt;1. “会员 ≠ API 付费”&lt;&#x2F;h3&gt;
+&lt;p&gt;Google AI Pro&#x2F;Ultra 会员（每月 $20-$100）是&lt;strong&gt;消费者订阅&lt;&#x2F;strong&gt;，不是 API 付费。数据保护不因此改变，只有开了 Cloud Billing 才算。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-api-key-mian-fei-jiu-neng-na&quot;&gt;2. API Key 免费就能拿&lt;&#x2F;h3&gt;
+&lt;p&gt;去 aistudio.google.com，无需绑卡即可创建。Pro 会员只是让免费配额变多，不改变隐私规则。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-cloud-billing-shi-wei-yi-kai-guan&quot;&gt;3. Cloud Billing 是唯一开关&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Google Cloud 绑一张信用卡，API 调用自动从「免费服务」切为「付费服务」——哪怕一分钱不花。免费配额（如 Flash 每天 1500 次）对个人开发完全够用。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;shi-jian-lu-jing&quot;&gt;实践路径&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;需要隐私保护？
+→ console.cloud.google.com 绑卡开 Billing
+→ aistudio.google.com 拿 Key（选已关联 Billing 的项目）
+→ 零成本，不再被训练
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;ai.google.dev&#x2F;gemini-api&#x2F;terms?hl=zh-cn&quot;&gt;Gemini API 附加服务条款&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;ai.google.dev&#x2F;gemini-api&#x2F;docs&#x2F;logs-policy?hl=zh-cn&quot;&gt;Gemini API 数据记录和共享&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;support.google.com&#x2F;gemini&#x2F;answer&#x2F;13594961?hl=zh-Hans&quot;&gt;Gemini 应用隐私信息中心&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;knowledge.workspace.google.com&#x2F;admin&#x2F;gemini&#x2F;generative-ai-in-google-workspace-privacy-hub&quot;&gt;Google Workspace Generative AI Privacy Hub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;blog.google&#x2F;innovation-and-ai&#x2F;technology&#x2F;developers-tools&#x2F;google-one-ai-studio&quot;&gt;Google AI Studio + Google One 订阅博客公告 (2026-04-20)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

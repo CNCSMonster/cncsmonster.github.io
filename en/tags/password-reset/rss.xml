@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Password Reset</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/password-reset/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Fri, 08 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>How to Reset a Forgotten Password in WSL</title>
+          <pubDate>Fri, 08 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl-wang-ji-mi-ma-zhong-zhi-fang-fa/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl-wang-ji-mi-ma-zhong-zhi-fang-fa/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl-wang-ji-mi-ma-zhong-zhi-fang-fa/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Applies to:&lt;&#x2F;strong&gt; Default WSL user is a regular user and you’ve forgotten the password (can’t sudo).
+&lt;strong&gt;Does not apply to:&lt;&#x2F;strong&gt; Default user is root (no password problem exists).&lt;&#x2F;p&gt;
+&lt;p&gt;If you use an AI coding agent that can execute commands (Claude Code, Cursor Agent, Pi, etc.), just share the link to this article — it will guide you through the steps. Traditional code completion tools (e.g. Copilot) are not applicable.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;1-enter-wsl-as-root&quot;&gt;1. Enter WSL as Root&lt;&#x2F;h2&gt;
+&lt;p&gt;Run the following in Windows PowerShell (Win key → search “PowerShell”):&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl -u root
+# Or specify the distro: wsl -d Ubuntu-24.04 -u root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;wsl.exe&lt;&#x2F;code&gt; is a Windows-side tool that can launch WSL as any Linux user — it bypasses the Linux authentication system, so the old password isn’t needed.&lt;&#x2F;p&gt;
+&lt;p&gt;Don’t know your distro name? Run &lt;code&gt;wsl -l -v&lt;&#x2F;code&gt; first to list them, then use &lt;code&gt;wsl -d &amp;lt;name&amp;gt; -u root&lt;&#x2F;code&gt;.
+When it succeeds, your prompt should change to &lt;code&gt;root@...&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;2-reset-the-password&quot;&gt;2. Reset the Password&lt;&#x2F;h2&gt;
+&lt;p&gt;Now in a root shell, run:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# See which users exist (usually matches your Windows username)
+ls &amp;#x2F;home
+# Example output: cncsmonster  lost+found
+
+# Reset the password (use the actual username from the step above)
+passwd &amp;lt;username&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;passwd&lt;&#x2F;code&gt; executed as root allows you to set a new password directly — no old password required.
+When typing the new password, nothing shows on screen (not even asterisks) — this is normal Linux behavior. Press Enter after typing, confirm it once more, and you’ll see &lt;code&gt;passwd: password updated successfully&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-verify&quot;&gt;3. Verify&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Exit the root shell, back to PowerShell
+exit
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Back in PowerShell, log into WSL as your regular user:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Inside WSL, test:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo whoami
+# Enter your new password when prompted
+# Output should be: root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+</description>
+      </item>
+    </channel>
+</rss>

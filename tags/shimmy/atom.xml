@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Shimmy</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/shimmy/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-06-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/shimmy/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Shimmy：Ollama 的 Rust 替代方案实测（WSL2 + Intel 集显）</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/shimmy-ollama-rust-alternative-wsl2-intel/"/>
+        <id>https://cncsmonster.github.io/posts/shimmy-ollama-rust-alternative-wsl2-intel/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/shimmy-ollama-rust-alternative-wsl2-intel/">&lt;p&gt;想找一个比 Ollama 更轻量的本地 LLM 推理服务器？&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt; 用 Rust 写成，单二进制文件，100% OpenAI API 兼容，零配置启动。本文基于 WSL2 + Intel 集显环境的实测，记录了踩坑过程和问题根因。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文是「本地 LLM 推理环境」系列第一篇。&lt;a href=&quot;&#x2F;posts&#x2F;wsl2-intel-gpu-llm-inference-diagnosis&#x2F;&quot;&gt;系列第二篇：WSL2 + Intel 集显跑 LLM 推理的分层诊断 →&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;shimmy-shi-shen-me&quot;&gt;Shimmy 是什么&lt;&#x2F;h2&gt;
+&lt;p&gt;一句话：&lt;strong&gt;Ollama 的 Rust 平替&lt;&#x2F;strong&gt;——更轻、更快、零依赖。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;维度&lt;&#x2F;th&gt;&lt;th&gt;Shimmy&lt;&#x2F;th&gt;&lt;th&gt;Ollama&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;语言&lt;&#x2F;td&gt;&lt;td&gt;Rust&lt;&#x2F;td&gt;&lt;td&gt;Go&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;依赖&lt;&#x2F;td&gt;&lt;td&gt;单二进制，无额外依赖&lt;&#x2F;td&gt;&lt;td&gt;需要 llama.cpp 动态库&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;许可&lt;&#x2F;td&gt;&lt;td&gt;MIT&lt;&#x2F;td&gt;&lt;td&gt;非商用限制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;GPU 支持&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Vulkan &#x2F; OpenCL &#x2F; MLX&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Metal&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;模型格式&lt;&#x2F;td&gt;&lt;td&gt;GGUF + SafeTensors&lt;&#x2F;td&gt;&lt;td&gt;GGUF&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API 兼容&lt;&#x2F;td&gt;&lt;td&gt;OpenAI 100%&lt;&#x2F;td&gt;&lt;td&gt;OpenAI + 自有 API&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;端口分配&lt;&#x2F;td&gt;&lt;td&gt;自动（默认 11435）&lt;&#x2F;td&gt;&lt;td&gt;固定（11434）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;响应缓存&lt;&#x2F;td&gt;&lt;td&gt;LRU + TTL，20-40% 提升&lt;&#x2F;td&gt;&lt;td&gt;无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;项目地址：https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-kai-shi&quot;&gt;快速开始&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Linux x86_64
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-linux-x86_64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# macOS ARM64 (含 MLX for Apple Silicon)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-macos-arm64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# Windows x64 (含 CUDA + Vulkan + OpenCL)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-windows-x86_64.exe -o shimmy.exe
+
+# 启动
+.&amp;#x2F;shimmy serve --gpu-backend auto
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;零配置：自动从 HuggingFace 缓存、Ollama 本地目录发现模型。热切换模型无需重启。&lt;&#x2F;p&gt;
+&lt;p&gt;启动后即提供 OpenAI 兼容的 &lt;code&gt;&#x2F;v1&#x2F;chat&#x2F;completions&lt;&#x2F;code&gt; 接口，现有 OpenAI 工具无需改动即可接入：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;curl http:&amp;#x2F;&amp;#x2F;localhost:11435&amp;#x2F;v1&amp;#x2F;chat&amp;#x2F;completions \
+  -H &amp;quot;Content-Type: application&amp;#x2F;json&amp;quot; \
+  -d &amp;#x27;{&amp;quot;model&amp;quot;:&amp;quot;your-model&amp;quot;,&amp;quot;messages&amp;quot;:[{&amp;quot;role&amp;quot;:&amp;quot;user&amp;quot;,&amp;quot;content&amp;quot;:&amp;quot;hello&amp;quot;}]}&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;ji-shu-jia-gou&quot;&gt;技术架构&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Rust + Tokio&lt;&#x2F;strong&gt;：内存安全，异步高性能&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;llama.cpp 后端&lt;&#x2F;strong&gt;：行业标准 GGUF 推理&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GPU 后端优先级&lt;&#x2F;strong&gt;：CUDA → Vulkan → OpenCL → MLX → CPU (fallback)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;动态端口管理&lt;&#x2F;strong&gt;：零冲突，自动分配&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;shi-ce-wsl2-intel-ji-xian&quot;&gt;实测：WSL2 + Intel 集显&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;ce-shi-huan-jing&quot;&gt;测试环境&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;项目&lt;&#x2F;th&gt;&lt;th&gt;值&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Core Ultra 7 255H (12 核心)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;内存&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;19GB&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Arc 140T (Arrow Lake H)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;环境&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;WSL2 (Linux 6.6.87)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 库已安装 (&lt;code&gt;libvulkan_intel.so&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;v1.9.0 (源码编译，启用 &lt;code&gt;llama-vulkan&lt;&#x2F;code&gt; feature)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;ce-shi-1-qwen3-5-0-8b-gguf-x-wu-fa-yun-xing&quot;&gt;测试 1: Qwen3.5-0.8B GGUF — ❌ 无法运行&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;llama_model_load: error loading model: unknown model architecture: &amp;#x27;qwen35&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;原因：Shimmy v1.9.0 内置的 llama.cpp &lt;strong&gt;尚未支持 Qwen3.5 架构&lt;&#x2F;strong&gt;。Qwen3.5 使用混合 SSM (Mamba) + Transformer 架构，需要更新版本的 llama.cpp。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;ce-shi-2-qwen2-5-safetensors-warning-ke-jia-zai-tui-li-wei-wan-cheng&quot;&gt;测试 2: Qwen2.5 SafeTensors — ⚠️ 可加载，推理未完成&lt;&#x2F;h3&gt;
+&lt;p&gt;SafeTensors 模型可以成功加载，但 Shimmy 报告 “Full transformer inference coming soon!”，推理支持仍在开发中。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gpu-hou-duan-shi-ce&quot;&gt;GPU 后端实测&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;后端&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CUDA&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 无 NVIDIA GPU&lt;&#x2F;td&gt;&lt;td&gt;不适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 可初始化但无真实 GPU&lt;&#x2F;td&gt;&lt;td&gt;WSL2 中只有 &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; 软件渲染器&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenCL&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 未编译&lt;&#x2F;td&gt;&lt;td&gt;可通过 &lt;code&gt;--features llama-opencl&lt;&#x2F;code&gt; 启用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MLX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ macOS only&lt;&#x2F;td&gt;&lt;td&gt;不适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;关键发现&lt;&#x2F;strong&gt;：&lt;code&gt;llvmpipe&lt;&#x2F;code&gt; 是 Mesa 的 CPU 软件渲染器，用 CPU 多线程模拟 Vulkan GPU。用 &lt;code&gt;--gpu-backend vulkan&lt;&#x2F;code&gt; 实际还是 CPU 做矩阵运算，可能反而更慢。&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Device: llvmpipe (LLVM 20.1.2, 256 bits)
+Type: CPU  ← 不是真正的 GPU！
+Vendor ID: 0x10005 (Mesa software renderer)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;wen-ti-gen-yin&quot;&gt;问题根因&lt;&#x2F;h2&gt;
+&lt;p&gt;无法运行不是 Shimmy 的问题，而是 &lt;strong&gt;WSL2 + Intel 集显的环境限制&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 DXG 内核模块与 Intel GPU 驱动不兼容&lt;&#x2F;strong&gt; — dmesg 持续报 ioctl 失败&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Intel GPU 驱动版本偏旧&lt;&#x2F;strong&gt; — 当前 32.0.101.6554，最新 32.0.101.8801（2026-05-15）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Windows Insider Preview Canary 频道&lt;&#x2F;strong&gt; — 26200 预发布版，兼容性不稳定&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;hou-xu-fang-xiang&quot;&gt;后续方向&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;优先级&lt;&#x2F;th&gt;&lt;th&gt;方案&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;更新 Intel GPU 驱动到最新版&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt; 更新 WSL2&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;退出 Insider Preview，切回稳定版&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;尝试 Level Zero 路径绕过 OpenCL DXG 问题&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;shui-gua-he-yong-shimmy&quot;&gt;谁适合用 Shimmy？&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ &lt;strong&gt;CUDA 环境&lt;&#x2F;strong&gt;（NVIDIA GPU）：开箱即用，性能最佳&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;macOS Apple Silicon&lt;&#x2F;strong&gt;：MLX 后端原生支持&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;需要 OpenAI API 兼容&lt;&#x2F;strong&gt;的现有工具链&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;WSL2 + Intel&#x2F;AMD 集显&lt;&#x2F;strong&gt;：Vulkan 后端受限，建议等驱动更新&lt;&#x2F;li&gt;
+&lt;li&gt;❌ &lt;strong&gt;纯 CPU 推理追求极致性能&lt;&#x2F;strong&gt;：Ollama 可能更成熟&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;can-kao-lian-jie&quot;&gt;参考链接&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;shimmy&quot;&gt;Shimmy Crates.io&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics 驱动下载&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

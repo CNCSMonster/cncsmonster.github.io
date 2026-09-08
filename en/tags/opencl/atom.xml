@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - OpenCL</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/opencl/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-06-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/opencl/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Why Intel GPU Can&#x27;t Run LLM Inference in WSL2: A Layer-by-Layer Diagnosis</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/wsl2-intel-gpu-llm-inference-diagnosis-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/wsl2-intel-gpu-llm-inference-diagnosis-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/wsl2-intel-gpu-llm-inference-diagnosis-en/">&lt;p&gt;In &lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel-en&#x2F;&quot;&gt;the previous post&lt;&#x2F;a&gt;, Shimmy failed to run on WSL2 with Intel integrated graphics. This post digs into why — it’s not Shimmy’s fault, not llama.cpp’s fault, but a fundamental &lt;strong&gt;incompatibility between WSL2’s DXG kernel module and the Intel GPU driver at the protocol level&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Part 2 of the “Local LLM Inference Environment” series.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;core-finding&quot;&gt;Core Finding&lt;&#x2F;h2&gt;
+&lt;p&gt;Intel integrated graphics &lt;strong&gt;cannot be used for LLM inference in WSL2&lt;&#x2F;strong&gt;. The issue isn’t in IGC or OpenCL drivers — it’s WSL2’s DXG kernel module failing to communicate with the Intel Arc 140T Windows driver.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wsl2-gpu-stack&quot;&gt;WSL2 GPU Stack&lt;&#x2F;h2&gt;
+&lt;p&gt;Four layers from hardware to Python:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Python (llama-cpp-python, OpenCL)
+         ↓
+[3] IGC — Intel Graphics Compiler
+         ↓
+[2] OpenCL ICD (intel-opencl-icd)
+         ↓
+[1] WSL2 DXG kernel module (&amp;#x2F;dev&amp;#x2F;dxg)
+         ↓
+[0] Windows Intel GPU driver
+         ↓
+     Physical GPU (Intel Arc 140T &amp;#x2F; Arrow Lake H)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;per-layer-diagnosis&quot;&gt;Per-Layer Diagnosis&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Layer&lt;&#x2F;th&gt;&lt;th&gt;Component&lt;&#x2F;th&gt;&lt;th&gt;Status&lt;&#x2F;th&gt;&lt;th&gt;Evidence&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;[0]&lt;&#x2F;td&gt;&lt;td&gt;Windows driver (32.0.101.6554)&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;Outdated&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;2025-01-15, Intel shipped many Arrow Lake updates since&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[1]&lt;&#x2F;td&gt;&lt;td&gt;WSL2 DXG (kernel 6.6.87.2)&lt;&#x2F;td&gt;&lt;td&gt;🔴 &lt;strong&gt;Massive ioctl failures&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;dmesg errors from 5 seconds after boot&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[2]&lt;&#x2F;td&gt;&lt;td&gt;OpenCL ICD (23.43.27642.40)&lt;&#x2F;td&gt;&lt;td&gt;✅ Enumerates GPU&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;clGetDeviceIDs&lt;&#x2F;code&gt; returns Intel Graphics&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[3]&lt;&#x2F;td&gt;&lt;td&gt;IGC (1.0.15468.25)&lt;&#x2F;td&gt;&lt;td&gt;✅ Library intact&lt;&#x2F;td&gt;&lt;td&gt;Compilation OK, but kernel submission goes through DXG → crash&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Layer 1 is the real failure point.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;dmesg-evidence&quot;&gt;dmesg Evidence&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;dmesg&lt;&#x2F;code&gt; is flooded with DXG ioctl errors from boot — &lt;strong&gt;not triggered by running llama.cpp&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;[    5.459659] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22  (EINVAL)
+[    5.460357] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -2   (ENOENT)
+[    5.460880] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+...
+[78509.821263] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+[78509.825964] misc dxg: dxgkio_reserve_gpu_va:     Ioctl failed: -75  (EOVERFLOW)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;errno&lt;&#x2F;th&gt;&lt;th&gt;Meaning&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;-2 (ENOENT)&lt;&#x2F;td&gt;&lt;td&gt;Adapter not found&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-22 (EINVAL)&lt;&#x2F;td&gt;&lt;td&gt;Invalid parameter — WSL2 DXG sends params the driver doesn’t understand&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-75 (EOVERFLOW)&lt;&#x2F;td&gt;&lt;td&gt;GPU virtual address reservation overflow&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;WSL2’s dxg module and the Windows Intel GPU driver are incompatible at the protocol level.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Intel Arc 140T is Arrow Lake H architecture, released late 2024.&lt;&#x2F;strong&gt; Windows driver &lt;code&gt;32.0.101.6554&lt;&#x2F;code&gt; (2025-01-15) is an early Arrow Lake driver with incomplete WSL2 DXG support. When DXG sends requests, the driver doesn’t understand them or has bugs, returning EINVAL&#x2F;EOVERFLOW.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;debugging-reflection&quot;&gt;Debugging Reflection&lt;&#x2F;h2&gt;
+&lt;p&gt;The first time you see &lt;code&gt;IGC segfault&lt;&#x2F;code&gt;, intuition says “IGC is the problem.” So you check IGC versions, look for known bugs, search Reddit — IGC is the latest, no known issues. Shift direction. Test Vulkan (WSL2 doesn’t support native Vulkan passthrough). Test DirectML (Windows-only, unusable in WSL2). Test Shimmy (same llama.cpp backend — completely unrelated variable).&lt;&#x2F;p&gt;
+&lt;p&gt;Four hours went into &lt;strong&gt;tracing upward and sideways&lt;&#x2F;strong&gt;. Downward takes one command, five minutes.&lt;&#x2F;p&gt;
+&lt;p&gt;Crash log formatting naturally draws your attention to the crashing layer. &lt;code&gt;IGC: Internal Compiler Error&lt;&#x2F;code&gt; — IGC’s name is in the error message, your attention gets pinned there. But when any component crashes &lt;strong&gt;while calling into an external layer&lt;&#x2F;strong&gt;, the root cause is almost always in the layer being called. Self-contained computation failures are your own problem.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;five-approaches-tested&quot;&gt;Five Approaches Tested&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Approach&lt;&#x2F;th&gt;&lt;th&gt;GPU Recognition&lt;&#x2F;th&gt;&lt;th&gt;Inference&lt;&#x2F;th&gt;&lt;th&gt;Rating&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Vulkan (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ Only llvmpipe&lt;&#x2F;td&gt;&lt;td&gt;CPU fallback&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Mesa needs native &lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;OpenCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;✅ Enumerates OK&lt;&#x2F;td&gt;&lt;td&gt;❌ DXG ioctl crash&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Retry after driver update&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;SYCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ Confirmed dead&lt;&#x2F;td&gt;&lt;td&gt;Needs ABI patch&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Community has given up&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ Works out of box&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Only viable option now&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;IPEX-LLM (Win)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ 17-18 t&#x2F;s&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;Verified on Lunar Lake&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;details&quot;&gt;Details&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Vulkan (WSL2)&lt;&#x2F;strong&gt;: No &lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt; device, Mesa Intel Vulkan ICD can’t initialize. GPU count = 0.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;OpenCL (WSL2)&lt;&#x2F;strong&gt;: GPU recognized (&lt;code&gt;Intel(R) Graphics [0x7d51]&lt;&#x2F;code&gt;), but IGC crashes on kernel submission — root cause is DXG layer.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;SYCL (WSL2)&lt;&#x2F;strong&gt;: Reddit r&#x2F;IntelArc users confirmed (2026-04) that WSL2 can’t detect Intel GPU via standard SYCL runtime. Community consensus: use Windows native.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;: Native Intel GPU support, WSL2 calls via HTTP API. &lt;strong&gt;Verified working, zero config.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;IPEX-LLM (Windows native)&lt;&#x2F;strong&gt;: Replacing IPEX-LLM’s bundled Ollama binary achieved 17-18 tokens&#x2F;s on Lunar Lake Arc 140V with qwen3:8b at 100% GPU utilization.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;next-steps&quot;&gt;Next Steps&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Priority&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;🔑 Update Windows Intel GPU driver (6554 → 8801)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;Update WSL2: &lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Return to stable Windows (exit Insider Preview Canary)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;Try Level Zero backend (&lt;code&gt;sudo apt install intel-level-zero-gpu&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics Driver Download&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;basic-commands&quot;&gt;Microsoft WSL Basic Commands&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy Project&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel-en&#x2F;&quot;&gt;Previous: Shimmy Review&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>
