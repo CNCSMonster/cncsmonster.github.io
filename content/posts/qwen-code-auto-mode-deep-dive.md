@@ -18,11 +18,32 @@ slug = "qwen-code-auto-mode-deep-dive"
 
 <style scoped>
 #qwen-auto-mode-approval-flow {
-  --flow-line: var(--vp-c-text-2);
-  --flow-card: var(--vp-c-bg-soft);
-  --flow-border: var(--vp-c-text-3);
+  --doc-text: #111827;
+  --doc-muted: #1f2937;
+  --doc-border: #9ca3af;
+  --doc-card: #f9fafb;
+  --doc-soft: #f3f4f6;
+  --doc-brand: #2563eb;
+  --doc-brand-soft: #dbeafe;
+  --doc-green: #15803d;
+  --doc-green-soft: #dcfce7;
+  --doc-green-border: #86efac;
+  --doc-yellow: #a16207;
+  --doc-yellow-soft: #fef9c3;
+  --doc-yellow-border: #fde047;
+  --doc-red: #b91c1c;
+  --doc-red-soft: #fee2e2;
+  --doc-red-border: #fca5a5;
+  --doc-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  --flow-line: var(--doc-muted);
+  --flow-card: var(--doc-card);
+  --flow-border: var(--doc-border);
   margin: 2rem 0;
-  color: var(--vp-c-text-1);
+  color: var(--doc-text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 #qwen-auto-mode-approval-flow * {
@@ -36,14 +57,14 @@ slug = "qwen-code-auto-mode-deep-dive"
   border: 1px solid var(--flow-border);
   border-radius: 0.75rem;
   background: var(--flow-card);
-  box-shadow: var(--vp-shadow-1);
+  box-shadow: var(--doc-shadow);
 }
 
 #qwen-auto-mode-approval-flow .flow-start {
   width: fit-content;
   margin: 0 auto;
   padding: 0.65rem 1.25rem;
-  border-color: var(--vp-c-brand-2);
+  border-color: var(--doc-brand);
   font-weight: 700;
   text-align: center;
 }
@@ -53,9 +74,9 @@ slug = "qwen-code-auto-mode-deep-dive"
   min-height: 2.25rem;
   align-items: center;
   justify-content: center;
-  color: var(--flow-line);
-  font-size: 1.25rem;
-  font-weight: 700;
+  color: #111827;
+  font-size: 1.35rem;
+  font-weight: 800;
   line-height: 1;
 }
 
@@ -82,16 +103,17 @@ slug = "qwen-code-auto-mode-deep-dive"
 #qwen-auto-mode-approval-flow .flow-down-label {
   flex: 0 0 auto;
   border-radius: 999px;
-  padding: 0.12rem 0.55rem;
-  background: var(--vp-c-default-soft);
-  color: var(--vp-c-text-2);
-  font-size: 0.78rem;
-  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  background: var(--doc-soft);
+  color: #111827;
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
 #qwen-auto-mode-approval-flow .flow-branch-arrow {
-  color: var(--flow-line);
-  font-weight: 700;
+  color: #111827;
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
 #qwen-auto-mode-approval-flow .flow-result {
@@ -102,21 +124,21 @@ slug = "qwen-code-auto-mode-deep-dive"
 }
 
 #qwen-auto-mode-approval-flow .flow-result--allow {
-  border-color: var(--vp-c-green-2);
-  background: var(--vp-c-green-soft);
-  color: var(--vp-c-green-1);
+  border-color: var(--doc-green-border);
+  background: var(--doc-green-soft);
+  color: var(--doc-green);
 }
 
 #qwen-auto-mode-approval-flow .flow-result--manual {
-  border-color: var(--vp-c-yellow-2);
-  background: var(--vp-c-yellow-soft);
-  color: var(--vp-c-yellow-1);
+  border-color: var(--doc-yellow-border);
+  background: var(--doc-yellow-soft);
+  color: var(--doc-yellow);
 }
 
 #qwen-auto-mode-approval-flow .flow-result--block {
-  border-color: var(--vp-c-red-2);
-  background: var(--vp-c-red-soft);
-  color: var(--vp-c-red-1);
+  border-color: var(--doc-red-border);
+  background: var(--doc-red-soft);
+  color: var(--doc-red);
 }
 
 #qwen-auto-mode-approval-flow .flow-next {
@@ -131,15 +153,16 @@ slug = "qwen-code-auto-mode-deep-dive"
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--flow-line);
-  font-weight: 700;
+  color: #111827;
+  font-size: 1.05rem;
+  font-weight: 800;
   line-height: 1.1;
 }
 
 #qwen-auto-mode-approval-flow .flow-review {
   padding: 1rem 1.15rem;
-  border-color: var(--vp-c-brand-2);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--doc-brand);
+  background: var(--doc-brand-soft);
   text-align: center;
 }
 
@@ -149,16 +172,16 @@ slug = "qwen-code-auto-mode-deep-dive"
 }
 
 #qwen-auto-mode-approval-flow .flow-review span {
-  color: var(--vp-c-text-2);
+  color: var(--doc-muted);
   font-size: 0.9rem;
 }
 
 #qwen-auto-mode-approval-flow .flow-section-note {
   display: block;
   margin-top: 0.4rem;
-  color: var(--vp-c-text-2);
-  font-size: 0.8rem;
-  font-weight: 400;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 #qwen-auto-mode-approval-flow .flow-outcomes {
@@ -181,8 +204,13 @@ slug = "qwen-code-auto-mode-deep-dive"
 }
 
 #qwen-auto-mode-approval-flow .flow-manual-route-intro {
-  color: var(--vp-c-text-2);
-  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.6;
+  opacity: 1;
   text-align: center;
 }
 
@@ -193,7 +221,7 @@ slug = "qwen-code-auto-mode-deep-dive"
   border: 1px solid var(--flow-border);
   border-radius: 0.75rem;
   background: var(--flow-card);
-  box-shadow: var(--vp-shadow-1);
+  box-shadow: var(--doc-shadow);
   font-weight: 600;
   text-align: center;
 }
@@ -219,12 +247,18 @@ slug = "qwen-code-auto-mode-deep-dive"
 }
 
 #qwen-auto-mode-approval-flow .flow-manual-branch-label {
-  color: var(--vp-c-text-2);
-  font-size: 0.82rem;
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 #qwen-auto-mode-approval-flow code {
   white-space: nowrap;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
 }
 
 @media (max-width: 640px) {
@@ -247,6 +281,31 @@ slug = "qwen-code-auto-mode-deep-dive"
 
   #qwen-auto-mode-approval-flow .flow-outcomes {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  #qwen-auto-mode-approval-flow,
+  #qwen-auto-mode-transcript-construction,
+  #qwen-auto-mode-two-stage-review,
+  #qwen-auto-mode-fallback-timeline {
+    --doc-text: #e5e7eb;
+    --doc-muted: #e5e7eb;
+    --doc-border: #6b7280;
+    --doc-card: #1f2937;
+    --doc-soft: #374151;
+    --doc-brand: #60a5fa;
+    --doc-brand-soft: #1e3a5f;
+    --doc-green: #86efac;
+    --doc-green-soft: #14532d;
+    --doc-green-border: #4ade80;
+    --doc-yellow: #fde68a;
+    --doc-yellow-soft: #713f12;
+    --doc-yellow-border: #facc15;
+    --doc-red: #fca5a5;
+    --doc-red-soft: #7f1d1d;
+    --doc-red-border: #f87171;
+    --doc-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
   }
 }
 </style>
@@ -488,10 +547,31 @@ Prior action: shell({"command":"ls -la"})
 
 <style scoped>
 #qwen-auto-mode-transcript-construction {
-  --construct-line: var(--vp-c-text-2);
-  --construct-border: var(--vp-c-text-3);
+  --doc-text: #111827;
+  --doc-muted: #1f2937;
+  --doc-border: #9ca3af;
+  --doc-card: #f9fafb;
+  --doc-soft: #f3f4f6;
+  --doc-brand: #2563eb;
+  --doc-brand-soft: #dbeafe;
+  --doc-green: #15803d;
+  --doc-green-soft: #dcfce7;
+  --doc-green-border: #86efac;
+  --doc-yellow: #a16207;
+  --doc-yellow-soft: #fef9c3;
+  --doc-yellow-border: #fde047;
+  --doc-red: #b91c1c;
+  --doc-red-soft: #fee2e2;
+  --doc-red-border: #fca5a5;
+  --doc-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  --construct-line: var(--doc-muted);
+  --construct-border: var(--doc-border);
   margin: 2rem 0;
-  color: var(--vp-c-text-1);
+  color: var(--doc-text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 #qwen-auto-mode-transcript-construction * {
@@ -509,8 +589,8 @@ Prior action: shell({"command":"ls -la"})
   padding: 1rem;
   border: 1px solid var(--construct-border);
   border-radius: 0.75rem;
-  background: var(--vp-c-bg-soft);
-  box-shadow: var(--vp-shadow-1);
+  background: var(--doc-card);
+  box-shadow: var(--doc-shadow);
 }
 
 #qwen-auto-mode-transcript-construction .construct-card strong {
@@ -522,7 +602,7 @@ Prior action: shell({"command":"ls -la"})
 #qwen-auto-mode-transcript-construction .construct-card ul {
   margin: 0;
   padding-left: 1.05rem;
-  color: var(--vp-c-text-2);
+  color: var(--doc-muted);
   font-size: 0.86rem;
 }
 
@@ -531,8 +611,8 @@ Prior action: shell({"command":"ls -la"})
 }
 
 #qwen-auto-mode-transcript-construction .construct-input {
-  border-color: var(--vp-c-brand-2);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--doc-brand);
+  background: var(--doc-brand-soft);
 }
 
 #qwen-auto-mode-transcript-construction .construct-process {
@@ -549,8 +629,8 @@ Prior action: shell({"command":"ls -la"})
   padding: 0.8rem;
   border: 1px solid var(--construct-border);
   border-radius: 0.75rem;
-  background: var(--vp-c-bg-soft);
-  box-shadow: var(--vp-shadow-1);
+  background: var(--doc-card);
+  box-shadow: var(--doc-shadow);
 }
 
 #qwen-auto-mode-transcript-construction .construct-action strong {
@@ -559,26 +639,26 @@ Prior action: shell({"command":"ls -la"})
 }
 
 #qwen-auto-mode-transcript-construction .construct-remove {
-  border-color: var(--vp-c-red-2);
-  background: var(--vp-c-red-soft);
+  border-color: var(--doc-red-border);
+  background: var(--doc-red-soft);
 }
 
 #qwen-auto-mode-transcript-construction .construct-keep {
-  border-color: var(--vp-c-green-2);
-  background: var(--vp-c-green-soft);
+  border-color: var(--doc-green-border);
+  background: var(--doc-green-soft);
 }
 
 #qwen-auto-mode-transcript-construction .construct-limit {
-  border-color: var(--vp-c-yellow-2);
-  background: var(--vp-c-yellow-soft);
+  border-color: var(--doc-yellow-border);
+  background: var(--doc-yellow-soft);
 }
 
 #qwen-auto-mode-transcript-construction .construct-output {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-color: var(--vp-c-green-2);
-  background: var(--vp-c-green-soft);
+  border-color: var(--doc-green-border);
+  background: var(--doc-green-soft);
   font-weight: 700;
 }
 
@@ -629,10 +709,31 @@ Transcript 通过过滤和裁剪减少不可信内容与审查成本，代价是
 
 <style scoped>
 #qwen-auto-mode-two-stage-review {
-  --stage-line: var(--vp-c-text-2);
-  --stage-border: var(--vp-c-text-3);
+  --doc-text: #111827;
+  --doc-muted: #1f2937;
+  --doc-border: #9ca3af;
+  --doc-card: #f9fafb;
+  --doc-soft: #f3f4f6;
+  --doc-brand: #2563eb;
+  --doc-brand-soft: #dbeafe;
+  --doc-green: #15803d;
+  --doc-green-soft: #dcfce7;
+  --doc-green-border: #86efac;
+  --doc-yellow: #a16207;
+  --doc-yellow-soft: #fef9c3;
+  --doc-yellow-border: #fde047;
+  --doc-red: #b91c1c;
+  --doc-red-soft: #fee2e2;
+  --doc-red-border: #fca5a5;
+  --doc-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  --stage-line: var(--doc-muted);
+  --stage-border: var(--doc-border);
   margin: 2rem 0;
-  color: var(--vp-c-text-1);
+  color: var(--doc-text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 #qwen-auto-mode-two-stage-review * {
@@ -654,22 +755,22 @@ Transcript 通过过滤和裁剪减少不可信内容与审查成本，代价是
   padding: 1rem;
   border: 1px solid var(--stage-border);
   border-radius: 0.75rem;
-  background: var(--vp-c-bg-soft);
-  box-shadow: var(--vp-shadow-1);
+  background: var(--doc-card);
+  box-shadow: var(--doc-shadow);
 }
 
 #qwen-auto-mode-two-stage-review .stage-input {
   margin-bottom: 1rem;
   padding: 0.8rem 1rem;
-  border: 1px solid var(--vp-c-brand-2);
+  border: 1px solid var(--doc-brand);
   border-radius: 999px;
-  background: var(--vp-c-brand-soft);
+  background: var(--doc-brand-soft);
   font-weight: 700;
   text-align: center;
 }
 
 #qwen-auto-mode-two-stage-review .stage-input span {
-  color: var(--vp-c-text-2);
+  color: var(--doc-muted);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -681,8 +782,8 @@ Transcript 通过过滤和裁剪减少不可信内容与审查成本，代价是
 #qwen-auto-mode-two-stage-review .stage-model {
   border-radius: 999px;
   padding: 0.2rem 0.65rem;
-  background: var(--vp-c-default-soft);
-  color: var(--vp-c-text-2);
+  background: var(--doc-soft);
+  color: var(--doc-muted);
   font-size: 0.82rem;
   font-weight: 700;
   text-align: center;
@@ -697,7 +798,7 @@ Transcript 通过过滤和裁剪减少不可信内容与审查成本，代价是
 }
 
 #qwen-auto-mode-two-stage-review .stage-item span:first-child {
-  color: var(--vp-c-text-2);
+  color: var(--doc-muted);
   font-size: 0.82rem;
 }
 
@@ -706,13 +807,13 @@ Transcript 通过过滤和裁剪减少不可信内容与审查成本，代价是
 }
 
 #qwen-auto-mode-two-stage-review .stage-one {
-  border-color: var(--vp-c-green-2);
-  background: var(--vp-c-green-soft);
+  border-color: var(--doc-green-border);
+  background: var(--doc-green-soft);
 }
 
 #qwen-auto-mode-two-stage-review .stage-two {
-  border-color: var(--vp-c-brand-2);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--doc-brand);
+  background: var(--doc-brand-soft);
 }
 
 #qwen-auto-mode-two-stage-review .stage-gate {
@@ -730,8 +831,8 @@ Transcript 通过过滤和裁剪减少不可信内容与审查成本，代价是
   max-width: 8rem;
   border-radius: 999px;
   padding: 0.16rem 0.65rem;
-  background: var(--vp-c-default-soft);
-  color: var(--vp-c-text-2);
+  background: var(--doc-soft);
+  color: var(--doc-muted);
   font-size: 0.78rem;
 }
 
@@ -788,6 +889,14 @@ Stage 1 的输出预算为自适应思考预留余量，Stage 2 则为复核提�
 
 Classifier 在网络超时、API 报错、返回格式无法解析或上下文溢出等情况下，会将结果标记为 `unavailable`。调度器记录不可用计数，并将当前调用转入人工确认流程；普通非交互运行无法弹出确认时，会拒绝执行。如果连续两次无法完成审查且计数未被重置，下一条仍需送审的调用会跳过 Classifier，直接进入人工确认流程。
 
+前两行是本次 Classifier 审查的结果；第三行是在当前调用送审前，根据此前失败计数作出的降级决定。
+
+| 当前调用的处理条件 | 交互式会话中本次调用 | 普通非交互运行中本次调用 |
+| :--- | :--- | :--- |
+| Classifier 明确阻断 | 直接拒绝 | 直接拒绝 |
+| Classifier 不可用 | 转人工确认 | 因无法确认而拒绝 |
+| 此前失败计数已达到阈值，跳过 Classifier | 转人工确认 | 因无法确认而拒绝 |
+
 ---
 
 ## 五、失败计数与降级：避免自动审批无限重试
@@ -800,10 +909,31 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
 
 <style scoped>
 #qwen-auto-mode-fallback-timeline {
-  --timeline-line: var(--vp-c-text-2);
-  --timeline-border: var(--vp-c-text-3);
+  --doc-text: #111827;
+  --doc-muted: #1f2937;
+  --doc-border: #9ca3af;
+  --doc-card: #f9fafb;
+  --doc-soft: #f3f4f6;
+  --doc-brand: #2563eb;
+  --doc-brand-soft: #dbeafe;
+  --doc-green: #15803d;
+  --doc-green-soft: #dcfce7;
+  --doc-green-border: #86efac;
+  --doc-yellow: #a16207;
+  --doc-yellow-soft: #fef9c3;
+  --doc-yellow-border: #fde047;
+  --doc-red: #b91c1c;
+  --doc-red-soft: #fee2e2;
+  --doc-red-border: #fca5a5;
+  --doc-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  --timeline-line: var(--doc-muted);
+  --timeline-border: var(--doc-border);
   margin: 2rem 0;
-  color: var(--vp-c-text-1);
+  color: var(--doc-text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 #qwen-auto-mode-fallback-timeline * {
@@ -823,8 +953,8 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
   justify-content: center;
   border: 1px solid var(--timeline-border);
   border-radius: 0.75rem;
-  background: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-2);
+  background: var(--doc-card);
+  color: var(--doc-muted);
   font-weight: 700;
   text-align: center;
 }
@@ -833,8 +963,8 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
   padding: 1rem 1.15rem;
   border: 1px solid var(--timeline-border);
   border-radius: 0.75rem;
-  background: var(--vp-c-bg-soft);
-  box-shadow: var(--vp-shadow-1);
+  background: var(--doc-card);
+  box-shadow: var(--doc-shadow);
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-card strong {
@@ -843,7 +973,7 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-card span {
-  color: var(--vp-c-text-2);
+  color: var(--doc-muted);
   font-size: 0.9rem;
 }
 
@@ -864,8 +994,8 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-check {
-  border-color: var(--vp-c-brand-2);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--doc-brand);
+  background: var(--doc-brand-soft);
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-branches {
@@ -885,8 +1015,8 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
 #qwen-auto-mode-fallback-timeline .timeline-branch-label {
   border-radius: 999px;
   padding: 0.12rem 0.55rem;
-  background: var(--vp-c-default-soft);
-  color: var(--vp-c-text-2);
+  background: var(--doc-soft);
+  color: var(--doc-muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -901,19 +1031,19 @@ Classifier 在网络超时、API 报错、返回格式无法解析或上下文�
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-result--review {
-  border-color: var(--vp-c-brand-2);
-  background: var(--vp-c-brand-soft);
+  border-color: var(--doc-brand);
+  background: var(--doc-brand-soft);
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-result--manual {
-  border-color: var(--vp-c-yellow-2);
-  background: var(--vp-c-yellow-soft);
-  color: var(--vp-c-yellow-1);
+  border-color: var(--doc-yellow-border);
+  background: var(--doc-yellow-soft);
+  color: var(--doc-yellow);
 }
 
 #qwen-auto-mode-fallback-timeline .timeline-reset {
   margin-top: 0.45rem;
-  color: var(--vp-c-text-2);
+  color: var(--doc-muted);
   font-size: 0.85rem;
   text-align: center;
 }
