@@ -6,77 +6,103 @@ slug = "deepseek-api-data-training-policy"
     tags = ["DeepSeek", "API", "隐私", "数据训练", "调研", "Research", "Privacy", "Data Training"]
 +++
 
-## 问题
-
-我用 DeepSeek API，我的数据会被拿去训练模型吗？
-
-## 答案
-
-**Open Platform 条款对此保持沉默——没说会，也没说不会。** 不像 OpenAI/Anthropic 那样明确承诺「API 数据不用于训练」。
-
-| 我用的是 | 会被训练吗？ | 能关吗？ |
-|---------|:-----------:|:------:|
-| Web/App 聊天 | ✅ 默认会 | ✅ 关闭「Improve the model for everyone」 |
-| API | ⚠️ 没说 | ❌ 无开关 |
-
-## 我该怎么办
-
-1. **默认当它「会」处理** — 条款没说不会，就不要假设不会
-2. **敏感数据不要走 API** — 尤其是用户隐私、商业机密
-3. **用本地部署替代** — DeepSeek 开源了模型权重（MIT License），本地跑完全规避
-4. **联系官方要求澄清** — <privacy@deepseek.com> / <api-service@deepseek.com>
-
-## 依据
-
-### 依据 1：通用条款允许训练，但可 opt-out（Web/App 端）
-
-**来源：** [DeepSeek Terms of Use — Section 4.3](https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html)
-
-> *"Under the premise of secure encryption technology processing, strict de-identification rendering, and irreversibility to identify specific individuals, we may, to a minimal extent, use Inputs and Outputs to provide, maintain, operate, develop or improve the Services or the underlying technologies supporting the Services."*
->
-> *"If you refuse to allow us to process the data in the manner described above, you can opt out by turning off 'Improve the model for everyone'."*
-
-**→ 这说明：Web/App 端默认会用数据训练，但你可以关。**
-
-### 依据 2：隐私政策明确写了训练用途
-
-**来源：** [DeepSeek Privacy Policy](https://cdn.deepseek.com/policies/en-US/deepseek-privacy-policy.html)
-
-> *"To improve and develop the Services and to train and improve our technology, such as our machine learning models and algorithms."*
->
-> 用户权利: *"the right to opt-out of using your Personal Data for training our models or optimizing our technologies."*
-
-**→ 这说明：训练用途是书面的，opt-out 权利也是书面的。**
-
-### 依据 3：API 条款缺少等价承诺（关键）
-
-**来源：** [DeepSeek Open Platform Terms of Service](https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html)
-
-通读全文，与通用条款对比：
-
-| 条款 | 通用 Terms（Web/App） | Open Platform Terms（API） |
-|------|:---:|:---:|
-| 声明可能使用 Input/Output 训练 | ✅ Section 4.3 | ❌ 无 |
-| 提供 opt-out 开关 | ✅「Improve the model for everyone」 | ❌ 无 |
-| 开发者保留 Input 所有权 | — | ✅ Section 4.2 |
-| 引用隐私政策 | — | ✅ Section 5.5 |
-
-**→ 这说明：API 端既没有说会用，也没有说不会用。不承诺 = 不可信。**
-
-### 依据 4：行业对比——别人都承诺了
-
-| 厂商 | 付费 API 承诺不训练？ | 来源 |
-|------|:---:|------|
-| **OpenAI** | ✅ 明确承诺（2023.3 起） | [developers.openai.com](https://developers.openai.com/api/docs/guides/your-data) |
-| **Anthropic** | ✅ 明确承诺 | [privacy.claude.com](https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training) |
-| **Google Cloud Gemini** | ✅ 明确承诺 | [docs.cloud.google.com](https://docs.cloud.google.com/gemini/docs/discover/data-governance) |
-| **DeepSeek** | ❌ 未承诺 | [Open Platform Terms](https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html) |
-
-**→ 这说明：DeepSeek 的沉默不是行业惯例，是落后于同行。**
+> **更新于 2026-09-22**：重写。原稿的结论（敏感数据别走 API）站得住，但推理有一个缺口——只读了《开放平台服务协议》一份文件，把上层的训练授权漏掉了。三份协议版本号与初版调研时点完全一致，所以不是条款变了，是读法错了。
 
 ---
 
-## 补充
+## 问题
 
-- **微博 @刘聪NLP**（2026-05-15）：用户普遍担心 LLM 拿聊天数据训练
+我用 DeepSeek 开放平台 API，我的 prompt 和返回内容会被拿去训练模型吗？
 
+## 答案
+
+**"开放平台协议里没写训练"是真的，但从这句话推不出"不会用于训练"。**
+
+DeepSeek 的数据规则由**三份协议叠加**构成。训练授权写在母协议《用户协议》第 4.3 条里，而《用户协议》第 1.1 条把 API 明确算作"服务"。API 场景的真实状态是**未披露**：DeepSeek 既没有承诺不使用 API 输入输出做训练，也没有声明它是否收集、留存这些内容。
+
+| 我用的是 | 条款写了什么 | 能关吗？ |
+|---------|-----------|:-------:|
+| Web/App 智能对话 | ✅ 明确写了会用于训练（去标识化前提） | ✅ 关闭「数据用于优化体验」 |
+| 开放平台 API | ⚠️ 子协议无训练授权条款，但母协议 4.3 未被排除；隐私政策未声明收集 prompt 内容 | ❌ 开放平台无对应开关 |
+
+## 关键：三份协议是叠加的，不是互相替换的
+
+**《DeepSeek 开放平台服务协议》**（更新 2026-04-22，生效 2026-04-29）首部：
+
+> *"《DeepSeek开放平台服务协议》……**作为《DeepSeek用户协议》项下所指的具体协议及其组成部分**，特别适用于您作为个人或企业开发者……使用本平台提供的应用程序编程接口（API）或其他开发者工具……的活动。"*
+
+**《DeepSeek 用户协议》**（更新/生效 2025-09-05）引言：
+
+> *"您在使用本服务某一特定功能时，针对该特定功能可能会另有单独的协议……**本协议与具体协议的内容存在冲突的，以具体协议的规定为准。所有前述条款和规则构成本协议不可分割的组成部分**。"*
+
+**→ 子协议只在"与母协议冲突"时压制母协议。子协议对训练保持沉默，不构成冲突，因此《用户协议》4.3 的训练授权对 API 场景并未被排除。** 判断 API 数据的命运，不能只读开放平台协议一份文件。
+
+三份文件的分工：
+
+| 文件 | 版本日期 | 对训练说了什么 |
+|------|---------|--------------|
+| 《用户协议》1.1 + 4.3 | 2025-09-05 | 1.1 服务定义含 API；4.3 **授权**将"服务所收集的输入及对应输出"用于模型训练和服务优化，并索取免费非排他许可 |
+| 《开放平台服务协议》 | 2026-04-29 生效 | **无**训练授权条款；4.2 输入权利归用户、输出归用户；5.5 将个人信息处理**指向隐私政策** |
+| 《隐私政策》 | 2026-02-10 | 前言适用范围**明列 API**；一、2「智能对话」含训练条款；一、3「开放平台服务」只列实名信息/邮箱/支付订单，**未列 prompt 内容** |
+
+## 依据
+
+### 依据 1：母协议写着"会用于训练"，且其服务定义包含 API
+
+**来源：** [《DeepSeek 用户协议》](https://cdn.deepseek.com/policies/zh-CN/deepseek-terms-of-use.html) 第 1.1、4.3 条（2026-09-22 抓取，版本 2025-09-05）
+
+> 1.1 *"我们的产品及服务包括我们以网页、应用程序……供第三方网站和应用程序使用软件开发工具包（SDK）、**应用程序编程接口（API）**以及随技术发展出现的创新形态方式向您提供的产品与服务。"*
+>
+> 4.3 *"为向您提供连续、高质量的服务，**在经安全加密技术处理、严格去标识化且无法重新识别特定个人的前提下，我们可能会将服务所收集的输入及对应输出，用于模型训练和服务的优化。在此前提下，您同意授予深度求索在全球范围内一项免费的、非排他的许可使用权**……如您拒绝将您的数据用于模型训练，可以在产品内通过关闭'数据用于优化体验'来选择退出。"*
+
+（英文版同条款：[Terms of Use §4.3](https://cdn.deepseek.com/policies/en-US/deepseek-terms-of-use.html)。国内账号以中文版为准。）
+
+### 依据 2：子协议无训练授权，但把个人信息处理指向隐私政策
+
+**来源：** [《DeepSeek 开放平台服务协议》](https://cdn.deepseek.com/policies/zh-CN/deepseek-open-platform-terms-of-service.html)（2026-09-22 抓取，生效 2026-04-29）
+
+- 全文无训练授权表述（4.2 的"训练其他模型（如模型蒸馏）"是**给用户的权利**，不是 DeepSeek 取得用户数据用于自身训练的授权）
+- 4.2 *"您保留在提交的输入中拥有的任何权利、所有权和利益（如有）……我们将本服务输出的内容的任何权利、所有权和利益（如有）归属于您。"*
+- 5.5 *"我们会按照[《DeepSeek隐私政策》]……收集、处理您作为个人信息主体在使用开放平台服务时产生和提供的个人信息。"*
+- 全文**无**数据留存期限、删除机制、日志约定
+
+### 依据 3：隐私政策覆盖 API，但对 API 的 prompt 内容只字未提
+
+**来源：** [《DeepSeek 隐私政策》](https://cdn.deepseek.com/policies/zh-CN/deepseek-privacy-policy.html)（2026-09-22 抓取，版本 2026-02-10）
+
+> 前言 *"除非本隐私政策另有说明，本隐私政策适用于我们提供的DeepSeek网页、应用程序、小程序、供第三方网站和应用程序使用的软件开发工具包（SDK）和**应用程序编程接口（API）**……"*
+>
+> 一、2 智能对话 *"在经安全加密技术处理和去标识化前提下，我们可能会将服务所收集的输入及对应输出，用于DeepSeek模型训练和服务的优化。"*
+>
+> 一、3 开放平台服务：收集清单只有实名身份信息、绑定邮箱、支付订单交易信息；末句 *"以上个人信息的收集处理仅适用于DeepSeek开放平台。"*
+
+**→ 真正的缺口在这里。** DeepSeek 没有针对 API 场景声明它收集 prompt/completion 内容，也没有声明不收集。而模型推理必须把完整 prompt 读进服务端——接收不等于留存，协议却没写留存多久。**"未列入收集清单"是披露缺失，不是数据未被使用的保证。**
+
+### 依据 4：留存只有法定下限，API 文档站零隐私声明
+
+- 隐私政策 五、2：*"遵从法律法规有关信息留存的要求（例如：《网络安全法》规定……并按照规定留存相关的网络日志不少于六个月）"*；注销或删除后 *"对您的个人信息进行删除或匿名化处理"*
+- [api-docs.deepseek.com](https://api-docs.deepseek.com/zh-cn/)：2026-09-22 检查，全站**没有任何**关于数据留存、日志、是否存储 prompt/completion、是否用于训练的说明
+- 训练条款的退出开关「数据用于优化体验」，在隐私政策 六、2.1 给出的路径是 App/Web 的"头像—设置—数据管理"；开放平台控制台无对应开关，纯 API 账号能否行使该退出权，条款未明确
+
+### 依据 5：横向对比——"正面承诺"是可达成的标准，DeepSeek 没做到
+
+| 厂商 | 付费 API 是否**正面承诺**不训练 | 原话 | 来源 |
+|------|:---:|---|------|
+| OpenAI | ✅ | *"As of March 1, 2023, data sent to the OpenAI API is not used to train or improve OpenAI models (unless you explicitly opt in)."* 默认滥用监控日志留存 30 天 | [your-data](https://developers.openai.com/api/docs/guides/your-data) |
+| Anthropic | ✅ | *"By default, we will not use your inputs or outputs from our commercial products (e.g. Claude for Work, **Anthropic API** …) to train our models."* | [privacy.claude.com](https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training) |
+| Google Cloud Gemini | ✅ | *"Gemini doesn't use your prompts or its responses as data to train its models."* | [data-governance](https://docs.cloud.google.com/gemini/docs/discover/data-governance) |
+| **DeepSeek** | ❌ 无正面承诺，且母协议保留训练授权 | 见依据 1–3 | [开放平台服务协议](https://cdn.deepseek.com/policies/zh-CN/deepseek-open-platform-terms-of-service.html) |
+
+**→ 差别不是"DeepSeek 没写、别人写了"这么简单：别人写的是"不会"，DeepSeek 母协议写的是"可能会"。**
+
+## 我该怎么办
+
+1. **敏感数据不要走 DeepSeek API** — 用户隐私、商业机密、代码库明文。理由不是"它一定会训练"，而是"它没有承诺不训练，且母协议保留了这项授权"
+2. **别把"协议没写"当成放行依据** — 那是把文本评价当成了行为保证，而且要先确认没有上层协议写了
+3. **需要正面承诺就换厂商** — 上表三家的原话可以直接引用、可审计
+4. **本地部署是唯一的确定性** — DeepSeek 开源模型权重（MIT License），本地推理不存在这条问题链
+5. **留一个复核动作** — 每季度重读三份协议，重点看开放平台协议是否新增数据条款、隐私政策一、3 是否开始列 prompt 内容。联系方式 <privacy@deepseek.com> / <api-service@deepseek.com>
+
+## 时效与版本
+
+2026-09-22 逐份重抓三份协议，版本号与初版调研时点（2026-05-19）**完全一致**：用户协议 2025-09-05、隐私政策 2026-02-10、开放平台服务协议 2026-04-29 生效。条款随时会改，以上结论只反映这个时点的文本。
