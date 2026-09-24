@@ -5,6 +5,10 @@ date = 2026-05-15T00:00:00+08:00
     tags = ["WSL2", "IME", "Lag", "Troubleshooting", "swap", "swappiness", "排查"]
 +++
 
+> ⚠️ **Note: This article has been archived**
+>
+> This post records an earlier troubleshooting session for input method lag and is preserved for historical reference only. For the comprehensive best practice guide that combines low-latency input with automated host memory reclamation, see: [WSL2 Low Latency Tuning Guide](/posts/wsl2-low-latency-tuning-guide/).
+
 ## Running into the Same Problem?
 
 Typing Chinese in a WSL2 terminal feels "sluggish" — a sticky delay between keystroke and character appearing on screen.
