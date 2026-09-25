@@ -171,9 +171,9 @@ a {
 }
 
 .module-card {
-    background: $bg-color;
+    background: rgba(255, 120, 0, 0.08);
     border: 1px solid $border-color;
-    border-radius: 0.5rem;
+    border-radius: 12px 34px 29px 12px;
     padding: 1.5rem;
     transition: transform 0.2s, box-shadow 0.2s;
 
@@ -1041,7 +1041,7 @@ a {
         margin-bottom: 3rem;
         
         .feed-card {
-            background: white;
+            background: $bg-color;
             border: 2px solid $border-color;
             border-radius: 1rem;
             padding: 1.5rem;
@@ -1123,8 +1123,8 @@ a {
                 position: relative;
                 
                 &:hover {
-                    background: #e0e7ff;
-                    
+                    background: #ffe9d9;
+
                     .click-hint {
                         opacity: 1;
                     }
@@ -1223,7 +1223,7 @@ a {
         }
         
         .compatibility-note {
-            background: white;
+            background: $bg-color;
             padding: 1.25rem;
             border-radius: 0.75rem;
             display: flex;
@@ -1264,7 +1264,7 @@ a {
             .reader-item {
                 display: block;
                 padding: 1.25rem;
-                background: white;
+                background: $bg-color;
                 border: 2px solid $border-color;
                 border-radius: 0.75rem;
                 text-decoration: none;
