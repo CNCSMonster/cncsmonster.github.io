@@ -711,18 +711,18 @@ a {
 // Footer
 .site-footer {
     background: $bg-secondary;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
     text-align: center;
     color: $text-light;
     font-size: 0.9rem;
 
     p {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
     }
-    
+
     .footer-links {
-        margin-top: 0.75rem;
-        margin-bottom: 0.5rem;
+        margin-top: 0.35rem;
+        margin-bottom: 0.25rem;
         font-size: 0.875rem;
         
         a {
