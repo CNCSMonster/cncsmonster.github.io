@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Handy</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/handy/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sat, 08 Aug 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Offline Speech-to-Text: Why I Ultimately Chose Handy</title>
+          <pubDate>Sat, 08 Aug 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/offline-speech-to-text-handy-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/offline-speech-to-text-handy-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/offline-speech-to-text-handy-en/">&lt;p&gt;Speaking to your AI coding assistant is becoming a natural way to interact. But there’s an often-overlooked question in the speech-to-text pipeline: &lt;strong&gt;who gets your voice data?&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;This article researches cross-platform, fully offline speech-to-text solutions, explains why I ultimately chose &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;handy.computer&quot;&gt;Handy&lt;&#x2F;a&gt;, and documents the complete selection process with real-world measurements.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-speech-to-text-should-run-locally&quot;&gt;Why Speech-to-Text Should Run Locally&lt;&#x2F;h2&gt;
+&lt;p&gt;Local (offline) speech-to-text provides two independent values:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Privacy&lt;&#x2F;strong&gt; — Your voice is a biometric characteristic, and its exposure carries real risks of cloning and abuse. When audio never leaves the device, the risk is closed at the source.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Performance&lt;&#x2F;strong&gt; — No network round-trip of “upload audio → cloud transcription → return text”. For push-to-talk interaction, the latency difference is perceptible.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;the-risk-of-voice-exposure&quot;&gt;The Risk of Voice Exposure&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Voice is a biometric characteristic&lt;&#x2F;strong&gt; (official definitions):&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pages.nist.gov&#x2F;800-63-4&#x2F;sp800-63b.html&quot;&gt;NIST SP 800-63B&lt;&#x2F;a&gt; lists voice prints among biometric characteristics&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.edpb.europa.eu&#x2F;system&#x2F;files&#x2F;2021-03&#x2F;edpb_guidelines_022021_virtual_voice_assistants_adopted-public-consultation_en.pdf&quot;&gt;EDPB Guidelines 02&#x2F;2021&lt;&#x2F;a&gt; (para. 31): “voice data is inherently biometric personal data”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Exposure is a scaled, real-world threat&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Fact&lt;&#x2F;th&gt;&lt;th&gt;Data&lt;&#x2F;th&gt;&lt;th&gt;Source&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Cloning threshold&lt;&#x2F;td&gt;&lt;td&gt;3 seconds of audio → 85% similarity&lt;&#x2F;td&gt;&lt;td&gt;McAfee&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Fraud scale&lt;&#x2F;td&gt;&lt;td&gt;$1.65B deepfake losses in 2025&lt;&#x2F;td&gt;&lt;td&gt;Surfshark&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Reach&lt;&#x2F;td&gt;&lt;td&gt;1 in 4 Americans encountered AI voice scams; 77% of victims lost money&lt;&#x2F;td&gt;&lt;td&gt;Hiya &#x2F; McAfee&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Official recognition&lt;&#x2F;td&gt;&lt;td&gt;FBI’s first AI crime category in 2025, $893M in losses&lt;&#x2F;td&gt;&lt;td&gt;FBI IC3&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Cases in China&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.thepaper.cn&#x2F;newsDetail_forward_30204154&quot;&gt;The Paper 2025-02&lt;&#x2F;a&gt;: AI voice impersonation of a grandson defrauded an elderly person of ¥20,000&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;news.qq.com&#x2F;rain&#x2F;a&#x2F;20260605A070IM00&quot;&gt;Jinshipin 2026-06&lt;&#x2F;a&gt;: AI face-swap + voice impersonation of a friend, ¥4.3M defrauded (5–10 seconds of audio is enough to extract a voiceprint)&lt;&#x2F;li&gt;
+&lt;li&gt;China’s Personal Information Protection Law (PIPL) classifies voiceprints as &lt;strong&gt;sensitive personal information&lt;&#x2F;strong&gt;, consistent with GDPR’s treatment of biometrics&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Implication&lt;&#x2F;strong&gt;: An online speech-to-text service means voluntarily handing your audio to an uncontrollable third party, which decides retention, training, and security. Risk paths:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Cloning and impersonation (deceiving &lt;em&gt;people&lt;&#x2F;em&gt;, not technical systems)&lt;&#x2F;li&gt;
+&lt;li&gt;Entering training datasets (nearly impossible to remove)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;tool-selection-why-handy&quot;&gt;Tool Selection: Why Handy&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Requirements&lt;&#x2F;strong&gt;: Cross-platform &#x2F; fully offline &#x2F; push-to-talk &#x2F; terminal paste compatibility &#x2F; Chinese support&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Handy vs. Shandianshuo&lt;&#x2F;strong&gt; (both local solutions, key difference in terminal adaptation):&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Handy&lt;&#x2F;th&gt;&lt;th&gt;Shandianshuo&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Paste method&lt;&#x2F;td&gt;&lt;td&gt;Configurable: Ctrl+V &#x2F; Ctrl+Shift+V &#x2F; Shift+Insert&lt;&#x2F;td&gt;&lt;td&gt;Fixed Ctrl+V&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Terminal compatibility&lt;&#x2F;td&gt;&lt;td&gt;Windows Terminal etc. ✅&lt;&#x2F;td&gt;&lt;td&gt;Cannot input in Ctrl+Shift+V terminals ❌&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Linux&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;❌ No Linux version&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Models&lt;&#x2F;td&gt;&lt;td&gt;Switchable (Whisper &#x2F; Parakeet &#x2F; SenseVoice)&lt;&#x2F;td&gt;&lt;td&gt;Fixed&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Two key points&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Terminal paste&lt;&#x2F;strong&gt;: Windows Terminal’s paste shortcut is &lt;code&gt;Ctrl+Shift+V&lt;&#x2F;code&gt;, not &lt;code&gt;Ctrl+V&lt;&#x2F;code&gt;. Shandianshuo only simulates &lt;code&gt;Ctrl+V&lt;&#x2F;code&gt;, so transcribed text cannot be pasted into terminals that require &lt;code&gt;Ctrl+Shift+V&lt;&#x2F;code&gt;. Handy lets you configure the paste method — the only one that works in terminals.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Multiple models&lt;&#x2F;strong&gt;: Handy supports switching between several local models. In testing, &lt;strong&gt;SenseVoice&lt;&#x2F;strong&gt; gave the best Chinese quality, better than Whisper.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;&lt;strong&gt;Other candidates eliminated&lt;&#x2F;strong&gt;: Zhipu Input Method has no Linux version; Voisty is paid.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;measurements-2026-05&quot;&gt;Measurements (2026-05)&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Scenario&lt;&#x2F;strong&gt;: push-to-talk real-time voice input (press to speak, release to get text immediately), where real-time performance is a hard requirement.
+&lt;strong&gt;Hardware baseline&lt;&#x2F;strong&gt;: Intel Core Ultra 7 255H (Arc 140T iGPU, no discrete GPU).
+Model conclusions must be tied to hardware and use case — without these, “which model is better” is meaningless.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Environment&lt;&#x2F;th&gt;&lt;th&gt;Result&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Windows&lt;&#x2F;td&gt;&lt;td&gt;✅ Tested: works out of the box, SenseVoice best for Chinese&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;macOS&lt;&#x2F;td&gt;&lt;td&gt;✅ Officially supported (.dmg for Apple Silicon &#x2F; Intel), not tested&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Ubuntu (Wayland)&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Tested: global hotkey unusable out of the box — a Wayland platform limitation (&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&#x2F;issues&#x2F;1691&quot;&gt;#1691&lt;&#x2F;a&gt;, &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&#x2F;issues&#x2F;140&quot;&gt;#140&lt;&#x2F;a&gt;); fixable with a udev rule for &#x2F;dev&#x2F;uinput permissions + switching to X11 session, verified working&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Model conclusion&lt;&#x2F;strong&gt; (Intel Core Ultra 7 255H + Arc 140T iGPU, push-to-talk scenario):&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;SenseVoice wins&lt;&#x2F;strong&gt;: ~240 MB, &lt;strong&gt;converts 1 minute of speech in under 3 seconds&lt;&#x2F;strong&gt;; simple commands appear instantly&lt;&#x2F;li&gt;
+&lt;li&gt;vs. Whisper large v3 (over 1 GB):
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Better&lt;&#x2F;strong&gt; Chinese quality&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Comparable&lt;&#x2F;strong&gt; for mixed Chinese-English and pure English&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Much faster&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;boundaries&quot;&gt;Boundaries&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Voice input suits natural-language intent; &lt;strong&gt;passwords and full code are unsuitable for voice input&lt;&#x2F;strong&gt; (precision issues)&lt;&#x2F;li&gt;
+&lt;li&gt;Local solutions prevent “audio → third party”; they do &lt;strong&gt;not&lt;&#x2F;strong&gt; prevent recording by a compromised machine or physical eavesdropping&lt;&#x2F;li&gt;
+&lt;li&gt;Transcribed text is still sent to the AI model — local processing protects the audio, not the content itself&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;handy.computer&quot;&gt;Handy website&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&quot;&gt;Handy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;cjpais&#x2F;Handy&#x2F;issues&#x2F;1691&quot;&gt;Handy issue #1691 (global hotkey unusable in background on Ubuntu 24.04, with workaround)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pages.nist.gov&#x2F;800-63-4&#x2F;sp800-63b.html&quot;&gt;NIST SP 800-63B&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.edpb.europa.eu&#x2F;system&#x2F;files&#x2F;2021-03&#x2F;edpb_guidelines_022021_virtual_voice_assistants_adopted-public-consultation_en.pdf&quot;&gt;EDPB Guidelines 02&#x2F;2021 on Virtual Voice Assistants (PDF, para. 31)&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

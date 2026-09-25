@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - 包管理</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/bao-guan-li/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2025-01-03T00:22:09+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/bao-guan-li/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Python Package Management with UV</title>
+        <published>2025-01-03T00:22:09+08:00</published>
+        <updated>2025-01-03T00:22:09+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/shi-yong-uv-guan-li-python-bao/"/>
+        <id>https://cncsmonster.github.io/en/posts/shi-yong-uv-guan-li-python-bao/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/shi-yong-uv-guan-li-python-bao/">&lt;p&gt;UV is a blazing-fast Python package and project manager written in Rust.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;reference&quot;&gt;Reference&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;astral-sh&#x2F;uv&quot;&gt;astral-sh&#x2F;uv&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Using pip
+pip install uv
+
+# Or using the standalone installer
+curl -LsSf https:&amp;#x2F;&amp;#x2F;astral.sh&amp;#x2F;uv&amp;#x2F;install.sh | sh
+
+# Or using cargo
+cargo install uv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;using-uv-to-run-python-projects&quot;&gt;Using UV to Run Python Projects&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Navigate to the project root first
+# Initialize UV project configuration
+uv init
+
+# Add dependencies
+uv add &amp;lt;package-name&amp;gt;
+
+# Run a Python script
+uv run python script.py
+
+# Run arbitrary commands
+uv run &amp;lt;command&amp;gt;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;common-commands&quot;&gt;Common Commands&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Create a virtual environment
+uv venv
+
+# Install packages
+uv pip install &amp;lt;package&amp;gt;
+
+# Export dependencies
+uv pip compile requirements.in -o requirements.txt
+
+# Sync dependencies
+uv pip sync requirements.txt
+
+# Show dependency tree
+uv pip tree
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;advantages&quot;&gt;Advantages&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;🚀 &lt;strong&gt;Blazing fast&lt;&#x2F;strong&gt;: 10–100× faster than pip&lt;&#x2F;li&gt;
+&lt;li&gt;📦 &lt;strong&gt;Compatible&lt;&#x2F;strong&gt;: Fully compatible with pip and requirements.txt&lt;&#x2F;li&gt;
+&lt;li&gt;🔧 &lt;strong&gt;All-in-one&lt;&#x2F;strong&gt;: Combines venv, pip, and pip-tools functionality&lt;&#x2F;li&gt;
+&lt;li&gt;🦀 &lt;strong&gt;Rust&lt;&#x2F;strong&gt;: Built with Rust — stable and reliable&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - MiniMax</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/minimax/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Fri, 19 Jun 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>MiniMax 模型服务会用我的数据训练吗？</title>
+          <pubDate>Fri, 19 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/minimax-api-data-training-policy/</link>
+          <guid>https://cncsmonster.github.io/posts/minimax-api-data-training-policy/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/minimax-api-data-training-policy/">&lt;p&gt;如果你正在考虑用 MiniMax API 处理代码、文档或个人内容，又担心输入&#x2F;输出被拿去训练模型，这篇直接给你答案和依据。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;调研日期：2026-06-19。pricing 以 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;docs&#x2F;pricing&#x2F;overview&quot;&gt;MiniMax 官方定价页&lt;&#x2F;a&gt; 实时页面为准。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;yi-ju-hua-jie-lun&quot;&gt;一句话结论&lt;&#x2F;h2&gt;
+&lt;p&gt;MiniMax 的四类模型服务产品中，&lt;strong&gt;国际 API 平台的 ToS 明确授权使用输入&#x2F;输出改进服务；国内 API 平台政策未明说训练，但也未承诺排除&lt;&#x2F;strong&gt;。都没有“关闭训练”的开关。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;产品&lt;&#x2F;th&gt;&lt;th&gt;训练风险&lt;&#x2F;th&gt;&lt;th&gt;依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;国内 Token Plan&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 未明说训练，但未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;国内开放平台隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;国内 Pay as You Go&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 同左&lt;&#x2F;td&gt;&lt;td&gt;同左&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;国际 Token Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ 可能用于改进服务&lt;&#x2F;td&gt;&lt;td&gt;Terms of Service 明确授权&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;国际 Pay as You Go&lt;&#x2F;td&gt;&lt;td&gt;❌ 同左&lt;&#x2F;td&gt;&lt;td&gt;同左&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;da-an-bu-tong-chang-jing-neng-bu-neng-yong&quot;&gt;答案：不同场景能不能用？&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;场景&lt;&#x2F;th&gt;&lt;th&gt;国内 API&lt;&#x2F;th&gt;&lt;th&gt;国际 API&lt;&#x2F;th&gt;&lt;th&gt;理由&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;公开算法&#x2F;通用脚本&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;训练风险低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;学生作业&#x2F;个人原型&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;⚠️&lt;&#x2F;td&gt;&lt;td&gt;国际 ToS 已授权使用输入&#x2F;输出&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;个人日记&#x2F;简历&#x2F;身份信息&lt;&#x2F;td&gt;&lt;td&gt;⚠️&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;不建议输入敏感个人信息&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;公司代码&#x2F;商业逻辑&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;数据训练风险不可控&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;含密码&#x2F;API Key 的代码&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;❌&lt;&#x2F;td&gt;&lt;td&gt;严禁&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;核心原则&lt;&#x2F;strong&gt;：只要内容对你有保密价值，就别直接发给 MiniMax API。国际 API 平台在法律授权上最宽松，国内 API 平台政策文本最模糊。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-ju&quot;&gt;依据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-ju-1-guo-ji-api-ping-tai-ming-que-shou-quan-shi-yong-shu-ru-shu-chu&quot;&gt;依据 1：国际 API 平台明确授权使用输入&#x2F;输出&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;protocol&#x2F;terms-of-service&quot;&gt;MiniMax API Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;As between you and us, and to the extent permitted by applicable laws, you retain your ownership rights in Client input and generated content. We may use the input and generated content to provide, maintain, develop, and improve our Services…&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;说明&lt;&#x2F;strong&gt;：虽然 Privacy Policy 声明不将“个人数据”用于画像&#x2F;定向训练，但 Terms of Service 明确保留了使用用户输入和生成内容来 develop and improve Services 的权利。这通常包括模型优化。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-2-guo-nei-api-kai-fang-ping-tai-zheng-ce-wen-ben-mo-hu&quot;&gt;依据 2：国内 API 开放平台政策文本模糊&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimaxi.com&#x2F;protocol&#x2F;privacy-policy&quot;&gt;MiniMax 开放平台隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;调用 API：我们收集该次提交的处理数据… 用于后台计算，生成返回数据…&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;说明&lt;&#x2F;strong&gt;：政策没有写“模型训练”，但也&lt;strong&gt;没有承诺排除&lt;&#x2F;strong&gt;。不能作为国内 API “不训练”的安全依据。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-3-jun-wu-zhuan-men-opt-out&quot;&gt;依据 3：均无专门 opt-out&lt;&#x2F;h3&gt;
+&lt;p&gt;MiniMax 各模型服务产品都没有“关闭数据训练”的开关。个人用户如果不同意，只能选择停止使用，或尝试行使删除&#x2F;撤回同意等一般性权利。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办？&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;不要输入密码、API Key、身份证号、内部代码。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;不要把公司文档、客户数据、商业逻辑发上去。&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;国际 API 用户尤其谨慎&lt;&#x2F;strong&gt;：ToS 明确授权使用输入&#x2F;输出改进服务。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;已经输入过敏感内容&lt;&#x2F;strong&gt;：可联系官方删除，但无法保证训练数据被彻底清除。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;对隐私高度敏感的内容&lt;&#x2F;strong&gt;：优先使用本地模型。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业用户&lt;&#x2F;strong&gt;：如需书面排除训练，需通过官方销售通道谈判，个人用户无此选项。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;protocol&#x2F;privacy-policy&quot;&gt;MiniMax API Privacy Policy（英文）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;protocol&#x2F;terms-of-service&quot;&gt;MiniMax API Terms of Service（英文）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimaxi.com&#x2F;protocol&#x2F;privacy-policy&quot;&gt;MiniMax 开放平台隐私政策（中文）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.minimax.io&#x2F;docs&#x2F;pricing&#x2F;overview&quot;&gt;MiniMax 官方定价页&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;p&gt;&lt;strong&gt;作者注&lt;&#x2F;strong&gt;：这是基于公开政策的分析，不构成法律建议。协议可能更新，关键决策前请复核官方原文。&lt;&#x2F;p&gt;
+</description>
+      </item>
+    </channel>
+</rss>

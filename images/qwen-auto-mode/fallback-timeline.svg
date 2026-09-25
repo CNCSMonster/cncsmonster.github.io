@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="620" viewBox="0 0 700 620" role="img" aria-labelledby="title">
+<title id="title">连续失败计数 · 跨调用降级</title>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#334155"/></marker></defs>
+<rect width="700" height="620" fill="#f8fafc"/>
+<g font-family="sans-serif">
+<g><rect x="40" y="70" width="620" height="140" rx="12" fill="#dbeafe" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="99" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">此前调用：Classifier 更新连续失败计数</text>
+<text x="350.0" y="127" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">明确阻断时记录 consecutiveBlock</text>
+<text x="350.0" y="153" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">审查不可用时记录 consecutiveUnavailable</text>
+</g>
+<path d="M350 210 V250" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="250" width="620" height="135" rx="12" fill="#dbeafe" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="279" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">本次调用：在送交 Classifier 前读取计数</text>
+<text x="350.0" y="307" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">此前是否累计阻断与不可用共 20 次，或</text>
+<text x="350.0" y="333" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">连续阻断 3 次，或连续不可用 2 次？</text>
+</g>
+<path d="M350 385 V415 H185 V465" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M350 385 V415 H515 V465" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="185" y="448" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">否</text>
+<text x="515" y="448" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">是</text>
+<g><rect x="35" y="465" width="300" height="90" rx="12" fill="#dcfce7" stroke="#64748b" stroke-width="1.5"/>
+<text x="185.0" y="494" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">继续两阶段 Classifier 审查</text>
+</g>
+<g><rect x="365" y="465" width="300" height="120" rx="12" fill="#fef3c7" stroke="#64748b" stroke-width="1.5"/>
+<text x="515.0" y="494" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">跳过 Classifier</text>
+<text x="515.0" y="522" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">本次调用转人工确认</text>
+<text x="515.0" y="548" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">用户批准后，两个连续计数归零</text>
+</g>
+<text x="350" y="40" text-anchor="middle" fill="#172033" font-size="23" font-weight="700">连续失败计数 · 跨调用降级</text>
+</g>
+</svg>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Static Site Generator</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/static-site-generator/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sun, 30 Aug 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Static Site Generators for Personal Knowledge Bases: Live Reload, Search Internals, and Selection Guide</title>
+          <pubDate>Sun, 30 Aug 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/static-doc-tools-selection-and-pitfalls-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/static-doc-tools-selection-and-pitfalls-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/static-doc-tools-selection-and-pitfalls-en/">&lt;p&gt;When building a local preview and static publishing workflow for personal knowledge bases containing hundreds of Markdown notes, developers often face two primary friction points:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Development Friction&lt;&#x2F;strong&gt;: Slow live reload where adding or renaming files requires manual service restarts or file touches;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Search Determinism Risk&lt;&#x2F;strong&gt;: Flawed tokenization or wildcard injection in client-side search engines that silently miss existing notes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;Drawing from practical migration experience across 640+ notes, this article breaks down the architectural differences between legacy and modern static doc frameworks regarding &lt;strong&gt;build lifecycles, HMR engines, and client-side search internals&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-client-side-search-engine-internals-core-foundation&quot;&gt;1. Client-Side Search Engine Internals (Core Foundation)&lt;&#x2F;h2&gt;
+&lt;p&gt;Search determinism is dictated by the architectural design of the search engine:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Search Engine&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Working Mechanism&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Key Advantages&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Trade-offs &amp;amp; Boundaries&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Lunr.js&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Legacy default, e.g. MkDocs)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure JS client-side execution, full single-file index download&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Broad legacy ecosystem, lightweight&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Stemming easily conflicts with instant search wildcard hacks (Typeahead); lacks paragraph-level precision.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;MiniSearch&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(VitePress default)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure TypeScript, native prefix &amp;amp; Levenshtein fuzzy matching&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;7KB tiny bundle, native prefix search avoiding wildcard bugs, sub-millisecond query response for small-to-medium vaults&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Full index JSON downloaded upfront; memory and initial bandwidth grow on huge repositories (&amp;gt;3000 docs).&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Pagefind&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Starlight &#x2F; Modern standard)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Rust-powered, post-build static indexer with chunked loading&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Strict symmetric indexing, paragraph-level targeting, minimal bandwidth on large sites&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Relies on static build artifacts on disk; does not automatically reindex on in-memory dev servers.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-live-reload-hmr-vs-legacy-batch-processing&quot;&gt;2. Live Reload (HMR) vs Legacy Batch Processing&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Aspect&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Legacy Architecture (e.g. MkDocs)&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Modern Architecture (e.g. VitePress &#x2F; Starlight)&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Build Model&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Python synchronous scripts + Watchdog file watcher&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Modern bundlers (Vite ESM &#x2F; Turbopack) fine-grained HMR&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;New File Detection&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ &lt;strong&gt;Batch Processing Limitation&lt;&#x2F;strong&gt;: Incremental reload only tracks modifications of existing pages; creating new files requires touching existing files to trigger full rebuilds.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;Sub-millisecond Full Pipeline Awareness&lt;&#x2F;strong&gt;: Adding, editing, or renaming any &lt;code&gt;.md&lt;&#x2F;code&gt; file updates the page and sidebar tree automatically in milliseconds.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Dev vs Prod Parity&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;⚠️ In-memory dev server exhibits lifecycle differences compared to static build artifacts.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;High Parity&lt;&#x2F;strong&gt;: Local dev and static builds share identical AST parsing and routing models.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-modern-static-knowledge-base-tools-comparison&quot;&gt;3. Modern Static Knowledge Base Tools Comparison&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Tool&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Core Positioning &amp;amp; Tech Base&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Frontend Component &amp;amp; Syntax Support&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Best Use Case&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;VitePress&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Adopted here)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Minimalist architecture based on Vite + Vue 3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Native support for &lt;strong&gt;Vue 3 SFC components in Markdown&lt;&#x2F;strong&gt; (no JSX&#x2F;MDX)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Fast HMR, built-in MiniSearch with zero plugin overhead; ideal for personal knowledge bases seeking simplicity and minimal maintenance.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Astro Starlight&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Modern industrial benchmark via Vite + Astro + Pagefind&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Native support for &lt;strong&gt;Standard MDX&lt;&#x2F;strong&gt; (with cross-framework React&#x2F;Vue&#x2F;Svelte via Astro Integrations)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Built-in Pagefind engine; ideal for large multilingual technical portals, team docs, and rich interactive components.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Quartz 4.0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Tailored for Obsidian &#x2F; networked notes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Obsidian-flavored Markdown extensions&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Wikilinks &lt;code&gt;[[link]]&lt;&#x2F;code&gt;, hover preview cards, interactive graph view; ideal for digital gardens relying on bidirectional links.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-engineering-practice-personal-takeaways&quot;&gt;4. Engineering Practice &amp;amp; Personal Takeaways&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;[Personal Opinion] Content &amp;amp; Directory Over Marketing Hero Pages&lt;&#x2F;strong&gt;: While commercial products benefit from promotional landing pages, personal knowledge bases are better served by immediate access to directory navigation and content; ensuring clean tree-view navigation remains the primary goal.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Explicit Rewrites for Unified Routing&lt;&#x2F;strong&gt;: For vaults organizing folder summaries in &lt;code&gt;readme.md&lt;&#x2F;code&gt;, modern routing rewrites (such as VitePress &lt;code&gt;rewrites&lt;&#x2F;code&gt;) map them directly to directory index routes, eliminating the need to maintain redundant &lt;code&gt;index.md&lt;&#x2F;code&gt; files.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+    </channel>
+</rss>

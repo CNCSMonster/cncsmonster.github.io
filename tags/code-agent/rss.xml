@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Code Agent</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/code-agent/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sat, 30 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>给 Pi 编码代理加一道安全门：pi-permission-gate</title>
+          <pubDate>Sat, 30 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/pi-permission-gate-security-extension/</link>
+          <guid>https://cncsmonster.github.io/posts/pi-permission-gate-security-extension/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/pi-permission-gate-security-extension/">&lt;blockquote&gt;
+&lt;p&gt;如果你用 Pi 写代码时担心误删文件、泄露密钥，试试 &lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; —— 一个基于规则的权限拦截扩展，敏感操作先确认，危险命令自动拒。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;为 Pi 代理配置规则，拦截对敏感文件的读写和执行危险命令。不替代安全审计，只做一件事：&lt;strong&gt;操作前问一下&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;neng-zuo-shen-me&quot;&gt;能做什么&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;✅ 拦截&lt;&#x2F;th&gt;&lt;th&gt;❌ 不做&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;读取 &lt;code&gt;~&#x2F;.ssh&#x2F;&lt;&#x2F;code&gt; 私钥&lt;&#x2F;td&gt;&lt;td&gt;审计日志记录&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;读取 &lt;code&gt;.env&lt;&#x2F;code&gt; 环境变量&lt;&#x2F;td&gt;&lt;td&gt;MCP 权限控制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;执行 &lt;code&gt;rm -rf&lt;&#x2F;code&gt; 命令&lt;&#x2F;td&gt;&lt;td&gt;子代理权限转发&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;修改项目外的文件&lt;&#x2F;td&gt;&lt;td&gt;复杂策略引擎&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;an-zhuang&quot;&gt;安装&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pi install git:github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-permission-gate
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;pei-zhi&quot;&gt;配置&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;quan-ju-gui-ze-an-quan-ji-xian&quot;&gt;全局规则（安全基线）&lt;&#x2F;h3&gt;
+&lt;p&gt;创建 &lt;code&gt;~&#x2F;.pi&#x2F;agent&#x2F;permission-rules.json&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;defaultAction&amp;quot;: &amp;quot;ask&amp;quot;,
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;.ssh&amp;#x2F;**&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;SSH 私钥&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    },
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;bash&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;rm -rf *&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;危险删除&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;deny&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;xiang-mu-gui-ze-ling-huo-te-hua&quot;&gt;项目规则（灵活特化）&lt;&#x2F;h3&gt;
+&lt;p&gt;创建 &lt;code&gt;&amp;lt;项目&amp;gt;&#x2F;.pi&#x2F;permission-rules.json&lt;&#x2F;code&gt;：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;trustedPaths&amp;quot;: [&amp;quot;.&amp;#x2F;data&amp;quot;, &amp;quot;.&amp;#x2F;tmp&amp;quot;],
+  &amp;quot;rules&amp;quot;: [
+    {
+      &amp;quot;tools&amp;quot;: [&amp;quot;read&amp;quot;, &amp;quot;write&amp;quot;, &amp;quot;edit&amp;quot;],
+      &amp;quot;pathPattern&amp;quot;: &amp;quot;**&amp;#x2F;*&amp;quot;,
+      &amp;quot;label&amp;quot;: &amp;quot;项目文件&amp;quot;,
+      &amp;quot;action&amp;quot;: &amp;quot;allow&amp;quot;
+    }
+  ]
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;配置修改后立即生效，无需重启 pi。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;shi-yong-ti-yan&quot;&gt;使用体验&lt;&#x2F;h2&gt;
+&lt;p&gt;当代理尝试访问敏感文件时：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;⚠️ 敏感操作 — SSH 私钥
+
+规则: **&amp;#x2F;.ssh&amp;#x2F;**
+工具: read
+目标: &amp;#x2F;home&amp;#x2F;user&amp;#x2F;.ssh&amp;#x2F;id_rsa
+
+允许吗？
+[允许本次] [始终允许] [拒绝本次] [始终拒绝]
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;始终允许&#x2F;拒绝&lt;&#x2F;strong&gt;：记住选择，后续自动处理&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;允许&#x2F;拒绝本次&lt;&#x2F;strong&gt;：仅影响当前操作&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;wei-shen-me-jian-dan&quot;&gt;为什么简单&lt;&#x2F;h2&gt;
+&lt;p&gt;与 &lt;code&gt;pi-permission-system&lt;&#x2F;code&gt;（另一个权限扩展）对比：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-system&lt;&#x2F;th&gt;&lt;th&gt;pi-permission-gate&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;功能&lt;&#x2F;td&gt;&lt;td&gt;全面（MCP、审计、子代理）&lt;&#x2F;td&gt;&lt;td&gt;精简（文件 + 命令）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;配置&lt;&#x2F;td&gt;&lt;td&gt;JSON schema + YAML&lt;&#x2F;td&gt;&lt;td&gt;简单 JSON + glob&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;代码量&lt;&#x2F;td&gt;&lt;td&gt;~2000 行&lt;&#x2F;td&gt;&lt;td&gt;~380 行&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;适用&lt;&#x2F;td&gt;&lt;td&gt;团队&#x2F;企业&lt;&#x2F;td&gt;&lt;td&gt;个人开发者&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;如果你只需要“操作前确认一下“，&lt;code&gt;pi-permission-gate&lt;&#x2F;code&gt; 更简单直接。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wei-shen-me-shi-gui-ze-er-fei-ai&quot;&gt;为什么是规则而非 AI&lt;&#x2F;h2&gt;
+&lt;p&gt;安全决策需要&lt;strong&gt;确定性&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;规则引擎：100% 可预测，毫秒级响应&lt;&#x2F;li&gt;
+&lt;li&gt;AI 判断：可能不一致，需要 API 调用&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;“大概应该允许“不够好，安全需要“明确允许或拒绝”。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;github&quot;&gt;GitHub&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;pi-permission-gate&quot;&gt;CNCSMonster&#x2F;pi-permission-gate&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;MIT 许可证，欢迎试用和反馈。&lt;&#x2F;p&gt;
+</description>
+      </item>
+    </channel>
+</rss>

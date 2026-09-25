@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Rust</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/rust/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 31 Aug 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>PyO3 Usage and Pitfalls</title>
+          <pubDate>Mon, 31 Aug 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/pyo3-usage-and-pitfalls-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/pyo3-usage-and-pitfalls-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/pyo3-usage-and-pitfalls-en/">&lt;p&gt;PyO3 connects Rust and Python. It supports several patterns: exposing Rust functions, structs, and modules to Python; retaining Python objects in Rust; and converting Python-created objects into Rust types so existing Rust business logic can be reused.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-expose-a-rust-function-to-python&quot;&gt;1. Expose a Rust Function to Python&lt;&#x2F;h2&gt;
+&lt;p&gt;The simplest approach is to mark a function with &lt;code&gt;#[pyfunction]&lt;&#x2F;code&gt; and register it in a &lt;code&gt;#[pymodule]&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;use pyo3::prelude::*;
+
+#[pyfunction]
+fn add(left: i64, right: i64) -&amp;gt; i64 {
+    left + right
+}
+
+#[pymodule]
+fn calc(m: &amp;amp;Bound&amp;lt;&amp;#x27;_, PyModule&amp;gt;) -&amp;gt; PyResult&amp;lt;()&amp;gt; {
+    m.add_function(wrap_pyfunction!(add, m)?)?;
+    Ok(())
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Python can call it directly:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;import calc
+
+assert calc.add(2, 3) == 5
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This approach fits calculation functions, utility functions, and performance-sensitive code.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-expose-a-rust-struct-as-a-python-class&quot;&gt;2. Expose a Rust Struct as a Python Class&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;#[pyclass]&lt;&#x2F;code&gt; defines a class visible to Python, while &lt;code&gt;#[pymethods]&lt;&#x2F;code&gt; exposes its constructor, methods, and properties.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;use pyo3::prelude::*;
+
+#[pyclass]
+struct Counter {
+    #[pyo3(get)]
+    value: i64,
+}
+
+#[pymethods]
+impl Counter {
+    #[new]
+    fn new() -&amp;gt; Self {
+        Self { value: 0 }
+    }
+
+    fn increment(&amp;amp;mut self) {
+        self.value += 1;
+    }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Python usage:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;counter = calc.Counter()
+counter.increment()
+assert counter.value == 1
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This approach fits objects whose Rust state must survive across multiple Python calls.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;3-pass-data-between-rust-and-python&quot;&gt;3. Pass Data Between Rust and Python&lt;&#x2F;h2&gt;
+&lt;p&gt;PyO3 can automatically convert many common types. For example, a Python dictionary can be extracted into a Rust &lt;code&gt;HashMap&amp;lt;String, f64&amp;gt;&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;use std::collections::HashMap;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+#[pyfunction]
+fn sum_values(values: &amp;amp;Bound&amp;lt;&amp;#x27;_, PyDict&amp;gt;) -&amp;gt; PyResult&amp;lt;f64&amp;gt; {
+    let values: HashMap&amp;lt;String, f64&amp;gt; = values.extract()?;
+    Ok(values.values().sum())
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;extract()&lt;&#x2F;code&gt; creates Rust-owned data. If the object only needs to be read during the current call, use &lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt; directly instead of converting the entire object into a Rust container first.&lt;&#x2F;p&gt;
+&lt;p&gt;A simple rule:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Convert to a Rust type when the data must outlive the Python call or be processed as Rust-owned data;&lt;&#x2F;li&gt;
+&lt;li&gt;Prefer borrowing with &lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt; when the object is only read during the current call.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;4-store-a-python-object-in-rust&quot;&gt;4. Store a Python Object in Rust&lt;&#x2F;h2&gt;
+&lt;p&gt;The following three types are easy to confuse:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Type&lt;&#x2F;th&gt;&lt;th&gt;Meaning&lt;&#x2F;th&gt;&lt;th&gt;Typical use&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;Python&amp;lt;&#x27;py&amp;gt;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Proof that the current thread may access the Python interpreter&lt;&#x2F;td&gt;&lt;td&gt;Calling Python APIs and binding &lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;An object reference bound to the current Python context&lt;&#x2F;td&gt;&lt;td&gt;Reading or calling a Python object during the current call&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;A smart pointer holding a Python object reference without being tied to the current &lt;code&gt;&#x27;py&lt;&#x2F;code&gt; lifetime&lt;&#x2F;td&gt;&lt;td&gt;Storing a Python object in a Rust struct for later use&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;For example, Rust may need to store a Python callback and call it later when an event occurs:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;#[pyclass]
+struct Worker {
+    callback: Py&amp;lt;PyAny&amp;gt;,
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Bind it to the current Python context when calling it:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;fn call(&amp;amp;self, py: Python&amp;lt;&amp;#x27;_&amp;gt;) -&amp;gt; PyResult&amp;lt;()&amp;gt; {
+    self.callback.bind(py).call0()?;
+    Ok(())
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt; is not the Python interpreter itself, and Rust does not take ownership of the Python object’s data. Rust holds a reference to an object managed by the Python interpreter.&lt;&#x2F;p&gt;
+&lt;p&gt;For temporary access during the current call, use a bound reference instead:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;fn read_data(data: &amp;amp;Bound&amp;lt;&amp;#x27;_, PyDict&amp;gt;) -&amp;gt; usize {
+    data.len()
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;5-let-python-provide-the-business-logic-required-by-a-rust-trait&quot;&gt;5. Let Python Provide the Business Logic Required by a Rust Trait&lt;&#x2F;h2&gt;
+&lt;p&gt;Rust can define a trait and the surrounding business flow while letting a Python object provide the concrete implementation. A Rust wrapper stores a reference to the Python object and implements the Rust trait; when the trait method is called, the wrapper forwards the call to the Python object’s method.&lt;&#x2F;p&gt;
+&lt;p&gt;In this example, Rust defines the &lt;code&gt;Model&lt;&#x2F;code&gt; trait and the generic &lt;code&gt;solve_model()&lt;&#x2F;code&gt; function. Python defines &lt;code&gt;UserModel&lt;&#x2F;code&gt; and provides its &lt;code&gt;compute()&lt;&#x2F;code&gt; logic.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;class UserModel:
+    def compute(self, value):
+        return value * 2
+
+model = UserModel()
+assert calc.solve(model, 10.0) == 20.0
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;When Python calls &lt;code&gt;calc.solve()&lt;&#x2F;code&gt;, &lt;code&gt;model&lt;&#x2F;code&gt; is a &lt;code&gt;UserModel&lt;&#x2F;code&gt; instance. The Rust function exposed to Python receives that object and stores it in a wrapper:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;use pyo3::prelude::*;
+
+trait Model {
+    fn compute(&amp;amp;self, py: Python&amp;lt;&amp;#x27;_&amp;gt;, value: f64) -&amp;gt; PyResult&amp;lt;f64&amp;gt;;
+}
+
+struct UserModelWrapper {
+    model: Py&amp;lt;PyAny&amp;gt;,
+}
+
+impl Model for UserModelWrapper {
+    fn compute(&amp;amp;self, py: Python&amp;lt;&amp;#x27;_&amp;gt;, value: f64) -&amp;gt; PyResult&amp;lt;f64&amp;gt; {
+        self.model
+            .bind(py)
+            .call_method1(&amp;quot;compute&amp;quot;, (value,))?
+            .extract()
+    }
+}
+
+fn solve_model&amp;lt;M: Model&amp;gt;(py: Python&amp;lt;&amp;#x27;_&amp;gt;, model: &amp;amp;M, value: f64) -&amp;gt; PyResult&amp;lt;f64&amp;gt; {
+    model.compute(py, value)
+}
+
+#[pyfunction(name = &amp;quot;solve&amp;quot;)]
+fn solve_wrapper(py: Python&amp;lt;&amp;#x27;_&amp;gt;, model: Py&amp;lt;PyAny&amp;gt;, value: f64) -&amp;gt; PyResult&amp;lt;f64&amp;gt; {
+    let wrapper = UserModelWrapper { model };
+    solve_model(py, &amp;amp;wrapper, value)
+}
+
+#[pymodule]
+fn calc(m: &amp;amp;Bound&amp;lt;&amp;#x27;_, PyModule&amp;gt;) -&amp;gt; PyResult&amp;lt;()&amp;gt; {
+    m.add_function(wrap_pyfunction!(solve_wrapper, m)?)?;
+    Ok(())
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The complete call chain is:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;text&quot; class=&quot;language-text &quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Python creates a UserModel instance
+    → Python calls calc.solve(model, 10.0)
+    → PyO3 receives model as solve_wrapper&amp;#x27;s Py&amp;lt;PyAny&amp;gt; parameter
+    → Rust creates UserModelWrapper and stores the Python object reference
+    → solve_model() calls wrapper.compute() through the Model trait
+    → wrapper.bind(py) obtains a Bound&amp;lt;&amp;#x27;py, PyAny&amp;gt; for the current context
+    → call_method1(&amp;quot;compute&amp;quot;, (10.0,)) calls Python&amp;#x27;s model.compute(10.0)
+    → Python returns 20.0
+    → extract() converts the result to Rust f64
+    → solve_wrapper returns PyResult&amp;lt;f64&amp;gt;
+    → Python receives 20.0
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;UserModel&lt;&#x2F;code&gt; is not converted into an equivalent Rust struct. &lt;code&gt;UserModelWrapper&lt;&#x2F;code&gt; is only an adapter: it satisfies Rust’s trait constraint, while the concrete &lt;code&gt;compute()&lt;&#x2F;code&gt; logic remains in Python.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;6-convert-a-python-object-structure-into-rust-types-and-use-existing-rust-trait-implementations&quot;&gt;6. Convert a Python Object Structure into Rust Types and Use Existing Rust Trait Implementations&lt;&#x2F;h2&gt;
+&lt;p&gt;Python objects cannot directly become a Rust &lt;code&gt;Box&amp;lt;dyn Evaluatable&amp;gt;&lt;&#x2F;code&gt;. When Python constructs the object structure while Rust already has the trait-based business logic, use three layers:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Native Rust types&lt;&#x2F;strong&gt;: implement the trait and contain the business logic;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;PyO3 wrapper types&lt;&#x2F;strong&gt;: register Python classes so Python can construct the object structure;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Conversion function&lt;&#x2F;strong&gt;: recursively traverse the Python object tree and rebuild the Rust trait-object tree.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;The call chain is:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;text&quot; class=&quot;language-text &quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Python constructs a PyAdd, PyVar, and PyConst object tree
+    → Python calls the expression object&amp;#x27;s evaluate()
+    → Rust receives the Python object tree
+    → to_evaluatable() checks concrete types and recursively reads objects
+    → PyAdd, PyVar, and PyConst become AddExpr, VarExpr, and ConstExpr
+    → a native Rust expression tree is formed
+    → the existing Evaluatable::evaluate() implementation runs
+    → the result is returned to Python
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Two different conversion operations appear here: &lt;code&gt;vars.extract()&lt;&#x2F;code&gt; is a PyO3-provided object method; &lt;code&gt;to_evaluatable(py, obj)&lt;&#x2F;code&gt; is an ordinary function defined in this example that recursively converts the expression tree.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-rust-trait-and-native-types&quot;&gt;1. Rust Trait and Native Types&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;use std::collections::HashMap;
+
+pub trait Evaluatable: Send + Sync {
+    fn evaluate(&amp;amp;self, vars: &amp;amp;HashMap&amp;lt;String, f64&amp;gt;) -&amp;gt; Result&amp;lt;f64, String&amp;gt;;
+}
+
+pub struct ConstExpr {
+    pub value: f64,
+}
+
+pub struct VarExpr {
+    pub name: String,
+}
+
+pub struct AddExpr {
+    pub left: Box&amp;lt;dyn Evaluatable&amp;gt;,
+    pub right: Box&amp;lt;dyn Evaluatable&amp;gt;,
+}
+
+impl Evaluatable for ConstExpr {
+    fn evaluate(&amp;amp;self, _: &amp;amp;HashMap&amp;lt;String, f64&amp;gt;) -&amp;gt; Result&amp;lt;f64, String&amp;gt; {
+        Ok(self.value)
+    }
+}
+
+impl Evaluatable for VarExpr {
+    fn evaluate(&amp;amp;self, vars: &amp;amp;HashMap&amp;lt;String, f64&amp;gt;) -&amp;gt; Result&amp;lt;f64, String&amp;gt; {
+        vars.get(&amp;amp;self.name)
+            .copied()
+            .ok_or_else(|| format!(&amp;quot;Undefined: {}&amp;quot;, self.name))
+    }
+}
+
+impl Evaluatable for AddExpr {
+    fn evaluate(&amp;amp;self, vars: &amp;amp;HashMap&amp;lt;String, f64&amp;gt;) -&amp;gt; Result&amp;lt;f64, String&amp;gt; {
+        Ok(self.left.evaluate(vars)? + self.right.evaluate(vars)?)
+    }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Example note&lt;&#x2F;strong&gt;: &lt;code&gt;Send + Sync&lt;&#x2F;code&gt; here is a concurrency constraint declared by the &lt;code&gt;Evaluatable&lt;&#x2F;code&gt; business trait itself. It is not a general PyO3 requirement. Keep it only if these expression objects must be safely sent between or shared across threads.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;2-pyo3-wrapper-types-and-the-conversion-bridge&quot;&gt;2. PyO3 Wrapper Types and the Conversion Bridge&lt;&#x2F;h3&gt;
+&lt;p&gt;The wrapper types are registered as Python classes. The conversion function checks concrete types and recursively builds a Rust object tree:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;use pyo3::exceptions::{PyRuntimeError, PyTypeError};
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+#[pyclass(name = &amp;quot;Const&amp;quot;)]
+pub struct PyConst {
+    #[pyo3(get)]
+    pub value: f64,
+}
+
+#[pymethods]
+impl PyConst {
+    #[new]
+    fn new(value: f64) -&amp;gt; Self {
+        Self { value }
+    }
+}
+
+#[pyclass(name = &amp;quot;Var&amp;quot;)]
+pub struct PyVar {
+    #[pyo3(get)]
+    pub name: String,
+}
+
+#[pymethods]
+impl PyVar {
+    #[new]
+    fn new(name: &amp;amp;str) -&amp;gt; Self {
+        Self { name: name.into() }
+    }
+}
+
+#[pyclass(name = &amp;quot;Add&amp;quot;)]
+pub struct PyAdd {
+    #[pyo3(get)]
+    pub left: Py&amp;lt;PyAny&amp;gt;,
+    #[pyo3(get)]
+    pub right: Py&amp;lt;PyAny&amp;gt;,
+}
+
+#[pymethods]
+impl PyAdd {
+    #[new]
+    fn new(left: Py&amp;lt;PyAny&amp;gt;, right: Py&amp;lt;PyAny&amp;gt;) -&amp;gt; Self {
+        Self { left, right }
+    }
+
+    fn evaluate(&amp;amp;self, py: Python&amp;lt;&amp;#x27;_&amp;gt;, vars: &amp;amp;Bound&amp;lt;&amp;#x27;_, PyDict&amp;gt;) -&amp;gt; PyResult&amp;lt;f64&amp;gt; {
+        let vars: HashMap&amp;lt;String, f64&amp;gt; = vars.extract()?;
+        AddExpr {
+            left: to_evaluatable(py, &amp;amp;self.left)?,
+            right: to_evaluatable(py, &amp;amp;self.right)?,
+        }
+        .evaluate(&amp;amp;vars)
+        .map_err(PyRuntimeError::new_err)
+    }
+}
+
+fn to_evaluatable(py: Python&amp;lt;&amp;#x27;_&amp;gt;, obj: &amp;amp;Py&amp;lt;PyAny&amp;gt;) -&amp;gt; PyResult&amp;lt;Box&amp;lt;dyn Evaluatable&amp;gt;&amp;gt; {
+    let obj = obj.bind(py);
+
+    if let Ok(value) = obj.downcast::&amp;lt;PyConst&amp;gt;() {
+        return Ok(Box::new(ConstExpr {
+            value: value.borrow().value,
+        }));
+    }
+
+    if let Ok(value) = obj.downcast::&amp;lt;PyVar&amp;gt;() {
+        return Ok(Box::new(VarExpr {
+            name: value.borrow().name.clone(),
+        }));
+    }
+
+    if let Ok(value) = obj.downcast::&amp;lt;PyAdd&amp;gt;() {
+        let value = value.borrow();
+        return Ok(Box::new(AddExpr {
+            left: to_evaluatable(py, &amp;amp;value.left)?,
+            right: to_evaluatable(py, &amp;amp;value.right)?,
+        }));
+    }
+
+    Err(PyTypeError::new_err(&amp;quot;Expected Const, Var, or Add&amp;quot;))
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Python can build and evaluate an expression:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;python&quot; class=&quot;language-python &quot;&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;import calc
+
+x = calc.Var(&amp;quot;x&amp;quot;)
+y = calc.Var(&amp;quot;y&amp;quot;)
+expr = calc.Add(calc.Add(x, calc.Const(3.14)), y)
+
+assert expr.evaluate({&amp;quot;x&amp;quot;: 10.0, &amp;quot;y&amp;quot;: 5.0}) == 18.14
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This does not expose the Rust trait directly to Python. Instead, Python wrapper types form the interface, and the conversion step produces Rust objects implementing the trait.&lt;&#x2F;p&gt;
+&lt;p&gt;The official PyO3 Trait Bounds tutorial addresses a different problem: a Rust wrapper holding a Python object implements an existing Rust trait, and that wrapper is passed to a generic function with a trait bound. It does not discuss recursively rebuilding a &lt;code&gt;Box&amp;lt;dyn Trait&amp;gt;&lt;&#x2F;code&gt; object tree as in this example.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;7-common-pitfalls&quot;&gt;7. Common Pitfalls&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-do-not-confuse-py-t-with-bound-py-t&quot;&gt;1. Do Not Confuse &lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt; with &lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Use &lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt; when Rust must retain a Python object for later reads or calls;&lt;&#x2F;li&gt;
+&lt;li&gt;Use &lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt; when the object is accessed only within the current Python context;&lt;&#x2F;li&gt;
+&lt;li&gt;When accessing a &lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt;, call &lt;code&gt;bind(py)&lt;&#x2F;code&gt; first to obtain &lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt;.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Confusing these types can lead to attempts to store a temporary &lt;code&gt;Bound&amp;lt;&#x27;py, T&amp;gt;&lt;&#x2F;code&gt; in a long-lived Rust struct, or to access &lt;code&gt;Py&amp;lt;T&amp;gt;&lt;&#x2F;code&gt; without first calling &lt;code&gt;bind(py)&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-map-python-exceptions-at-the-boundary&quot;&gt;2. Map Python Exceptions at the Boundary&lt;&#x2F;h3&gt;
+&lt;p&gt;If the Rust business layer returns &lt;code&gt;Result&amp;lt;T, String&amp;gt;&lt;&#x2F;code&gt;, map the error at the boundary to a specific Python exception such as &lt;code&gt;PyValueError&lt;&#x2F;code&gt;, &lt;code&gt;PyTypeError&lt;&#x2F;code&gt;, or &lt;code&gt;PyRuntimeError&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-choose-conversion-logic-by-actual-type&quot;&gt;3. Choose Conversion Logic by Actual Type&lt;&#x2F;h3&gt;
+&lt;p&gt;When Rust receives a parameter of type &lt;code&gt;Py&amp;lt;PyAny&amp;gt;&lt;&#x2F;code&gt;, it must determine at runtime which kind of Python object it is. Do not inspect strings such as &lt;code&gt;__class__.__name__&lt;&#x2F;code&gt;: an ordinary Python class can use the same name.&lt;&#x2F;p&gt;
+&lt;p&gt;If only known &lt;code&gt;#[pyclass]&lt;&#x2F;code&gt; types are accepted, use &lt;code&gt;downcast::&amp;lt;PyConst&amp;gt;()&lt;&#x2F;code&gt;, &lt;code&gt;downcast::&amp;lt;PyVar&amp;gt;()&lt;&#x2F;code&gt;, and similar checks to inspect the object’s actual PyO3 type and apply the corresponding conversion logic. Return &lt;code&gt;PyTypeError&lt;&#x2F;code&gt; only after all supported type checks fail.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-binding-and-packaging-are-separate-concerns&quot;&gt;4. Binding and Packaging Are Separate Concerns&lt;&#x2F;h3&gt;
+&lt;p&gt;PyO3 provides the Rust&#x2F;Python bindings. Building the extension as an installable Python package usually also requires a packaging tool such as &lt;code&gt;maturin&lt;&#x2F;code&gt;. The module name, Cargo configuration, and Python package layout must agree.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pyo3.rs&#x2F;v0.23.5&#x2F;&quot;&gt;PyO3 User Guide&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pyo3.rs&#x2F;main&#x2F;doc&#x2F;pyo3&#x2F;struct.Bound&quot;&gt;PyO3 Bound API&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;pyo3.rs&#x2F;v0.23.5&#x2F;trait-bounds&quot;&gt;PyO3 Trait Bounds Tutorial&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.rs&#x2F;pyo3&#x2F;0.23.5&#x2F;pyo3&#x2F;&quot;&gt;PyO3 docs.rs&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.maturin.rs&#x2F;&quot;&gt;maturin documentation&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;types&#x2F;trait-object.html&quot;&gt;Rust Trait Objects&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Shimmy: An Ollama Alternative in Rust — Tested on WSL2 + Intel GPU</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/shimmy-ollama-rust-alternative-wsl2-intel-en/">&lt;p&gt;Looking for a lighter local LLM inference server than Ollama? &lt;strong&gt;Shimmy&lt;&#x2F;strong&gt; is written in Rust, ships as a single binary, offers 100% OpenAI API compatibility, and runs with zero configuration. This post covers what it is, how it compares to Ollama, and what happened when I tested it on WSL2 with Intel integrated graphics.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is Part 1 of a “Local LLM Inference Environment” series. &lt;a href=&quot;&#x2F;posts&#x2F;wsl2-intel-gpu-llm-inference-diagnosis-en&#x2F;&quot;&gt;Part 2: Why Intel GPU Can’t Run LLM Inference in WSL2 →&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;what-is-shimmy&quot;&gt;What is Shimmy&lt;&#x2F;h2&gt;
+&lt;p&gt;One line: &lt;strong&gt;a Rust drop-in replacement for Ollama&lt;&#x2F;strong&gt; — lighter, faster, zero dependencies.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Dimension&lt;&#x2F;th&gt;&lt;th&gt;Shimmy&lt;&#x2F;th&gt;&lt;th&gt;Ollama&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Language&lt;&#x2F;td&gt;&lt;td&gt;Rust&lt;&#x2F;td&gt;&lt;td&gt;Go&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Dependencies&lt;&#x2F;td&gt;&lt;td&gt;Single binary, none&lt;&#x2F;td&gt;&lt;td&gt;Requires llama.cpp dynamic libs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;License&lt;&#x2F;td&gt;&lt;td&gt;MIT&lt;&#x2F;td&gt;&lt;td&gt;Non-commercial restrictions&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;GPU support&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Vulkan &#x2F; OpenCL &#x2F; MLX&lt;&#x2F;td&gt;&lt;td&gt;CUDA &#x2F; Metal&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Model formats&lt;&#x2F;td&gt;&lt;td&gt;GGUF + SafeTensors&lt;&#x2F;td&gt;&lt;td&gt;GGUF&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API compatibility&lt;&#x2F;td&gt;&lt;td&gt;OpenAI 100%&lt;&#x2F;td&gt;&lt;td&gt;OpenAI + custom API&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Port allocation&lt;&#x2F;td&gt;&lt;td&gt;Auto (default 11435)&lt;&#x2F;td&gt;&lt;td&gt;Fixed (11434)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Response caching&lt;&#x2F;td&gt;&lt;td&gt;LRU + TTL, 20-40% speedup&lt;&#x2F;td&gt;&lt;td&gt;None&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Project: https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-start&quot;&gt;Quick Start&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Linux x86_64
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-linux-x86_64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# macOS ARM64 (with MLX for Apple Silicon)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-macos-arm64 -o shimmy &amp;amp;&amp;amp; chmod +x shimmy
+
+# Windows x64 (with CUDA + Vulkan + OpenCL)
+curl -L https:&amp;#x2F;&amp;#x2F;github.com&amp;#x2F;Michael-A-Kuykendall&amp;#x2F;shimmy&amp;#x2F;releases&amp;#x2F;latest&amp;#x2F;download&amp;#x2F;shimmy-windows-x86_64.exe -o shimmy.exe
+
+# Start
+.&amp;#x2F;shimmy serve --gpu-backend auto
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Zero config: auto-discovers models from HuggingFace cache, Ollama local directories. Hot-swap models without restarting.&lt;&#x2F;p&gt;
+&lt;p&gt;Once running, it exposes an OpenAI-compatible &lt;code&gt;&#x2F;v1&#x2F;chat&#x2F;completions&lt;&#x2F;code&gt; endpoint — existing OpenAI tools work with zero code changes:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;curl http:&amp;#x2F;&amp;#x2F;localhost:11435&amp;#x2F;v1&amp;#x2F;chat&amp;#x2F;completions \
+  -H &amp;quot;Content-Type: application&amp;#x2F;json&amp;quot; \
+  -d &amp;#x27;{&amp;quot;model&amp;quot;:&amp;quot;your-model&amp;quot;,&amp;quot;messages&amp;quot;:[{&amp;quot;role&amp;quot;:&amp;quot;user&amp;quot;,&amp;quot;content&amp;quot;:&amp;quot;hello&amp;quot;}]}&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;architecture&quot;&gt;Architecture&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Rust + Tokio&lt;&#x2F;strong&gt;: Memory-safe, async high performance&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;llama.cpp backend&lt;&#x2F;strong&gt;: Industry-standard GGUF inference&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GPU backend priority&lt;&#x2F;strong&gt;: CUDA → Vulkan → OpenCL → MLX → CPU (fallback)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Dynamic port management&lt;&#x2F;strong&gt;: Zero conflicts, auto-assign&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;real-world-test-wsl2-intel-gpu&quot;&gt;Real-World Test: WSL2 + Intel GPU&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;test-environment&quot;&gt;Test Environment&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Item&lt;&#x2F;th&gt;&lt;th&gt;Value&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Core Ultra 7 255H (12 cores)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;RAM&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;19GB&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GPU&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Intel Arc 140T (Arrow Lake H)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Env&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;WSL2 (Linux 6.6.87)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ Library installed (&lt;code&gt;libvulkan_intel.so&lt;&#x2F;code&gt;)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Shimmy&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;v1.9.0 (built from source with &lt;code&gt;llama-vulkan&lt;&#x2F;code&gt; feature)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;test-1-qwen3-5-0-8b-gguf-x-failed&quot;&gt;Test 1: Qwen3.5-0.8B GGUF — ❌ Failed&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;llama_model_load: error loading model: unknown model architecture: &amp;#x27;qwen35&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Shimmy v1.9.0 bundles a llama.cpp version that &lt;strong&gt;doesn’t support Qwen3.5 yet&lt;&#x2F;strong&gt;. Qwen3.5 uses a hybrid SSM (Mamba) + Transformer architecture requiring a newer llama.cpp.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;test-2-qwen2-5-safetensors-warning-loads-no-inference&quot;&gt;Test 2: Qwen2.5 SafeTensors — ⚠️ Loads, no inference&lt;&#x2F;h3&gt;
+&lt;p&gt;SafeTensors models load successfully, but Shimmy reports “Full transformer inference coming soon!” — inference support is still in development.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gpu-backend-results&quot;&gt;GPU Backend Results&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Backend&lt;&#x2F;th&gt;&lt;th&gt;Status&lt;&#x2F;th&gt;&lt;th&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;CUDA&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ No NVIDIA GPU&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Vulkan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Initializes but no real GPU&lt;&#x2F;td&gt;&lt;td&gt;WSL2 only exposes &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; software renderer&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenCL&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ Not compiled&lt;&#x2F;td&gt;&lt;td&gt;Enable with &lt;code&gt;--features llama-opencl&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;MLX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ macOS only&lt;&#x2F;td&gt;&lt;td&gt;N&#x2F;A&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Key finding&lt;&#x2F;strong&gt;: &lt;code&gt;llvmpipe&lt;&#x2F;code&gt; is Mesa’s CPU software renderer — it simulates Vulkan GPU using CPU multithreading. Using &lt;code&gt;--gpu-backend vulkan&lt;&#x2F;code&gt; still runs matrix ops on CPU, potentially slower than pure CPU mode due to Vulkan overhead.&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Device: llvmpipe (LLVM 20.1.2, 256 bits)
+Type: CPU  ← Not a real GPU!
+Vendor ID: 0x10005 (Mesa software renderer)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;The failure isn’t Shimmy’s fault — it’s a &lt;strong&gt;WSL2 + Intel GPU environment limitation&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 DXG kernel module incompatible with Intel GPU driver&lt;&#x2F;strong&gt; — dmesg shows persistent ioctl failures&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Intel GPU driver outdated&lt;&#x2F;strong&gt; — current 32.0.101.6554, latest 32.0.101.8801 (2026-05-15)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Windows Insider Preview Canary&lt;&#x2F;strong&gt; — build 26200 is pre-release, unstable compatibility&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;next-steps&quot;&gt;Next Steps&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Priority&lt;&#x2F;th&gt;&lt;th&gt;Action&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;Update Intel GPU driver to latest&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;Exit Insider Preview, return to stable&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;Try Level Zero backend to bypass OpenCL DXG issues&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;who-should-use-shimmy&quot;&gt;Who Should Use Shimmy?&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ &lt;strong&gt;CUDA environment&lt;&#x2F;strong&gt; (NVIDIA GPU): Works out of the box, best performance&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;macOS Apple Silicon&lt;&#x2F;strong&gt;: MLX backend native support&lt;&#x2F;li&gt;
+&lt;li&gt;✅ &lt;strong&gt;Existing toolchains needing OpenAI API compatibility&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;WSL2 + Intel&#x2F;AMD integrated GPU&lt;&#x2F;strong&gt;: Vulkan backend limited, wait for driver updates&lt;&#x2F;li&gt;
+&lt;li&gt;❌ &lt;strong&gt;Pure CPU inference追求极致性能&lt;&#x2F;strong&gt;: Ollama may be more mature&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy GitHub&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;shimmy&quot;&gt;Shimmy Crates.io&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics Driver Download&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Replacing FGM with Mise: A Practical Guide</title>
+          <pubDate>Fri, 13 Dec 2024 21:15:54 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/</link>
+          <guid>https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/">&lt;p&gt;Mise fully covers FGM’s features and use cases, and goes far beyond Golang toolchain management — it can manage toolchains for Node.js, Neovim, Java, and more. You can even replace direnv with Mise to handle environment variable loading and unloading when entering and leaving directories.&lt;&#x2F;p&gt;
+&lt;p&gt;Here’s my experience using Mise across three aspects:&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;1-installing-mise&quot;&gt;1. Installing Mise&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Option 1&lt;&#x2F;strong&gt;: Install via a package manager&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# Requires cargo-binstall and the Rust toolchain
+cargo binstall mise
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Option 2&lt;&#x2F;strong&gt;: Download a prebuilt binary from the releases page, extract it, and place the &lt;code&gt;mise&lt;&#x2F;code&gt; executable in your PATH.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;jdx&#x2F;mise&#x2F;releases&quot;&gt;jdx&#x2F;mise Releases&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-configuring-mise&quot;&gt;2. Configuring Mise&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;2-1-shell-initialization&quot;&gt;2.1 Shell Initialization&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# For bash
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate bash)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.bashrc
+
+# For zsh
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate zsh)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.zshrc
+
+# For fish
+echo &amp;#x27;~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate fish | source&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.config&amp;#x2F;fish&amp;#x2F;config.fish
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-2-configuration-file&quot;&gt;2.2 Configuration File&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise’s config file is &lt;code&gt;.mise.toml&lt;&#x2F;code&gt;, placed in your project root or home directory.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# ~&amp;#x2F;.mise.toml
+[tools]
+go = &amp;quot;1.21&amp;quot;
+node = &amp;quot;20&amp;quot;
+python = &amp;quot;3.12&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;3-using-mise&quot;&gt;3. Using Mise&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# Install tools
+mise install go@1.21
+mise install node@20
+
+# Set global version
+mise use --global go@1.21
+
+# Set project-specific version (auto-creates .mise.toml)
+mise use go@1.21
+
+# List installed versions
+mise ls
+
+# Uninstall
+mise uninstall go@1.21
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;4-advanced-features&quot;&gt;4. Advanced Features&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;4-1-environment-variable-management&quot;&gt;4.1 Environment Variable Management&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[env]
+_.path = [&amp;quot;.&amp;#x2F;bin&amp;quot;, &amp;quot;{{config_root}}&amp;#x2F;scripts&amp;quot;]
+API_KEY = &amp;quot;secret&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-2-task-runner&quot;&gt;4.2 Task Runner&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[tasks.build]
+description = &amp;quot;Build the project&amp;quot;
+run = &amp;quot;make build&amp;quot;
+
+[tasks.test]
+description = &amp;quot;Run tests&amp;quot;
+run = &amp;quot;go test .&amp;#x2F;...&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-3-replacing-direnv&quot;&gt;4.3 Replacing direnv&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise supports &lt;code&gt;.envrc&lt;&#x2F;code&gt; files, fully replacing direnv:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;mise activate direnv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Then in &lt;code&gt;.envrc&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;use go
+use node
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;&#x2F;h2&gt;
+&lt;p&gt;Mise is a powerful toolchain manager with these advantages:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ Multi-language support (Go, Node.js, Python, Java, Rust, and more)&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Project-level and global configuration&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Environment variable management&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Built-in task runner&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Compatible with the asdf plugin ecosystem&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Great performance (written in Rust)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

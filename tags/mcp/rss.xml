@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - MCP</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/mcp/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 13 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Big Model Radar：一个 AI 自动维护的 CLI 工具生态仪表盘</title>
+          <pubDate>Mon, 13 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/</link>
+          <guid>https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/">&lt;p&gt;AI Coding Agent 领域变化极快——Claude Code、Codex、Gemini CLI、Qwen Code 等工具每天都在产生大量 Issues、PR 和讨论。一个人根本看不过来。&lt;&#x2F;p&gt;
+&lt;p&gt;最近发现了一个叫 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&quot;&gt;Big Model Radar&lt;&#x2F;a&gt; 的项目，它用 GitHub Actions 每天自动抓取这些工具的开发动态，用 LLM 生成中英双语日报。从 2026 年 7 月 7 日至今，每天稳定产出，从未中断。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;&#x2F;strong&gt;：Web UI 是旧版快照（内容截至 2026-05），看最新内容建议看 Issues 或 Telegram。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ta-zhui-zong-shen-me&quot;&gt;它追踪什么&lt;&#x2F;h2&gt;
+&lt;p&gt;7 个主流 CLI 工具：Claude Code &#x2F; OpenAI Codex &#x2F; Gemini CLI &#x2F; GitHub Copilot CLI &#x2F; Kimi Code CLI &#x2F; OpenCode &#x2F; Qwen Code。&lt;&#x2F;p&gt;
+&lt;p&gt;每天生成 5 类报告：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;digest&lt;&#x2F;strong&gt;：CLI 工具社区动态横向对比&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;hn&lt;&#x2F;strong&gt;：Hacker News AI 热帖&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;trending&lt;&#x2F;strong&gt;：GitHub AI 趋势仓库&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;web&lt;&#x2F;strong&gt;：Anthropic&#x2F;OpenAI 官网更新&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;openclaw&lt;&#x2F;strong&gt;：OpenClaw 生态日报&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;ri-bao-bu-shi-chun-zhai-yao&quot;&gt;日报不是纯摘要&lt;&#x2F;h2&gt;
+&lt;p&gt;每个工具的日报包含 6 个板块：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;今日速览&lt;&#x2F;strong&gt;：一段话概括当天重点&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;版本发布&lt;&#x2F;strong&gt;：新版本列表&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;社区热点 Issues (Top 10)&lt;&#x2F;strong&gt;：每条含优先级 + 评论数 + &lt;strong&gt;重要性分析&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;重要 PR 进展 (Top 7-10)&lt;&#x2F;strong&gt;：每条含功能说明 + 影响评估&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;功能需求趋势&lt;&#x2F;strong&gt;：从 Issues&#x2F;PR 中提炼的方向性判断&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;开发者关注点&lt;&#x2F;strong&gt;：痛点聚类 + 高频需求归纳&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;不是简单的 Issue 搬运，而是 &lt;strong&gt;AI 生成的摘要 + 趋势分析&lt;&#x2F;strong&gt; 混合体。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;san-duan-lian-lu-sheng-chan-qiao-jie-xiao-fei&quot;&gt;三段链路：生产 → 桥接 → 消费&lt;&#x2F;h2&gt;
+&lt;p&gt;这个项目的架构很有意思：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;生产&lt;&#x2F;strong&gt;：维护者付费 LLM token，GitHub Actions 每天 08:00 CST 自动生成日报，写入 GitHub Issues + Markdown 文件&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;桥接&lt;&#x2F;strong&gt;：项目提供 MCP Server 源码，用户自己部署到 Cloudflare Workers，暴露查询 API（&lt;code&gt;list_reports&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_latest&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_report&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;search&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;消费&lt;&#x2F;strong&gt;：用户自己的 Claude Desktop 连接 MCP Server 查询，消耗用户自己的 LLM token&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;本质是：&lt;strong&gt;生产者付费生成内容，消费者自费查询&lt;&#x2F;strong&gt;。MCP Server 是数据桥，让 AI agent 能直接消费 Issue 数据，而不是人去翻页面。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fang-wen-fang-shi&quot;&gt;访问方式&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Web UI&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&quot;&gt;gsscsd.github.io&#x2F;big_model_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Issues&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&#x2F;issues&quot;&gt;loxehate.github.io&#x2F;issues&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;RSS&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&#x2F;feed.xml&quot;&gt;feed.xml&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Telegram&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;t.me&#x2F;agents_radar&quot;&gt;t.me&#x2F;agents_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;MCP Server&lt;&#x2F;strong&gt;：用户自部署到 Cloudflare Workers&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;yi-ge-you-qu-de-xian-shi&quot;&gt;一个有趣的现实&lt;&#x2F;h2&gt;
+&lt;p&gt;截至 2026-07-12，41 个 issue 中&lt;strong&gt;零条人类评论&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;Issue 在这个项目里是 AI 生成内容的持久化存储，不是讨论区。所有通道都是单向的——AI 生成 → 人&#x2F;AI 消费。没有“人类反馈回 AI“的闭环。&lt;&#x2F;p&gt;
+&lt;p&gt;准确描述：&lt;strong&gt;AI 生成、AI 消费、人类旁观&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jia-zhi&quot;&gt;价值&lt;&#x2F;h2&gt;
+&lt;p&gt;降低信息获取成本——从“每天手动刷 7 个仓库“变成“看一眼日报“；跨工具横向对比；趋势感知；AI 分析提供方向性判断。&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>AI Code CLI 能力增强应基于 MCP 协议，而非内置工具源码</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/</link>
+          <guid>https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/">&lt;p&gt;&lt;strong&gt;不要在会被删除的代码上盖房子。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ju-ti-jing-li&quot;&gt;具体经历&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 旧版内置了 &lt;code&gt;web_search&lt;&#x2F;code&gt; 工具，支持 Tavily、Google、DashScope 三个搜索后端（DashScope 可走 Qwen OAuth 认证）。但它的 provider 选择是静态的——用户在配置中指定一个 default，工具一次搜索只调一个 provider，失败就直接报错，不会尝试下一个。&lt;&#x2F;p&gt;
+&lt;p&gt;笔者的目标是在工具内部实现运行时 provider fallback：按 Tavily → Google → DashScope 的顺序依次尝试，前一个失败自动切换到下一个，避免单后端不可用时搜索能力彻底瘫痪。&lt;&#x2F;p&gt;
+&lt;p&gt;2026-04-24，方案还在本地，Qwen Code PR #3502 合并——&lt;strong&gt;把整个 &lt;code&gt;web_search&lt;&#x2F;code&gt; 内置工具删了&lt;&#x2F;strong&gt;，替换成 MCP 架构。旧版的所有配置键（&lt;code&gt;webSearch&lt;&#x2F;code&gt; 块、&lt;code&gt;advanced.tavilyApiKey&lt;&#x2F;code&gt;、&lt;code&gt;--tavily-api-key&lt;&#x2F;code&gt; 等 CLI 参数）全部作废。笔者针对的是一个已经不存在的目标。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wei-shen-me-zhe-ge-fang-xiang-zhan-bu-zhu-jiao&quot;&gt;为什么这个方向站不住脚&lt;&#x2F;h2&gt;
+&lt;p&gt;不是方案本身有问题——旧版确实缺少运行时 fallback，这是一个合理的改进方向。问题是地基：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;web_search&lt;&#x2F;code&gt; 从存在到消失只隔了一个 PR。AI Code CLI 品类发展不到两年，内置工具随时可能被重构、合并或删除。&lt;&#x2F;li&gt;
+&lt;li&gt;MCP 是跨 CLI 的通用协议，Qwen Code、Claude Code、Gemini CLI 都支持。工具本身独立于任何 CLI 的实现——不存在“改了半天源码，工具一删全白干“的风险。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;fan-si-zheng-que-de-zuo-fa&quot;&gt;反思：正确的做法&lt;&#x2F;h2&gt;
+&lt;p&gt;fallback 本身的方向没问题——旧版确实需要，MCP 层也同样需要。错的是实现位置：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;❌ 修改 CLI 内置工具的源码来实现 fallback&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 写一个独立的 MCP server，内部封装多 provider fallback 逻辑&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;同样的功能，放在内部工具源码里随时可能被删；放在 MCP server 里，和 CLI 版本解耦，自己控制生命周期。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jing-yan&quot;&gt;经验&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;在 AI Code CLI 上做能力增强，优先在 MCP 层——工具独立于 CLI 实现，不会因为上游重构而作废。&lt;&#x2F;li&gt;
+&lt;li&gt;动手前确认目标模块的生命周期：是稳定核心能力，还是随时可能被替代的实验性功能？&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Qwen Code 接入 Tavily 搜索</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/</link>
+          <guid>https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/">&lt;h2 id=&quot;1-huo-qu-api-key&quot;&gt;1. 获取 API Key&lt;&#x2F;h2&gt;
+&lt;p&gt;注册 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;tavily.com&#x2F;&quot;&gt;Tavily&lt;&#x2F;a&gt;，复制 API key。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-she-zhi-huan-jing-bian-liang&quot;&gt;2. 设置环境变量&lt;&#x2F;h2&gt;
+&lt;p&gt;将 &lt;code&gt;TAVILY_API_KEY&lt;&#x2F;code&gt; 持久化到系统环境变量中（&lt;code&gt;tvly-xxxxxxxx&lt;&#x2F;code&gt; 替换为你的 key）。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Linux &#x2F; macOS：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;echo &amp;#x27;export TAVILY_API_KEY=&amp;quot;tvly-xxxxxxxx&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.profile
+source ~&amp;#x2F;.profile
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果之前已经设置过，用编辑器打开 &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; 替换或删除旧值，避免重复行。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Windows（PowerShell）：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;[Environment]::SetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;tvly-xxxxxxxx&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;无需管理员权限。这个命令会写入当前用户的持久化环境变量，但不会修改已经打开的 PowerShell 进程；关闭并重新打开终端后生效。&lt;&#x2F;p&gt;
+&lt;p&gt;重新打开 PowerShell 后可验证：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果想在当前这个 PowerShell 窗口里立刻继续测试，也可以临时同步一次：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY = [Environment]::GetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;API key 涉及付费额度，自己手动执行以上命令，不要让 AI 代劳。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-an-zhuang-tavily-mcp&quot;&gt;3. 安装 Tavily MCP&lt;&#x2F;h2&gt;
+&lt;p&gt;发给 Qwen Code：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;请帮我用 qwen mcp add 命令安装 Tavily MCP，然后搜索验证是否正常。
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;结束。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;验证时间：2026-05-05，Qwen Code 0.15.6 + tavily-mcp 0.2.19&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</description>
+      </item>
+    </channel>
+</rss>

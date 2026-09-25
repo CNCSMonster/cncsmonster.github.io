@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Lunr.js</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/lunr-js/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-08-08T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/lunr-js/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>MkDocs (Material 主题) 搜索问题排查：新文件与英文单词为什么会“漏搜”？</title>
+        <published>2026-08-08T00:00:00+08:00</published>
+        <updated>2026-08-08T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/mkdocs-material-search-issue-troubleshooting/"/>
+        <id>https://cncsmonster.github.io/posts/mkdocs-material-search-issue-troubleshooting/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/mkdocs-material-search-issue-troubleshooting/">&lt;p&gt;在个人知识库或文档站中使用 &lt;strong&gt;MkDocs + Material 主题&lt;&#x2F;strong&gt; 时，你可能会遇到两个极其反直觉的搜索失效现象：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;写了新笔记，搜索栏死活搜不到&lt;&#x2F;strong&gt;，但网页本身又能正常打开（HTTP 200）；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;笔记标题明确写着 &lt;code&gt;Handy&lt;&#x2F;code&gt;，搜索完整单词 &lt;code&gt;handy&lt;&#x2F;code&gt; 结果为空，手滑少打一个字母搜 &lt;code&gt;hand&lt;&#x2F;code&gt; 却能正常搜出来&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;这两个问题叠加在一起，极易让作者产生“笔记丢了”或“自己记错内容”的错觉。本文结合源码与生命周期，深度还原这两个缺陷的产生根因，并给出立竿见影的配置止损方案与现代化选型建议。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;he-xin-ding-xing-shuang-ceng-que-xian-de-die-jia-xiao-ying&quot;&gt;核心定性：双层缺陷的叠加效应&lt;&#x2F;h2&gt;
+&lt;p&gt;经过排查，这两个现象并非单一原因造成，而是 &lt;strong&gt;MkDocs 核心&lt;&#x2F;strong&gt; 与 &lt;strong&gt;Material 主题&lt;&#x2F;strong&gt; 在不同层级的两个独立缺陷叠加引发的：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;故障现象&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;责任主体&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;根因层级&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;本质机制&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;新增文件搜不到&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;MkDocs 核心&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;后端构建管线与 Dev Server 生命周期&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;增量刷新仅响应已有文件修改，新增文件未闭环触发内存索引重算&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;搜 handy 搜不到&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Material 主题&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;前端查询预处理与 Typeahead 实现&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;为实现即时联想强行追加 &lt;code&gt;*&lt;&#x2F;code&gt; 通配符，破坏了 Lunr.js 词干提取流水线&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wen-ti-yi-xin-zeng-wen-jian-sou-bu-dao-mkdocs-he-xin-sheng-ming-zhou-qi-que-xian&quot;&gt;问题一：新增文件搜不到（MkDocs 核心生命周期缺陷）&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;xian-xiang-yu-shi-yan-yan-zheng&quot;&gt;现象与实验验证&lt;&#x2F;h3&gt;
+&lt;p&gt;在 &lt;code&gt;mkdocs serve&lt;&#x2F;code&gt; 运行中新增一篇 Markdown 笔记，页面能正常浏览，但顶部搜索框无法检索到该文件内容。&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;实验 A&lt;&#x2F;strong&gt;：修改&lt;strong&gt;已有&lt;&#x2F;strong&gt;老文件 $\to$ 搜索索引立即刷新；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;实验 B&lt;&#x2F;strong&gt;：新增新文件 $\to$ 搜索索引不更新，直到后续某次其他已有文件的修改触发了全量重建。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;gen-yin-fen-xi&quot;&gt;根因分析&lt;&#x2F;h3&gt;
+&lt;p&gt;MkDocs 属于纯静态站点生成器（SSG），其本地开发服务器（&lt;code&gt;serve&lt;&#x2F;code&gt;）遵循单向批处理模型。为了保持实现简洁，官方未在内存中维护细粒度的动态增量状态机。新增文件时仅完成单页渲染，未触发搜索插件生成新索引。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;ying-dui-shou-duan&quot;&gt;应对手段&lt;&#x2F;h3&gt;
+&lt;p&gt;在本地开发时，新建文件后可通过 &lt;code&gt;touch&lt;&#x2F;code&gt; 任意已有文件触发一次整站 rebuild，或直接重启 serve 服务。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wen-ti-er-sou-handy-sou-bu-dao-sou-hand-neng-sou-dao-material-zhu-ti-cha-xun-she-ji-que-xian&quot;&gt;问题二：搜 handy 搜不到，搜 hand 能搜到（Material 主题查询设计缺陷）&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;xian-xiang&quot;&gt;现象&lt;&#x2F;h3&gt;
+&lt;p&gt;知识库中有一篇关于语音识别工具的笔记，标题和正文都明确包含 &lt;code&gt;Handy&lt;&#x2F;code&gt;。在搜索框输入 &lt;code&gt;handy&lt;&#x2F;code&gt; 无法命中，输入 &lt;code&gt;hand&lt;&#x2F;code&gt; 却能命中。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;gen-yin-pou-xi-liang-duan-liu-shui-xian-tuo-jie&quot;&gt;根因剖析：两端流水线脱节&lt;&#x2F;h3&gt;
+&lt;p&gt;这是典型的&lt;strong&gt;索引端（Index Pipeline）与查询端（Query Pipeline）处理流水线不匹配&lt;&#x2F;strong&gt;引发的功能缺陷：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;索引端（MkDocs 核心导出）&lt;&#x2F;strong&gt;：
+英文单词经过 Porter Stemmer 词干提取算法，&lt;code&gt;Handy&lt;&#x2F;code&gt; 按照“辅音 + y 变为 i”的规则，在索引库中实际保存为词根 &lt;code&gt;handi&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;查询端（Material 主题接管）&lt;&#x2F;strong&gt;：
+Material 主题为了实现“边输入边出结果”的即时联想（Typeahead），在前端 JS 中强行给每个查询词追加尾部通配符 &lt;code&gt;term*&lt;&#x2F;code&gt;；而 Lunr.js 底层规则明确规定：&lt;strong&gt;凡包含 &lt;code&gt;*&lt;&#x2F;code&gt; 的查询项直接跳过词干提取流水线&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;两端脱靶冲突&lt;&#x2F;strong&gt;：
+&lt;ul&gt;
+&lt;li&gt;搜 &lt;code&gt;handy&lt;&#x2F;code&gt; $\to$ 前端转换为 &lt;code&gt;handy*&lt;&#x2F;code&gt;（跳过词干化）$\to$ 在索引库中寻找以 &lt;code&gt;handy&lt;&#x2F;code&gt; 开头的词条 $\to$ 索引库只有 &lt;code&gt;handi&lt;&#x2F;code&gt; $\to$ &lt;strong&gt;匹配失败 ❌&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;搜 &lt;code&gt;hand&lt;&#x2F;code&gt; $\to$ 前端转换为 &lt;code&gt;hand*&lt;&#x2F;code&gt;（跳过词干化）$\to$ 在索引库中寻找以 &lt;code&gt;hand&lt;&#x2F;code&gt; 开头的词条 $\to$ 成功前缀匹配到 &lt;code&gt;handi&lt;&#x2F;code&gt; $\to$ &lt;strong&gt;搜索命中 ✅&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;所有以辅音字母加 &lt;code&gt;y&lt;&#x2F;code&gt; 结尾的英文单词（如 &lt;code&gt;study&lt;&#x2F;code&gt;、&lt;code&gt;happy&lt;&#x2F;code&gt;、&lt;code&gt;handy&lt;&#x2F;code&gt;）在 Material 默认搜索下均会触发该脱靶 bug（中文分词不受此影响）。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;jie-jue-fang-an-yu-quan-heng-fan-si&quot;&gt;解决方案与权衡反思&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-huan-qi-ta-mkdocs-yuan-sheng-zhu-ti-neng-jie-jue-ma&quot;&gt;1. 换其他 MkDocs 原生主题能解决吗？&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;能解决什么&lt;&#x2F;strong&gt;：原生简易主题（如 &lt;code&gt;mkdocs&lt;&#x2F;code&gt; 或 &lt;code&gt;readthedocs&lt;&#x2F;code&gt;）未引入通配符 hack，英文词干匹配正常。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;代价&lt;&#x2F;strong&gt;：失去了 Material 精致的 UI、Web Worker 后台非阻塞检索和键盘快捷键交互；且“新增文件搜不到”属于 MkDocs 核心机制，换主题依然无法解决。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-tong-guo-cha-jian-ji-cheng-xian-dai-sou-suo-ru-mkdocs-pagefind-ke-xing-ma&quot;&gt;2. 通过插件集成现代搜索（如 &lt;code&gt;mkdocs-pagefind&lt;&#x2F;code&gt;）可行吗？&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;构建发布场景（Build）&lt;&#x2F;strong&gt;：可行且体验优秀，静态构建后 Pagefind 提供精准的对称分词与段落级索引。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;本地开发场景（Serve）&lt;&#x2F;strong&gt;：体验割裂。Pagefind 基于磁盘静态 HTML 进行后置索引，而 &lt;code&gt;mkdocs serve&lt;&#x2F;code&gt; 运行于纯内存渲染模型，两者生命周期冲突；同时外挂插件难以无缝复用 Material 原生的输入框交互。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;zui-jia-shi-jian-yu-xuan-xing-qi-shi&quot;&gt;最佳实践与选型启示&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-dang-qian-shi-yong-zhe-de-zui-jia-zhi-sun-fang-an&quot;&gt;1. 当前使用者的最佳止损方案&lt;&#x2F;h3&gt;
+&lt;p&gt;如果你继续使用 MkDocs + Material：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;禁用英文词干化&lt;&#x2F;strong&gt;：在 &lt;code&gt;mkdocs.yml&lt;&#x2F;code&gt; 中配置 search 插件禁用英文 stemmer pipeline，宁可牺牲英文形态派生词的泛化匹配，也要保证“完整拼写精确必中”；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;明确增量边界&lt;&#x2F;strong&gt;：新建文件或变更目录拓扑后，养成重启 serve 或 touch 已有文件的习惯。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-xian-dai-hua-jia-gou-xuan-xing-si-kao&quot;&gt;2. 现代化架构选型思考&lt;&#x2F;h3&gt;
+&lt;p&gt;MkDocs 与 Material 主题虽然更新频繁，但底层依然受制于上一代 Python 同步批处理模型与停滞维护的 Lunr.js 引擎。在构建新的个人知识库或文档站时，应优先考虑现代化方案：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;采用现代静态搜索引擎（如 Pagefind）&lt;&#x2F;strong&gt;：由 Rust 编写，支持对称的多语言分词与段落级索引，从设计上避免了通配符与词干化脱靶的问题。现代文档框架（如 &lt;strong&gt;Astro Starlight&lt;&#x2F;strong&gt; 开箱内置，或 &lt;strong&gt;VitePress&lt;&#x2F;strong&gt; 通过插件集成）均广泛采用该方案；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;现代打包驱动&lt;&#x2F;strong&gt;：基于 Vite&#x2F;Turbopack 的细粒度 HMR 能够毫秒级响应文件的增删改，从根本上消除了开发服务器状态不一致的问题。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

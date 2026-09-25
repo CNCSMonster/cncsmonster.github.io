@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Claude Code</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/claude-code/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Thu, 07 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Claude Code WebFetch 修复：跳过 preflight 解决站点抓取失败</title>
+          <pubDate>Thu, 07 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/claude-code-fix-webfetch-preflight/</link>
+          <guid>https://cncsmonster.github.io/posts/claude-code-fix-webfetch-preflight/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/claude-code-fix-webfetch-preflight/">&lt;h2 id=&quot;bei-jing&quot;&gt;背景&lt;&#x2F;h2&gt;
+&lt;p&gt;使用三方 LLM provider（智谱等 Anthropic 兼容 API）时，Claude Code 的原生网络工具存在问题：WebSearch 不可用，WebFetch 看似被国内站点拒绝。经过 Claude Code 源码分析和实测验证，找到了根因和修复方案。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;yuan-ma-shi-shi-claude-code-2-x&quot;&gt;源码事实（Claude Code 2.x）&lt;&#x2F;h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;源码位置：&lt;code&gt;claude-code-haha&#x2F;src&#x2F;tools&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;webfetch-jia-gou&quot;&gt;WebFetch 架构&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;调用链：
+  ① preflight 域名安全检查 → POST https:&amp;#x2F;&amp;#x2F;api.anthropic.com&amp;#x2F;api&amp;#x2F;web&amp;#x2F;domain_info
+     硬编码，不受 ANTHROPIC_BASE_URL 控制
+  ② 本地 HTTP 抓取 → axios.get(url)，从用户机器直接发出
+  ③ 内容摘要 → ANTHROPIC_BASE_URL (Haiku)，走用户的 provider
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;关键文件：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;WebFetchTool.ts&lt;&#x2F;code&gt; — 工具定义和权限检查&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;utils.ts&lt;&#x2F;code&gt; — &lt;code&gt;getWithPermittedRedirects()&lt;&#x2F;code&gt; 通过 &lt;code&gt;axios.get()&lt;&#x2F;code&gt; 本地抓取（262行）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebFetchTool&#x2F;utils.ts&lt;&#x2F;code&gt; — &lt;code&gt;checkDomainBlocklist()&lt;&#x2F;code&gt; preflight 检查（176行）&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;websearch-jia-gou&quot;&gt;WebSearch 架构&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;调用链：
+  构造 server_tool_use schema (type: web_search_20250305)
+  → 注入到 Messages API 请求中
+  → Anthropic 服务端执行搜索
+  → 客户端消费流式返回的 web_search_tool_result
+  全程服务端执行，客户端不发起搜索 HTTP 请求
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;关键文件：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;WebSearchTool&#x2F;WebSearchTool.ts&lt;&#x2F;code&gt; — &lt;code&gt;isEnabled()&lt;&#x2F;code&gt; 只允许 firstParty&#x2F;vertex&#x2F;foundry（168行）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;WebSearchTool&#x2F;prompt.ts&lt;&#x2F;code&gt; — 明确说明 “Searches are performed automatically within a single API call”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;anthropic-base-url-de-zuo-yong-fan-wei&quot;&gt;ANTHROPIC_BASE_URL 的作用范围&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;受影响&lt;&#x2F;th&gt;&lt;th&gt;不受影响&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Chat Completions API&lt;&#x2F;td&gt;&lt;td&gt;WebFetch preflight（硬编码 api.anthropic.com）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;WebFetch 内容摘要（Haiku）&lt;&#x2F;td&gt;&lt;td&gt;WebFetch 本地抓取（axios.get）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;&#x2F;td&gt;&lt;td&gt;WebSearch 不可用（三方 provider 不实现）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;xiu-fu-fang-an&quot;&gt;修复方案&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-tiao-pei-zhi-jie-jue-webfetch&quot;&gt;一条配置解决 WebFetch&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&amp;#x2F;&amp;#x2F; .claude&amp;#x2F;settings.local.json
+{
+  &amp;quot;skipWebFetchPreflight&amp;quot;: true
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;原理&lt;&#x2F;strong&gt;：跳过 &lt;code&gt;checkDomainBlocklist()&lt;&#x2F;code&gt; 的 API 调用。本地 &lt;code&gt;axios.get()&lt;&#x2F;code&gt; 直接抓取，不经过 Anthropic 安全检查。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;shi-ce-yan-zheng&quot;&gt;实测验证&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;测试目标&lt;&#x2F;th&gt;&lt;th&gt;skipWebFetchPreflight=false&lt;&#x2F;th&gt;&lt;th&gt;skipWebFetchPreflight=true&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;deepseek.com&lt;&#x2F;td&gt;&lt;td&gt;❌ Unable to verify…&lt;&#x2F;td&gt;&lt;td&gt;✅ DeepSeek | 深度求索&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;docs.bigmodel.cn&lt;&#x2F;td&gt;&lt;td&gt;❌ Unable to verify…&lt;&#x2F;td&gt;&lt;td&gt;✅ (验证通过)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;websearch-wu-jie&quot;&gt;WebSearch 无解&lt;&#x2F;h3&gt;
+&lt;p&gt;三方 provider 不实现 Anthropic 的 server_tool 协议。&lt;code&gt;isEnabled()&lt;&#x2F;code&gt; 直接返回 false，工具不注册。&lt;strong&gt;不是配置问题，是 provider 能力限制&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;mcp-sou-suo-zuo-wei-bu-chong&quot;&gt;MCP 搜索作为补充&lt;&#x2F;h3&gt;
+&lt;p&gt;WebFetch 修复后已是主要抓取工具。以下 MCP 工具提供搜索能力（搜索引擎 vs 单页抓取是不同能力）：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;定位&lt;&#x2F;th&gt;&lt;th&gt;免费额度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Tavily MCP&lt;&#x2F;td&gt;&lt;td&gt;技术文档搜索最优&lt;&#x2F;td&gt;&lt;td&gt;1000次&#x2F;月&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Brave Search MCP&lt;&#x2F;td&gt;&lt;td&gt;通用搜索 + 独立索引&lt;&#x2F;td&gt;&lt;td&gt;2000次&#x2F;月&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;zui-zhong-pei-zhi&quot;&gt;最终配置&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;json&quot; class=&quot;language-json &quot;&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;{
+  &amp;quot;skipWebFetchPreflight&amp;quot;: true,
+  &amp;quot;permissions&amp;quot;: {
+    &amp;quot;allow&amp;quot;: [
+      &amp;quot;WebFetch&amp;quot;,
+      &amp;quot;Bash(curl:*)&amp;quot;,
+      &amp;quot;Bash(claude mcp *)&amp;quot;,
+      &amp;quot;Bash(python3 *)&amp;quot;
+    ],
+    &amp;quot;deny&amp;quot;: [&amp;quot;WebSearch&amp;quot;]
+  }
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;wang-luo-gong-ju-neng-li-ju-zhen-xiu-fu-hou&quot;&gt;网络工具能力矩阵（修复后）&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;th&gt;原理&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;WebFetch&lt;&#x2F;td&gt;&lt;td&gt;✅ 已修复&lt;&#x2F;td&gt;&lt;td&gt;本地 axios.get()，跳过 Anthropic preflight&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;WebSearch&lt;&#x2F;td&gt;&lt;td&gt;❌ deny&lt;&#x2F;td&gt;&lt;td&gt;三方 provider 不实现 server_tool&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Brave MCP&lt;&#x2F;td&gt;&lt;td&gt;已装&lt;&#x2F;td&gt;&lt;td&gt;本地进程，需 API Key&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Tavily MCP&lt;&#x2F;td&gt;&lt;td&gt;已装&lt;&#x2F;td&gt;&lt;td&gt;本地进程，需 API Key&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;curl&lt;&#x2F;td&gt;&lt;td&gt;✅ 兜底&lt;&#x2F;td&gt;&lt;td&gt;无依赖&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;you-xian-ji-ce-lue&quot;&gt;优先级策略&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;查特定网页内容     → WebFetch（已修复，无额度限制）
+查技术文档&amp;#x2F;API     → Tavily MCP（搜索质量最优）
+通用搜索          → Brave Search MCP（独立索引）
+已知文档站快速获取  → llms.txt + curl（零 token 消耗）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;guan-jian-jiao-xun&quot;&gt;关键教训&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;报错信息具有误导性&lt;&#x2F;strong&gt;：&lt;code&gt;&quot;unable to verify domain is safe&quot;&lt;&#x2F;code&gt; 看起来像目标站拒绝，实则是 Anthropic preflight 在不通知的情况下拦截&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;源码验证优于推测&lt;&#x2F;strong&gt;：最初推测 WebFetch 从 Anthropic 服务器抓取，源码证明是本地 axios&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;一行配置解决大问题&lt;&#x2F;strong&gt;：整个探索过程中最有效的措施是 &lt;code&gt;skipWebFetchPreflight: true&lt;&#x2F;code&gt;，之前折腾 MCP 是因为不知道这个配置存在&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+    </channel>
+</rss>
