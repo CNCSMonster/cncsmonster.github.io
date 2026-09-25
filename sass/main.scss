@@ -107,6 +107,27 @@ a {
     }
 }
 
+// Responsive navigation: 窄屏下防止站名与链接文字被压折成竖排
+@media (max-width: 900px) {
+    .site-nav {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+
+    .site-title {
+        white-space: nowrap;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        gap: 0.5rem 1.1rem;
+
+        a {
+            white-space: nowrap;
+        }
+    }
+}
+
 // Main content
 .site-main {
     max-width: $max-width;
