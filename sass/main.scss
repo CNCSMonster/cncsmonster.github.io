@@ -146,20 +146,20 @@ a {
 // Hero section
 .hero {
     text-align: center;
-    padding: 3rem 0;
-    margin-bottom: 2rem;
-    
+    padding: 1.5rem 0 0.75rem;
+    margin-bottom: 0.75rem;
+
     h1 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
+        font-size: 1.9rem;
+        margin-bottom: 0.4rem;
         background: linear-gradient(135deg, $primary-color, $secondary-color);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
-    
+
     .hero-subtitle {
-        font-size: 1.2rem;
+        font-size: 1rem;
         color: $text-light;
     }
 }
@@ -169,7 +169,7 @@ a {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
-    margin-top: 2rem;
+    margin-top: 0.75rem;
 }
 
 .module-card {
@@ -213,7 +213,7 @@ a {
         margin-bottom: 1rem;
 
         li {
-            padding: 0.25rem 0;
+            padding: 0.45rem 0;
             border-bottom: 1px solid $border-color;
 
             &:last-child {
@@ -222,17 +222,17 @@ a {
 
             a {
                 color: $text-color;
-                font-size: 0.9rem;
+                font-size: 1.05rem;
 
                 &:hover {
                     color: $primary-color;
                 }
             }
-            
+
             &.empty-notice {
                 color: $text-light;
                 font-style: italic;
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
         }
     }
