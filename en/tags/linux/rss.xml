@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Linux</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/linux/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Thu, 24 Sep 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>WSL2 Low Latency Tuning Guide</title>
+          <pubDate>Thu, 24 Sep 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/">&lt;p&gt;Many developers using WSL2 on Windows 11 encounter a frustrating dilemma:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Dilemma A (Input lag &amp;amp; jittery cursor)&lt;&#x2F;strong&gt;: Typing in the terminal or holding navigation keys in modal editors like Helix or Vim feels sticky, stuttering, and disconnected;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Dilemma B (Host memory exhaustion)&lt;&#x2F;strong&gt;: By default, memory allocated to WSL2 is never released back to Windows. If left unchecked or if you forget to reclaim it, Windows runs out of RAM, leading to severe system-wide freezing.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;To solve memory retention, many guides recommend enabling Microsoft’s &lt;code&gt;autoMemoryReclaim=gradual&lt;&#x2F;code&gt;. Unfortunately, this often makes input responsiveness significantly worse. The &lt;code&gt;gradual&lt;&#x2F;code&gt; mode continuously injects Hyper-V callback interrupts (HYP interrupts) into the VM over a 30-minute span, chopping continuous keystrokes into jittery pulses.&lt;&#x2F;p&gt;
+&lt;p&gt;This guide presents a &lt;strong&gt;dual-sided co-optimization strategy&lt;&#x2F;strong&gt; that completely eliminates typing and cursor stutter while ensuring idle memory is safely and automatically returned to the Windows host.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-input-pipeline-and-latency-bottlenecks&quot;&gt;1. Input Pipeline and Latency Bottlenecks&lt;&#x2F;h2&gt;
+&lt;p&gt;To eliminate typing and navigation lag, we must inspect the full path from physical keystroke to terminal echo:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;text&quot; class=&quot;language-text &quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Keyboard Hardware → [Windows Drivers &amp;#x2F; IME &amp;#x2F; TSF] → Windows Terminal (GPU&amp;#x2F;DWM)
+                  → ConPTY (Hyper-V Boundary)
+                  → Linux PTY (&amp;#x2F;dev&amp;#x2F;pts)
+                  → Shell &amp;#x2F; Helix Editor
+                  → ANSI Redraw &amp;amp; Echo
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Along this pipeline, two hidden culprits destroy low-latency interaction:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;High-frequency interrupts from &lt;code&gt;autoMemoryReclaim=gradual&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+After 5 minutes of idle time, &lt;code&gt;gradual&lt;&#x2F;code&gt; initiates periodic cgroup reclamation passes for the next &lt;strong&gt;30 full minutes&lt;&#x2F;strong&gt;. This floods the VM with millions of Hyper-V interrupts. High-frequency key repeats collide with these interrupt windows, causing erratic cursor stutter.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Swap thrashing caused by default &lt;code&gt;swappiness=60&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+Even with plenty of physical RAM available, the Linux kernel aggressively evicts idle processes (such as terminal buffers and Language Server Protocols) into disk swap. Continuous cursor navigation triggers memory page swap-ins, causing millisecond-level I&#x2F;O stalls right in the middle of character echoes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-windows-host-configuration-wslconfig&quot;&gt;2. Windows Host Configuration (&lt;code&gt;.wslconfig&lt;&#x2F;code&gt;)&lt;&#x2F;h2&gt;
+&lt;p&gt;Create or edit &lt;code&gt;C:\Users\&amp;lt;YourUsername&amp;gt;\.wslconfig&lt;&#x2F;code&gt; on the Windows host:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[wsl2]
+# 1. Strict CPU isolation: on a 16-thread CPU, allocate 8 cores to WSL and reserve 8 for Windows
+processors=8
+
+# 2. Hard memory ceiling: cap WSL at 16GB on a 32GB system to protect host stability
+memory=16GB
+
+# 3. Swap space
+swap=8GB
+localhostForwarding=true
+
+[experimental]
+# 4. Critical: use dropCache for instantaneous release without 30-minute interrupt pulses
+autoMemoryReclaim=dropCache
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;architectural-principles&quot;&gt;Architectural Principles&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;why-reserve-8-out-of-16-cores-for-windows&quot;&gt;Why reserve 8 out of 16 cores for Windows?&lt;&#x2F;h4&gt;
+&lt;p&gt;Keyboard hardware interrupts, debounce logic, Text Services Framework (TSF&#x2F;IME), and Windows Terminal GPU&#x2F;DWM rendering &lt;strong&gt;all execute on the Windows host&lt;&#x2F;strong&gt;.&lt;br &#x2F;&gt;
+If you allocate 10 to 12 cores to WSL, heavy background compilation (like &lt;code&gt;cargo build&lt;&#x2F;code&gt; or &lt;code&gt;go test&lt;&#x2F;code&gt;) will starve the Windows UI and input scheduler, directly leading to missed keystrokes and dropped frames. A strict 5:5 split guarantees Windows has 8 dedicated cores to keep foreground interactions buttery smooth.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;why-choose-dropcache-over-gradual&quot;&gt;Why choose &lt;code&gt;dropCache&lt;&#x2F;code&gt; over &lt;code&gt;gradual&lt;&#x2F;code&gt;?&lt;&#x2F;h4&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Mode&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Mechanism&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Input &#x2F; Cursor Impact&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Host Freeze Protection&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;gradual&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Reclaims memory incrementally over 30 minutes after 5 min idle.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Severe lag&lt;&#x2F;strong&gt;. Constant interrupt spikes cause noticeable stutter.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Protected&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Static allocation. WSL never returns memory.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Smoothest&lt;&#x2F;strong&gt;. Zero interrupt overhead.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ &lt;strong&gt;Unprotected&lt;&#x2F;strong&gt;. Host can run out of memory.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;dropCache&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Drops clean file caches (PageCache) in &lt;strong&gt;a single instant pass&lt;&#x2F;strong&gt; after 5 min idle.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Excellent&lt;&#x2F;strong&gt;. Zero sustained interrupt pulses.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;Fully protected&lt;&#x2F;strong&gt;. Safely frees host RAM.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Known Trade-off&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+&lt;code&gt;dropCache&lt;&#x2F;code&gt; trades a brief secondary cold start upon returning for absolute host stability. After 5 minutes of idle time, file caches are emptied. When you resume heavy compilation or trigger large LSP indexings, you may see a momentary 3-second disk read spike as headers are reread from SSD. This is an optimal engineering compromise.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-wsl-linux-guest-configuration-anti-jitter-tuning&quot;&gt;3. WSL Linux Guest Configuration (Anti-Jitter Tuning)&lt;&#x2F;h2&gt;
+&lt;p&gt;Windows-side tuning must be paired with Linux kernel parameter hardening.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-tame-swap-thrashing-swappiness-10&quot;&gt;1. Tame Swap Thrashing (&lt;code&gt;swappiness=10&lt;&#x2F;code&gt;)&lt;&#x2F;h3&gt;
+&lt;p&gt;Prevent the kernel from evicting memory pages to swap when physical RAM is abundant:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. Apply immediately to active kernel
+sudo sysctl vm.swappiness=10
+
+# 2. Persist across reboots via sysctl.d (Ubuntu 24.04+)
+sudo bash -c &amp;#x27;echo &amp;quot;vm.swappiness=10&amp;quot; &amp;gt; &amp;#x2F;etc&amp;#x2F;sysctl.d&amp;#x2F;99-swappiness.conf&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-accelerate-cross-drive-access-via-metadata-mount&quot;&gt;2. Accelerate Cross-Drive Access via Metadata Mount&lt;&#x2F;h3&gt;
+&lt;p&gt;When accessing Windows drives (&lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;&lt;&#x2F;code&gt;), default mounts incur Hyper-V permission verification overhead on every &lt;code&gt;stat&lt;&#x2F;code&gt; call.&lt;&#x2F;p&gt;
+&lt;p&gt;Edit &lt;code&gt;&#x2F;etc&#x2F;wsl.conf&lt;&#x2F;code&gt; inside WSL to include:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[automount]
+enabled = true
+options = &amp;quot;metadata,umask=22,fmask=11&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-verification-and-observability&quot;&gt;4. Verification and Observability&lt;&#x2F;h2&gt;
+&lt;p&gt;Shut down WSL from Windows PowerShell to apply all changes:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl --shutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Relaunch your WSL terminal and verify runtime metrics:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. Verify CPU core count
+nproc
+
+# 2. Verify swappiness
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness
+
+# 3. Inspect memory and cache
+free -h
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Verifying &lt;code&gt;dropCache&lt;&#x2F;code&gt; Reclamation&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+Run a build task in WSL to let &lt;code&gt;buff&#x2F;cache&lt;&#x2F;code&gt; expand. Switch away to Windows for 5 minutes of idle time, then run &lt;code&gt;free -h&lt;&#x2F;code&gt; again. If &lt;code&gt;buff&#x2F;cache&lt;&#x2F;code&gt; drops sharply and &lt;code&gt;vmmemWSL&lt;&#x2F;code&gt; memory usage in Windows Task Manager decreases accordingly, your automated reclamation loop is successfully operating.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>WSL2 TUN Module Version Mismatch: Diagnosis and Fix</title>
+          <pubDate>Mon, 10 Aug 2026 00:00:00 +0000</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl2-tun-module-version-mismatch/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl2-tun-module-version-mismatch/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl2-tun-module-version-mismatch/">&lt;h1 id=&quot;wsl2-tun-module-version-mismatch-diagnosis-and-fix&quot;&gt;WSL2 TUN Module Version Mismatch: Diagnosis and Fix&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;problem&quot;&gt;Problem&lt;&#x2F;h2&gt;
+&lt;p&gt;Running &lt;code&gt;modprobe tun&lt;&#x2F;code&gt; in WSL2 fails with:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;modprobe: ERROR: could not insert &amp;#x27;tun&amp;#x27;: Exec format error
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you’re encountering this error, the solution and diagnostic approach in this article apply to you.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-fix&quot;&gt;Quick Fix&lt;&#x2F;h2&gt;
+&lt;p&gt;Extract modules.vhd from a newer WSL package and replace the outdated version in the system directory:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# Windows side (Administrator)
+# 1. Backup the old version
+Copy-Item &amp;quot;C:\Program Files\WSL\tools\modules.vhd&amp;quot; &amp;quot;C:\Users\&amp;lt;user&amp;gt;\Downloads\modules.vhd.bak&amp;quot;
+
+# 2. Extract modules.vhd from the new WSL package (unpack msixbundle → msi → extract)
+# 3. Replace
+Copy-Item &amp;quot;new-modules.vhd&amp;quot; &amp;quot;C:\Program Files\WSL\tools\modules.vhd&amp;quot; -Force
+
+# 4. Restart WSL
+wsl --shutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Verify in WSL
+sudo modprobe tun &amp;amp;&amp;amp; echo &amp;quot;MODULE LOAD OK&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;WSL2 kernel and module version mismatch&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Component&lt;&#x2F;th&gt;&lt;th&gt;Version&lt;&#x2F;th&gt;&lt;th&gt;Note&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kernel (kernel)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;6.18.33.2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Manually updated&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;modules.vhd (module package)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;6.6.87.2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Missed, outdated&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;When updating the WSL2 kernel previously, only &lt;code&gt;kernel&lt;&#x2F;code&gt; and &lt;code&gt;system.vhd&lt;&#x2F;code&gt; were replaced — &lt;strong&gt;&lt;code&gt;modules.vhd&lt;&#x2F;code&gt; was missed&lt;&#x2F;strong&gt;. The kernel is new, but tun.ko’s vermagic is still the old version (6.6.87.2), so the kernel refuses to load it — this is the real cause of &lt;code&gt;Exec format error&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;diagnostic-chain&quot;&gt;Diagnostic Chain&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;modprobe tun → Exec format error
+  ↓
+CONFIG_TUN=m → Kernel supports TUN, not &amp;quot;kernel limitation&amp;quot;
+  ↓
+modinfo tun.ko → vermagic: 6.6.87.2
+uname -r      → 6.18.33.2
+  ↓ Version mismatch → vermagic mismatch
+  ↓
+Trace operation history: only replaced kernel + system.vhd, missed modules.vhd
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Key insight&lt;&#x2F;strong&gt;: In the kernel module context, &lt;code&gt;Exec format error&lt;&#x2F;code&gt; ≠ file corruption, it’s &lt;strong&gt;vermagic mismatch&lt;&#x2F;strong&gt; (kernel refuses to load a .ko file with the wrong version).&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;exec-format-error-diagnostic-framework&quot;&gt;Exec format Error Diagnostic Framework&lt;&#x2F;h2&gt;
+&lt;p&gt;When &lt;code&gt;modprobe&lt;&#x2F;code&gt; reports &lt;code&gt;Exec format error&lt;&#x2F;code&gt;, rule out in order:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Check&lt;&#x2F;th&gt;&lt;th&gt;Method&lt;&#x2F;th&gt;&lt;th&gt;Root Cause&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;① vermagic version&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;modinfo xxx.ko | grep vermagic&lt;&#x2F;code&gt; vs &lt;code&gt;uname -r&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Kernel&#x2F;module version mismatch (this case)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;② vermagic suffix&lt;&#x2F;td&gt;&lt;td&gt;Compare full vermagic string (e.g., &lt;code&gt;-tegra&lt;&#x2F;code&gt; suffix)&lt;&#x2F;td&gt;&lt;td&gt;CONFIG_LOCALVERSION mismatch&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;③ Source version&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;git log&lt;&#x2F;code&gt; vs &lt;code&gt;uname -r&lt;&#x2F;code&gt; corresponding version&lt;&#x2F;td&gt;&lt;td&gt;Wrong source version used to compile module&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;④ GCC version&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;gcc --version&lt;&#x2F;code&gt; vs kernel build GCC&lt;&#x2F;td&gt;&lt;td&gt;Multiple GCC versions causing vermagic difference&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;⑤ Symbol table&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;dmesg | grep &quot;disagrees about version&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Kernel ABI changed, module needs recompilation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;⑥ depmod&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo depmod -a&lt;&#x2F;code&gt; then retry&lt;&#x2F;td&gt;&lt;td&gt;Dependency index not updated after manual module install&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wsl2-module-loading-mechanism&quot;&gt;WSL2 Module Loading Mechanism&lt;&#x2F;h2&gt;
+&lt;p&gt;How WSL2 6.6+ kernel modules are distributed:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Modules are packaged in &lt;code&gt;modules.vhd&lt;&#x2F;code&gt; (Windows-side file)&lt;&#x2F;li&gt;
+&lt;li&gt;Mounted at startup as the overlay’s &lt;strong&gt;lower layer&lt;&#x2F;strong&gt; (read-only), path &lt;code&gt;&#x2F;modules&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;&#x2F;usr&#x2F;lib&#x2F;modules&#x2F;&amp;lt;ver&amp;gt;&#x2F;&lt;&#x2F;code&gt; is the overlay merged view:&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre&gt;&lt;code&gt;overlay → lower = &amp;#x2F;modules (modules.vhd, read-only)
+          upper = &amp;#x2F;lib&amp;#x2F;modules&amp;#x2F;...&amp;#x2F;rw&amp;#x2F;upper (writable, persists across reboots)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;&#x2F;h2&gt;
+&lt;p&gt;This diagnosis got stuck on the wrong assumption that “Exec format error = file corruption”, wasting significant time. Checking vermagic first would have saved a lot of effort.&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Exec format error = vermagic mismatch&lt;&#x2F;strong&gt;, not “file corruption” or “kernel doesn’t support it”&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 kernel update requires replacing three files&lt;&#x2F;strong&gt;: kernel + system.vhd + &lt;strong&gt;modules.vhd&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;When confirming “kernel doesn’t support it”, check CONFIG_TUN first&lt;&#x2F;strong&gt;: &lt;code&gt;grep CONFIG_TUN &#x2F;boot&#x2F;config-$(uname -r)&lt;&#x2F;code&gt;, &lt;code&gt;CONFIG_TUN=m&lt;&#x2F;code&gt; means kernel supports it, just module not loaded&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+      <item>
+          <title>WSL2 + xrdp + XFCE Desktop: A Post-Mortem</title>
+          <pubDate>Sat, 20 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl2-xrdp-xfce-desktop-en/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl2-xrdp-xfce-desktop-en/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl2-xrdp-xfce-desktop-en/">&lt;p&gt;Can WSL2 serve as a full Linux desktop machine? I tried the xrdp + XFCE route, and the answer is &lt;strong&gt;it doesn’t work&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 was never designed for a complete desktop&lt;&#x2F;strong&gt; — Microsoft built WSLg to run individual GUI apps, not to give you a desktop server&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;xrdp assumes a real Linux server&lt;&#x2F;strong&gt; — WSL2 has no real display hardware, no VT, no stable networking&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Here’s the full post-mortem.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;the-issues&quot;&gt;The Issues&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;prelude-xrdp-binding-address-misconfiguration&quot;&gt;Prelude: xrdp binding address misconfiguration&lt;&#x2F;h3&gt;
+&lt;p&gt;Instinctively wrote &lt;code&gt;address=127.0.0.1&lt;&#x2F;code&gt;, but this version of xrdp controls binding via &lt;code&gt;port=&lt;&#x2F;code&gt;, not &lt;code&gt;address=&lt;&#x2F;code&gt;. Fixed by changing to &lt;code&gt;port=tcp:&#x2F;&#x2F;.:3389&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;issue-1-black-screen-or-session-exits-immediately-after-connecting&quot;&gt;Issue 1: Black screen or session exits immediately after connecting&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Cause&lt;&#x2F;strong&gt;: WSLg sets &lt;code&gt;WAYLAND_DISPLAY=wayland-0&lt;&#x2F;code&gt;. XFCE&#x2F;GTK components prefer Wayland, but xrdp only provides X11.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Fix&lt;&#x2F;strong&gt;: Clear Wayland variables in &lt;code&gt;&#x2F;etc&#x2F;xrdp&#x2F;startwm.sh&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;unset WAYLAND_DISPLAY
+export GDK_BACKEND=x11
+export QT_QPA_PLATFORM=xcb
+export SDL_VIDEODRIVER=x11
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;code&gt;&#x2F;etc&#x2F;xrdp&#x2F;startwm.sh&lt;&#x2F;code&gt; is xrdp’s default session startup script — called by xrdp when a user connects via RDP. Think of it as xrdp’s equivalent of &lt;code&gt;.xinitrc&lt;&#x2F;code&gt;. On a regular Linux server it doesn’t need modification; here it’s used to clear the Wayland variables injected by WSLg.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;issue-2-desktop-elements-too-small-on-hidpi-displays&quot;&gt;Issue 2: Desktop elements too small on HiDPI displays&lt;&#x2F;h3&gt;
+&lt;p&gt;Test environment: 2880x1800 display, Windows scaling at 200%.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Approaches tried&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Lowering mstsc resolution to 1440x900 → desktop shrinks with black borders&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GDK_SCALE=2&lt;&#x2F;code&gt; global scaling → XFCE crashes outright&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Final compromise&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;GDK_DPI_SCALE=1.5&lt;&#x2F;code&gt; to scale fonts only (&lt;code&gt;GDK_SCALE&lt;&#x2F;code&gt; changes window geometry, which XFCE can’t handle)&lt;&#x2F;li&gt;
+&lt;li&gt;Panel &lt;code&gt;icon-size&lt;&#x2F;code&gt; changed from default 16 to 48&lt;&#x2F;li&gt;
+&lt;li&gt;Panel height set to 64&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;issue-3-home-folder-won-t-open&quot;&gt;Issue 3: HOME folder won’t open&lt;&#x2F;h3&gt;
+&lt;p&gt;Error: &lt;code&gt;获取文件信息时出错 &quot;&#x2F;home&#x2F;...&#x2F;thinclient_drives&quot;：传输端点未连接。&lt;&#x2F;code&gt; (Error getting file info: transport endpoint not connected)&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Cause&lt;&#x2F;strong&gt;: xrdp’s drive redirection creates a FUSE mount point &lt;code&gt;thinclient_drives&lt;&#x2F;code&gt; under the home directory. It doesn’t auto-unmount when the connection drops.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Fix&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo umount -l &amp;#x2F;home&amp;#x2F;&amp;lt;username&amp;gt;&amp;#x2F;thinclient_drives
+sudo rm -rf &amp;#x2F;home&amp;#x2F;&amp;lt;username&amp;gt;&amp;#x2F;thinclient_drives
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;WSLg’s &lt;code&gt;WAYLAND_DISPLAY&lt;&#x2F;code&gt; pollutes X11 sessions — remote desktop setups must clear it manually&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;GDK_SCALE&lt;&#x2F;code&gt; and &lt;code&gt;GDK_DPI_SCALE&lt;&#x2F;code&gt; are fundamentally different: the former changes window geometry, the latter only scales fonts&lt;&#x2F;li&gt;
+&lt;li&gt;XFCE panel icon size is controlled independently by &lt;code&gt;icon-size&lt;&#x2F;code&gt;, separate from panel height&lt;&#x2F;li&gt;
+&lt;li&gt;xrdp’s &lt;code&gt;thinclient_drives&lt;&#x2F;code&gt; tends to linger under WSL&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

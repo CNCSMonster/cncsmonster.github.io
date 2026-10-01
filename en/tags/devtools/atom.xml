@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - DevTools</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/devtools/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2024-12-13T21:15:54+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/devtools/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Replacing FGM with Mise: A Practical Guide</title>
+        <published>2024-12-13T21:15:54+08:00</published>
+        <updated>2024-12-13T21:15:54+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/"/>
+        <id>https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/shi-yong-mise-ti-huan-fgm/">&lt;p&gt;Mise fully covers FGM’s features and use cases, and goes far beyond Golang toolchain management — it can manage toolchains for Node.js, Neovim, Java, and more. You can even replace direnv with Mise to handle environment variable loading and unloading when entering and leaving directories.&lt;&#x2F;p&gt;
+&lt;p&gt;Here’s my experience using Mise across three aspects:&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;1-installing-mise&quot;&gt;1. Installing Mise&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Option 1&lt;&#x2F;strong&gt;: Install via a package manager&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# Requires cargo-binstall and the Rust toolchain
+cargo binstall mise
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Option 2&lt;&#x2F;strong&gt;: Download a prebuilt binary from the releases page, extract it, and place the &lt;code&gt;mise&lt;&#x2F;code&gt; executable in your PATH.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;jdx&#x2F;mise&#x2F;releases&quot;&gt;jdx&#x2F;mise Releases&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-configuring-mise&quot;&gt;2. Configuring Mise&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;2-1-shell-initialization&quot;&gt;2.1 Shell Initialization&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# For bash
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate bash)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.bashrc
+
+# For zsh
+echo &amp;#x27;eval &amp;quot;$(~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate zsh)&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.zshrc
+
+# For fish
+echo &amp;#x27;~&amp;#x2F;.cargo&amp;#x2F;bin&amp;#x2F;mise activate fish | source&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.config&amp;#x2F;fish&amp;#x2F;config.fish
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-2-configuration-file&quot;&gt;2.2 Configuration File&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise’s config file is &lt;code&gt;.mise.toml&lt;&#x2F;code&gt;, placed in your project root or home directory.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# ~&amp;#x2F;.mise.toml
+[tools]
+go = &amp;quot;1.21&amp;quot;
+node = &amp;quot;20&amp;quot;
+python = &amp;quot;3.12&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;3-using-mise&quot;&gt;3. Using Mise&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;# Install tools
+mise install go@1.21
+mise install node@20
+
+# Set global version
+mise use --global go@1.21
+
+# Set project-specific version (auto-creates .mise.toml)
+mise use go@1.21
+
+# List installed versions
+mise ls
+
+# Uninstall
+mise uninstall go@1.21
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;4-advanced-features&quot;&gt;4. Advanced Features&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;4-1-environment-variable-management&quot;&gt;4.1 Environment Variable Management&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[env]
+_.path = [&amp;quot;.&amp;#x2F;bin&amp;quot;, &amp;quot;{{config_root}}&amp;#x2F;scripts&amp;quot;]
+API_KEY = &amp;quot;secret&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-2-task-runner&quot;&gt;4.2 Task Runner&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;toml&quot; class=&quot;language-toml &quot;&gt;&lt;code class=&quot;language-toml&quot; data-lang=&quot;toml&quot;&gt;# .mise.toml
+[tasks.build]
+description = &amp;quot;Build the project&amp;quot;
+run = &amp;quot;make build&amp;quot;
+
+[tasks.test]
+description = &amp;quot;Run tests&amp;quot;
+run = &amp;quot;go test .&amp;#x2F;...&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;4-3-replacing-direnv&quot;&gt;4.3 Replacing direnv&lt;&#x2F;h3&gt;
+&lt;p&gt;Mise supports &lt;code&gt;.envrc&lt;&#x2F;code&gt; files, fully replacing direnv:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;sh&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;mise activate direnv
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Then in &lt;code&gt;.envrc&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;use go
+use node
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;summary&quot;&gt;Summary&lt;&#x2F;h2&gt;
+&lt;p&gt;Mise is a powerful toolchain manager with these advantages:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ Multi-language support (Go, Node.js, Python, Java, Rust, and more)&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Project-level and global configuration&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Environment variable management&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Built-in task runner&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Compatible with the asdf plugin ecosystem&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Great performance (written in Rust)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

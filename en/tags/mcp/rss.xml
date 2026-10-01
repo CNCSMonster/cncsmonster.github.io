@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - MCP</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/mcp/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 13 Jul 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Big Model Radar: An AI-Maintained Dashboard for CLI Tool Ecosystems</title>
+          <pubDate>Mon, 13 Jul 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/</link>
+          <guid>https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/big-model-radar-ai-cli-ecosystem/">&lt;p&gt;The AI Coding Agent space moves fast. Claude Code, Codex, Gemini CLI, Qwen Code, and others generate a constant stream of Issues, PRs, and discussions daily. No one can keep up with all of it.&lt;&#x2F;p&gt;
+&lt;p&gt;I recently discovered &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&quot;&gt;Big Model Radar&lt;&#x2F;a&gt;, a project that uses GitHub Actions to automatically scrape development activity from these tools and generates bilingual (Chinese&#x2F;English) daily reports using LLMs. It has been producing reports steadily every day since July 7, 2026.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Note&lt;&#x2F;strong&gt;: The Web UI is a snapshot of the old version (content up to 2026-05). For the latest reports, check Issues or Telegram.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-it-tracks&quot;&gt;What It Tracks&lt;&#x2F;h2&gt;
+&lt;p&gt;7 major CLI tools: Claude Code &#x2F; OpenAI Codex &#x2F; Gemini CLI &#x2F; GitHub Copilot CLI &#x2F; Kimi Code CLI &#x2F; OpenCode &#x2F; Qwen Code.&lt;&#x2F;p&gt;
+&lt;p&gt;It generates 5 types of daily reports:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;digest&lt;&#x2F;strong&gt;: Cross-tool community activity comparison&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;hn&lt;&#x2F;strong&gt;: Hacker News AI hot topics&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;trending&lt;&#x2F;strong&gt;: GitHub AI trending repositories&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;web&lt;&#x2F;strong&gt;: Anthropic&#x2F;OpenAI official site updates&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;openclaw&lt;&#x2F;strong&gt;: OpenClaw ecosystem report&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;more-than-just-summaries&quot;&gt;More Than Just Summaries&lt;&#x2F;h2&gt;
+&lt;p&gt;Each tool’s daily report contains 6 sections:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Today’s Overview&lt;&#x2F;strong&gt;: A paragraph summarizing the day’s key signals&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Releases&lt;&#x2F;strong&gt;: New version listings&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Top 10 Hot Issues&lt;&#x2F;strong&gt;: Each with priority + comment count + &lt;strong&gt;significance analysis&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Top 7-10 Important PRs&lt;&#x2F;strong&gt;: Each with feature description + impact assessment&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Feature Request Trends&lt;&#x2F;strong&gt;: Directional insights extracted from Issues&#x2F;PRs&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Developer Focus Areas&lt;&#x2F;strong&gt;: Pain point clustering + high-frequency demand aggregation&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;This isn’t simple Issue forwarding. It’s a hybrid of &lt;strong&gt;AI-generated summaries + trend analysis&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;three-stage-pipeline-production-bridge-consumption&quot;&gt;Three-Stage Pipeline: Production → Bridge → Consumption&lt;&#x2F;h2&gt;
+&lt;p&gt;The project’s architecture is interesting:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Production&lt;&#x2F;strong&gt;: The maintainer pays for LLM tokens. GitHub Actions automatically generates daily reports at 08:00 CST, writing to GitHub Issues + Markdown files&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bridge&lt;&#x2F;strong&gt;: The project provides MCP Server source code. Users deploy their own instance to Cloudflare Workers, exposing query APIs (&lt;code&gt;list_reports&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_latest&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_report&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;search&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Consumption&lt;&#x2F;strong&gt;: Users connect their own Claude Desktop to the MCP Server for queries, consuming their own LLM tokens&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;The essence: &lt;strong&gt;producers pay to generate content, consumers pay to query it&lt;&#x2F;strong&gt;. The MCP Server is a data bridge that lets AI agents consume Issue data directly, instead of humans browsing pages.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;access-methods&quot;&gt;Access Methods&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Web UI&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&quot;&gt;gsscsd.github.io&#x2F;big_model_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Issues&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&#x2F;issues&quot;&gt;loxehate.github.io&#x2F;issues&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;RSS&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&#x2F;feed.xml&quot;&gt;feed.xml&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Telegram&lt;&#x2F;strong&gt;: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;t.me&#x2F;agents_radar&quot;&gt;t.me&#x2F;agents_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;MCP Server&lt;&#x2F;strong&gt;: Self-deployed to Cloudflare Workers&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;an-interesting-reality&quot;&gt;An Interesting Reality&lt;&#x2F;h2&gt;
+&lt;p&gt;As of 2026-07-12, there are &lt;strong&gt;zero human comments&lt;&#x2F;strong&gt; across 41 issues.&lt;&#x2F;p&gt;
+&lt;p&gt;Issues in this project serve as persistent storage for AI-generated content, not a discussion forum. All channels are unidirectional — AI generates → humans&#x2F;AI consume. There is no “human feedback to AI” loop.&lt;&#x2F;p&gt;
+&lt;p&gt;An accurate description: &lt;strong&gt;AI generates, AI consumes, humans observe&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;value&quot;&gt;Value&lt;&#x2F;h2&gt;
+&lt;p&gt;Reduces information acquisition costs — from “manually checking 7 repositories daily” to “glancing at a daily report”; enables cross-tool comparison; provides trend awareness; AI analysis offers directional insights.&lt;&#x2F;p&gt;
+</description>
+      </item>
+      <item>
+          <title>Enhancing AI Code CLI Capabilities Should Use MCP Protocol, Not Built-in Tool Source Code</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/ai-code-cli-mcp-protocol-not-internal-tools/</link>
+          <guid>https://cncsmonster.github.io/en/posts/ai-code-cli-mcp-protocol-not-internal-tools/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/ai-code-cli-mcp-protocol-not-internal-tools/">&lt;p&gt;&lt;strong&gt;Don’t build on code that’s about to be deleted.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-happened&quot;&gt;What Happened&lt;&#x2F;h2&gt;
+&lt;p&gt;The older version of Qwen Code had a built-in &lt;code&gt;web_search&lt;&#x2F;code&gt; tool supporting three search backends: Tavily, Google, and DashScope (DashScope was eligible for Qwen OAuth authentication). But its provider selection was static — you’d configure a single default, the tool would call that one provider per search, and failures were just errors. No fallback.&lt;&#x2F;p&gt;
+&lt;p&gt;My goal was to add runtime provider fallback inside the tool: try Tavily first, then Google, then DashScope. If the first one fails, automatically move to the next. That way a single backend going down wouldn’t kill search entirely.&lt;&#x2F;p&gt;
+&lt;p&gt;On 2026-04-24, while my solution was still local — Qwen Code PR #3502 landed. &lt;strong&gt;It deleted the entire &lt;code&gt;web_search&lt;&#x2F;code&gt; built-in tool&lt;&#x2F;strong&gt; and replaced it with an MCP-based architecture. All the old config keys (&lt;code&gt;webSearch&lt;&#x2F;code&gt; block, &lt;code&gt;advanced.tavilyApiKey&lt;&#x2F;code&gt;, &lt;code&gt;--tavily-api-key&lt;&#x2F;code&gt; CLI flag, etc.) were deprecated. I had been working against a target that no longer existed.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;why-this-approach-was-doomed&quot;&gt;Why This Approach Was Doomed&lt;&#x2F;h2&gt;
+&lt;p&gt;The problem wasn’t the idea — the old implementation genuinely lacked runtime fallback, and adding it was a reasonable improvement. The problem was the foundation:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;web_search&lt;&#x2F;code&gt; went from existence to deletion in a single PR. The AI Code CLI category is less than two years old. Built-in tools can be refactored, merged, or deleted at any time.&lt;&#x2F;li&gt;
+&lt;li&gt;MCP is a cross-CLI standard. Qwen Code, Claude Code, Gemini CLI all support it. Tools built on MCP are independent of any CLI implementation — there’s no risk of “I spent weeks modifying source code, and then the tool got deleted.”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;reflection-the-right-approach&quot;&gt;Reflection: The Right Approach&lt;&#x2F;h2&gt;
+&lt;p&gt;Fallback itself was a good idea — the old version needed it, and the MCP layer needs it too. The mistake was &lt;strong&gt;where&lt;&#x2F;strong&gt; I chose to implement it:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;❌ Modifying CLI built-in tool source code to add fallback&lt;&#x2F;li&gt;
+&lt;li&gt;✅ Writing a standalone MCP server that internally handles multi-provider fallback&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Same functionality. Placed in built-in tool source, it’s one PR away from deletion. Placed in an MCP server, it’s decoupled from the CLI version lifecycle — you control when it lives or dies.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;takeaways&quot;&gt;Takeaways&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;When building capability enhancements for AI Code CLIs, &lt;strong&gt;prioritize the MCP layer&lt;&#x2F;strong&gt; — tools live independently of CLI implementation, immune to upstream refactoring.&lt;&#x2F;li&gt;
+&lt;li&gt;Before you start, check the module’s lifecycle: is it stable core functionality, or experimental code that could be replaced at any time?&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+      <item>
+          <title>Getting Qwen Code to Work with Tavily Search</title>
+          <pubDate>Tue, 05 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/qwen-code-tavily-mcp-setup/</link>
+          <guid>https://cncsmonster.github.io/en/posts/qwen-code-tavily-mcp-setup/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/qwen-code-tavily-mcp-setup/">&lt;h2 id=&quot;1-get-an-api-key&quot;&gt;1. Get an API Key&lt;&#x2F;h2&gt;
+&lt;p&gt;Sign up at &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;tavily.com&#x2F;&quot;&gt;Tavily&lt;&#x2F;a&gt; and copy your API key.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-set-the-environment-variable&quot;&gt;2. Set the Environment Variable&lt;&#x2F;h2&gt;
+&lt;p&gt;Persist &lt;code&gt;TAVILY_API_KEY&lt;&#x2F;code&gt; as a system environment variable (replace &lt;code&gt;tvly-xxxxxxxx&lt;&#x2F;code&gt; with your actual key).&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Linux &#x2F; macOS:&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;echo &amp;#x27;export TAVILY_API_KEY=&amp;quot;tvly-xxxxxxxx&amp;quot;&amp;#x27; &amp;gt;&amp;gt; ~&amp;#x2F;.profile
+source ~&amp;#x2F;.profile
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;If you’ve already set this before, open &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; in an editor to replace or remove the old entry — avoid duplicate lines.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Windows (PowerShell):&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;[Environment]::SetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;tvly-xxxxxxxx&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;No admin privileges required. This writes a persistent environment variable for the current user, but doesn’t modify the already-open PowerShell process — close and reopen the terminal for it to take effect.&lt;&#x2F;p&gt;
+&lt;p&gt;After reopening PowerShell, verify:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you want to continue testing immediately in the current PowerShell window without reopening, sync it once:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY = [Environment]::GetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Your API key grants access to a paid tier. Run the commands above yourself — don’t let an AI agent do it for you.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-install-tavily-mcp&quot;&gt;3. Install Tavily MCP&lt;&#x2F;h2&gt;
+&lt;p&gt;Tell Qwen Code:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Please install Tavily MCP using the qwen mcp add command, then search for something to verify it works.
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Done.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Verified: 2026-05-05, Qwen Code 0.15.6 + tavily-mcp 0.2.19&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</description>
+      </item>
+    </channel>
+</rss>

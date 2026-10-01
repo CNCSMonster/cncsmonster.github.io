@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - Intel GPU</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/intel-gpu/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 01 Jun 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>WSL2 + Intel 集显跑 LLM 推理：为什么不行？分层诊断全记录</title>
+          <pubDate>Mon, 01 Jun 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/</link>
+          <guid>https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/wsl2-intel-gpu-llm-inference-diagnosis/">&lt;p&gt;在 &lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel&#x2F;&quot;&gt;上一篇&lt;&#x2F;a&gt; 中，Shimmy 在 WSL2 + Intel 集显环境下无法运行。本文深入拆解这个问题的根因——不是 Shimmy 的锅，也不是 llama.cpp 的锅，而是 &lt;strong&gt;WSL2 的 DXG 内核模块与 Intel GPU 驱动在协议层就不兼容&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;本文是「本地 LLM 推理环境」系列第二篇。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;he-xin-jie-lun&quot;&gt;核心结论&lt;&#x2F;h2&gt;
+&lt;p&gt;WSL2 中 Intel 集成显卡&lt;strong&gt;无法用于 LLM 推理&lt;&#x2F;strong&gt;。问题不在 IGC 或 OpenCL 驱动本身，而是 WSL2 DXG 内核模块与 Intel Arc 140T 的 Windows 驱动不兼容。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wsl2-de-gpu-zhan-chang-shen-me-yang&quot;&gt;WSL2 的 GPU 栈长什么样&lt;&#x2F;h2&gt;
+&lt;p&gt;从硬件往上 4 层：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;Python (llama-cpp-python, OpenCL)
+         ↓
+[3] IGC — Intel Graphics Compiler
+         ↓
+[2] OpenCL ICD (intel-opencl-icd)
+         ↓
+[1] WSL2 DXG 内核模块 (&amp;#x2F;dev&amp;#x2F;dxg)
+         ↓
+[0] Windows Intel GPU 驱动
+         ↓
+     物理 GPU (Intel Arc 140T &amp;#x2F; Arrow Lake H)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;ge-ceng-zhen-duan-jie-guo&quot;&gt;各层诊断结果&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;层&lt;&#x2F;th&gt;&lt;th&gt;组件&lt;&#x2F;th&gt;&lt;th&gt;状态&lt;&#x2F;th&gt;&lt;th&gt;证据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;[0]&lt;&#x2F;td&gt;&lt;td&gt;Windows 驱动 (32.0.101.6554)&lt;&#x2F;td&gt;&lt;td&gt;⚠️ &lt;strong&gt;偏旧&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;2025-01-15，Intel 在 1~5 月发布了大量 Arrow Lake 更新&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[1]&lt;&#x2F;td&gt;&lt;td&gt;WSL2 DXG (kernel 6.6.87.2)&lt;&#x2F;td&gt;&lt;td&gt;🔴 &lt;strong&gt;大量 ioctl 失败&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;dmesg 从开机 5 秒起持续报错&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[2]&lt;&#x2F;td&gt;&lt;td&gt;OpenCL ICD (23.43.27642.40)&lt;&#x2F;td&gt;&lt;td&gt;✅ 能枚举 GPU&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;clGetDeviceIDs&lt;&#x2F;code&gt; 成功返回 Intel Graphics&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;[3]&lt;&#x2F;td&gt;&lt;td&gt;IGC (1.0.15468.25)&lt;&#x2F;td&gt;&lt;td&gt;✅ 库完整&lt;&#x2F;td&gt;&lt;td&gt;编译正常，但提交内核需过 DXG 层 → 崩溃&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;Layer 1 是真正的故障点。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;dmesg-li-de-tie-zheng&quot;&gt;dmesg 里的铁证&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;dmesg&lt;&#x2F;code&gt; 从头到尾充斥 DXG ioctl 错误，&lt;strong&gt;不是运行 llama.cpp 才触发&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;[    5.459659] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22  (EINVAL)
+[    5.460357] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -2   (ENOENT)
+[    5.460880] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+...
+[78509.821263] misc dxg: dxgkio_query_adapter_info: Ioctl failed: -22
+[78509.825964] misc dxg: dxgkio_reserve_gpu_va:     Ioctl failed: -75  (EOVERFLOW)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;错误码含义：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;errno&lt;&#x2F;th&gt;&lt;th&gt;宏&lt;&#x2F;th&gt;&lt;th&gt;含义&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;-2&lt;&#x2F;td&gt;&lt;td&gt;ENOENT&lt;&#x2F;td&gt;&lt;td&gt;适配器不存在&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-22&lt;&#x2F;td&gt;&lt;td&gt;EINVAL&lt;&#x2F;td&gt;&lt;td&gt;参数无效（WSL2 DXG 传了 Windows 驱动不理解的参数）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;-75&lt;&#x2F;td&gt;&lt;td&gt;EOVERFLOW&lt;&#x2F;td&gt;&lt;td&gt;GPU 虚拟地址预留溢出&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;WSL2 内核的 dxg 模块和 Windows 侧的 Intel GPU 驱动在协议层面不兼容。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;gen-ben-yuan-yin&quot;&gt;根本原因&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Intel Arc 140T 属于 Arrow Lake H 架构，2024 年底刚发布。&lt;&#x2F;strong&gt; Windows 驱动 &lt;code&gt;32.0.101.6554&lt;&#x2F;code&gt;（2025-01-15）是 Arrow Lake 早期版本，对 WSL2 的 DXG 接口支持不完整。DXG 模块向 Windows 驱动发出请求时，驱动不理解或处理有 bug，导致 ioctl 返回 EINVAL&#x2F;EOVERFLOW。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;cai-keng-fan-si&quot;&gt;踩坑反思&lt;&#x2F;h2&gt;
+&lt;p&gt;第一次看到 &lt;code&gt;IGC segfault&lt;&#x2F;code&gt; 时，直觉是“IGC 有问题“。于是查 IGC 版本、看是不是已知 bug、翻 Reddit — IGC 是最新版，没有已知问题。换个方向，测试了 Vulkan（WSL2 不支持原生 Vulkan 透传）、DirectML（Windows 专属，WSL2 不适用）和 Shimmy（底层还是同一个 llama.cpp，完全无关的变量）。&lt;&#x2F;p&gt;
+&lt;p&gt;四个小时花在了&lt;strong&gt;往上追和往旁边追&lt;&#x2F;strong&gt;。往下只需要一个命令，五分钟。&lt;&#x2F;p&gt;
+&lt;p&gt;崩溃日志格式天然引导你关注崩溃的那一层。&lt;code&gt;IGC: Internal Compiler Error&lt;&#x2F;code&gt; — IGC 的名字在错误信息里，注意力就被钉在 IGC 上。但实际上，任何一个组件在&lt;strong&gt;调用外部&lt;&#x2F;strong&gt;时崩溃，根因几乎总是在被调的那一层。纯内部计算崩了才是自己的问题。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wu-chong-fang-an-shi-ce-dui-bi&quot;&gt;五种方案实测对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;方案&lt;&#x2F;th&gt;&lt;th&gt;GPU 识别&lt;&#x2F;th&gt;&lt;th&gt;推理&lt;&#x2F;th&gt;&lt;th&gt;推荐度&lt;&#x2F;th&gt;&lt;th&gt;备注&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Vulkan (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ 只有 llvmpipe&lt;&#x2F;td&gt;&lt;td&gt;fallback CPU&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;Mesa 需要原生 &lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;OpenCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;✅ 枚举成功&lt;&#x2F;td&gt;&lt;td&gt;❌ DXG ioctl 崩溃&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;更新驱动后再试&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;SYCL (WSL2)&lt;&#x2F;td&gt;&lt;td&gt;❌ 已确认不可行&lt;&#x2F;td&gt;&lt;td&gt;需手动 patch ABI&lt;&#x2F;td&gt;&lt;td&gt;⭐&lt;&#x2F;td&gt;&lt;td&gt;社区已放弃&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ 开箱即用&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;当前唯一可用方案&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;IPEX-LLM (Win)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;✅ 17-18 t&#x2F;s&lt;&#x2F;td&gt;&lt;td&gt;⭐⭐⭐&lt;&#x2F;td&gt;&lt;td&gt;Lunar Lake 已验证&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;ge-fang-an-xiang-qing&quot;&gt;各方案详情&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Vulkan (WSL2)&lt;&#x2F;strong&gt;：&lt;code&gt;&#x2F;dev&#x2F;dri&lt;&#x2F;code&gt; 设备不存在，Mesa Intel Vulkan ICD 无法初始化。强制指定后 GPU 数量为 0。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;OpenCL (WSL2)&lt;&#x2F;strong&gt;：GPU 能被正确识别（&lt;code&gt;Intel(R) Graphics [0x7d51]&lt;&#x2F;code&gt;），但提交计算内核时 IGC 编译崩溃——根源在 DXG 层。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;SYCL (WSL2)&lt;&#x2F;strong&gt;：Reddit r&#x2F;IntelArc 用户 2026-04 确认，WSL2 无法通过标准 Intel SYCL 运行时识别 Intel GPU。社区一致建议改用 Windows 原生。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Windows Ollama&lt;&#x2F;strong&gt;：Windows 版原生支持 Intel GPU，WSL2 通过 HTTP API 调用即可。&lt;strong&gt;实测验证通过，开箱即用。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;IPEX-LLM (Windows 原生)&lt;&#x2F;strong&gt;：r&#x2F;IntelArc 用户通过替换 IPEX-LLM 内置 Ollama 二进制，在 Lunar Lake Arc 140V 上实现 qwen3:8b 达到 17-18 tokens&#x2F;s，100% GPU 占用。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ke-xing-de-hou-xu-fang-xiang&quot;&gt;可行的后续方向&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;优先级&lt;&#x2F;th&gt;&lt;th&gt;方案&lt;&#x2F;th&gt;&lt;th&gt;操作&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;1&lt;&#x2F;td&gt;&lt;td&gt;🔑 更新 Windows Intel GPU 驱动&lt;&#x2F;td&gt;&lt;td&gt;下载最新版（当前 6554 → 最新 8801）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;2&lt;&#x2F;td&gt;&lt;td&gt;更新 WSL2&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;wsl --update&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;3&lt;&#x2F;td&gt;&lt;td&gt;切回 Windows 稳定版&lt;&#x2F;td&gt;&lt;td&gt;退出 Insider Preview Canary&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;4&lt;&#x2F;td&gt;&lt;td&gt;尝试 Level Zero 路径&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo apt install intel-level-zero-gpu&lt;&#x2F;code&gt;，走不同 DXG ioctl&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;推荐顺序&lt;&#x2F;strong&gt;：先更新驱动 → 再更新 WSL → 测试效果 → 如仍有问题再切稳定版。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao&quot;&gt;参考&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;www.intel.com&#x2F;content&#x2F;www&#x2F;us&#x2F;en&#x2F;download&#x2F;785597&#x2F;intel-arc-iris-xe-graphics-windows.html&quot;&gt;Intel Arc Graphics 驱动下载&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;windows&#x2F;wsl&#x2F;basic-commands&quot;&gt;Microsoft WSL 基本命令&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;Michael-A-Kuykendall&#x2F;shimmy&quot;&gt;Shimmy 项目&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a href=&quot;&#x2F;posts&#x2F;shimmy-ollama-rust-alternative-wsl2-intel&#x2F;&quot;&gt;上一篇：Shimmy 评测&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

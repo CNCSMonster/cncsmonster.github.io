@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Kernel Module</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/kernel-module/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 10 Aug 2026 00:00:00 +0000</lastBuildDate>
+      <item>
+          <title>WSL2 TUN Module Version Mismatch: Diagnosis and Fix</title>
+          <pubDate>Mon, 10 Aug 2026 00:00:00 +0000</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/wsl2-tun-module-version-mismatch/</link>
+          <guid>https://cncsmonster.github.io/en/posts/wsl2-tun-module-version-mismatch/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/wsl2-tun-module-version-mismatch/">&lt;h1 id=&quot;wsl2-tun-module-version-mismatch-diagnosis-and-fix&quot;&gt;WSL2 TUN Module Version Mismatch: Diagnosis and Fix&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;problem&quot;&gt;Problem&lt;&#x2F;h2&gt;
+&lt;p&gt;Running &lt;code&gt;modprobe tun&lt;&#x2F;code&gt; in WSL2 fails with:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;modprobe: ERROR: could not insert &amp;#x27;tun&amp;#x27;: Exec format error
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you’re encountering this error, the solution and diagnostic approach in this article apply to you.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quick-fix&quot;&gt;Quick Fix&lt;&#x2F;h2&gt;
+&lt;p&gt;Extract modules.vhd from a newer WSL package and replace the outdated version in the system directory:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;# Windows side (Administrator)
+# 1. Backup the old version
+Copy-Item &amp;quot;C:\Program Files\WSL\tools\modules.vhd&amp;quot; &amp;quot;C:\Users\&amp;lt;user&amp;gt;\Downloads\modules.vhd.bak&amp;quot;
+
+# 2. Extract modules.vhd from the new WSL package (unpack msixbundle → msi → extract)
+# 3. Replace
+Copy-Item &amp;quot;new-modules.vhd&amp;quot; &amp;quot;C:\Program Files\WSL\tools\modules.vhd&amp;quot; -Force
+
+# 4. Restart WSL
+wsl --shutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Verify in WSL
+sudo modprobe tun &amp;amp;&amp;amp; echo &amp;quot;MODULE LOAD OK&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;root-cause&quot;&gt;Root Cause&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;WSL2 kernel and module version mismatch&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Component&lt;&#x2F;th&gt;&lt;th&gt;Version&lt;&#x2F;th&gt;&lt;th&gt;Note&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Kernel (kernel)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;6.18.33.2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Manually updated&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;modules.vhd (module package)&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;6.6.87.2&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Missed, outdated&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;When updating the WSL2 kernel previously, only &lt;code&gt;kernel&lt;&#x2F;code&gt; and &lt;code&gt;system.vhd&lt;&#x2F;code&gt; were replaced — &lt;strong&gt;&lt;code&gt;modules.vhd&lt;&#x2F;code&gt; was missed&lt;&#x2F;strong&gt;. The kernel is new, but tun.ko’s vermagic is still the old version (6.6.87.2), so the kernel refuses to load it — this is the real cause of &lt;code&gt;Exec format error&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;diagnostic-chain&quot;&gt;Diagnostic Chain&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;modprobe tun → Exec format error
+  ↓
+CONFIG_TUN=m → Kernel supports TUN, not &amp;quot;kernel limitation&amp;quot;
+  ↓
+modinfo tun.ko → vermagic: 6.6.87.2
+uname -r      → 6.18.33.2
+  ↓ Version mismatch → vermagic mismatch
+  ↓
+Trace operation history: only replaced kernel + system.vhd, missed modules.vhd
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Key insight&lt;&#x2F;strong&gt;: In the kernel module context, &lt;code&gt;Exec format error&lt;&#x2F;code&gt; ≠ file corruption, it’s &lt;strong&gt;vermagic mismatch&lt;&#x2F;strong&gt; (kernel refuses to load a .ko file with the wrong version).&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;exec-format-error-diagnostic-framework&quot;&gt;Exec format Error Diagnostic Framework&lt;&#x2F;h2&gt;
+&lt;p&gt;When &lt;code&gt;modprobe&lt;&#x2F;code&gt; reports &lt;code&gt;Exec format error&lt;&#x2F;code&gt;, rule out in order:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Check&lt;&#x2F;th&gt;&lt;th&gt;Method&lt;&#x2F;th&gt;&lt;th&gt;Root Cause&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;① vermagic version&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;modinfo xxx.ko | grep vermagic&lt;&#x2F;code&gt; vs &lt;code&gt;uname -r&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Kernel&#x2F;module version mismatch (this case)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;② vermagic suffix&lt;&#x2F;td&gt;&lt;td&gt;Compare full vermagic string (e.g., &lt;code&gt;-tegra&lt;&#x2F;code&gt; suffix)&lt;&#x2F;td&gt;&lt;td&gt;CONFIG_LOCALVERSION mismatch&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;③ Source version&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;git log&lt;&#x2F;code&gt; vs &lt;code&gt;uname -r&lt;&#x2F;code&gt; corresponding version&lt;&#x2F;td&gt;&lt;td&gt;Wrong source version used to compile module&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;④ GCC version&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;gcc --version&lt;&#x2F;code&gt; vs kernel build GCC&lt;&#x2F;td&gt;&lt;td&gt;Multiple GCC versions causing vermagic difference&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;⑤ Symbol table&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;dmesg | grep &quot;disagrees about version&quot;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;Kernel ABI changed, module needs recompilation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;⑥ depmod&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;sudo depmod -a&lt;&#x2F;code&gt; then retry&lt;&#x2F;td&gt;&lt;td&gt;Dependency index not updated after manual module install&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;wsl2-module-loading-mechanism&quot;&gt;WSL2 Module Loading Mechanism&lt;&#x2F;h2&gt;
+&lt;p&gt;How WSL2 6.6+ kernel modules are distributed:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Modules are packaged in &lt;code&gt;modules.vhd&lt;&#x2F;code&gt; (Windows-side file)&lt;&#x2F;li&gt;
+&lt;li&gt;Mounted at startup as the overlay’s &lt;strong&gt;lower layer&lt;&#x2F;strong&gt; (read-only), path &lt;code&gt;&#x2F;modules&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;&#x2F;usr&#x2F;lib&#x2F;modules&#x2F;&amp;lt;ver&amp;gt;&#x2F;&lt;&#x2F;code&gt; is the overlay merged view:&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;pre&gt;&lt;code&gt;overlay → lower = &amp;#x2F;modules (modules.vhd, read-only)
+          upper = &amp;#x2F;lib&amp;#x2F;modules&amp;#x2F;...&amp;#x2F;rw&amp;#x2F;upper (writable, persists across reboots)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;&#x2F;h2&gt;
+&lt;p&gt;This diagnosis got stuck on the wrong assumption that “Exec format error = file corruption”, wasting significant time. Checking vermagic first would have saved a lot of effort.&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Exec format error = vermagic mismatch&lt;&#x2F;strong&gt;, not “file corruption” or “kernel doesn’t support it”&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;WSL2 kernel update requires replacing three files&lt;&#x2F;strong&gt;: kernel + system.vhd + &lt;strong&gt;modules.vhd&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;When confirming “kernel doesn’t support it”, check CONFIG_TUN first&lt;&#x2F;strong&gt;: &lt;code&gt;grep CONFIG_TUN &#x2F;boot&#x2F;config-$(uname -r)&lt;&#x2F;code&gt;, &lt;code&gt;CONFIG_TUN=m&lt;&#x2F;code&gt; means kernel supports it, just module not loaded&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+</description>
+      </item>
+    </channel>
+</rss>

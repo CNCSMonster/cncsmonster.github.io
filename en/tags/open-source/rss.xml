@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Open Source</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/open-source/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Mon, 11 May 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>gsudo: A Graphical sudo Frontend for Your AI Coding Agent</title>
+          <pubDate>Mon, 11 May 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/gsudo-ai-agent-gui-sudo/</link>
+          <guid>https://cncsmonster.github.io/en/posts/gsudo-ai-agent-gui-sudo/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/gsudo-ai-agent-gui-sudo/">&lt;p&gt;&lt;strong&gt;Your AI is writing code in the terminal, suddenly needs sudo privileges — and gets stuck. Meanwhile, you’re doing something else in the foreground and don’t even notice.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-problem&quot;&gt;The Problem&lt;&#x2F;h2&gt;
+&lt;p&gt;AI Coding Agents (pi, Claude Code, Qwen Code, etc.) run inside a terminal, but the terminal isn’t launched as root. When the agent needs to run &lt;code&gt;sudo apt install&lt;&#x2F;code&gt; or &lt;code&gt;systemctl restart&lt;&#x2F;code&gt;, &lt;code&gt;sudo&lt;&#x2F;code&gt; prompts for a password on the terminal — but the AI’s subprocess environment has no interactive tty, so the password can’t be entered. The command simply fails.&lt;&#x2F;p&gt;
+&lt;p&gt;The AI then reacts in one of three frustrating ways:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Endless retries&lt;&#x2F;strong&gt; — sees “permission denied” and retries in a loop, task completely deadlocked&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Hallucination&lt;&#x2F;strong&gt; — treats the error output as command results, continues with fabricated data (you only discover this after investigating)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Gives up&lt;&#x2F;strong&gt; — “I don’t have permission to complete this task”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;All three make autonomous AI operation unreliable.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-solution&quot;&gt;The Solution&lt;&#x2F;h2&gt;
+&lt;p&gt;gsudo is a graphical privilege-escalation frontend designed for AI Agents. Here’s how it works:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;AI calls  gsudo --reason &amp;quot;install nginx&amp;quot; -- apt install -y nginx
+                   ↓
+        ┌─────────────────────────────┐
+        │ 🔐 Administrator Access     │  ← Always-on-top popup
+        │ ℹ install nginx             │     Shows command &amp;amp; reason
+        │ sudo apt install...         │
+        │ Password: [●●●●●●]          │  ← You type your password
+        │        [Deny]  [Execute]    │
+        └─────────────────────────────┘
+                   ↓
+           Command executes as root
+           Output returned to AI
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;While you’re working on something else, the dialog pops up as a top-level window — no need to switch terminals or guess which instance needs attention.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;try-it-in-one-command&quot;&gt;Try It in One Command&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# Dependency (Linux only — macOS&amp;#x2F;Windows include it by default)
+sudo apt install python3-tk
+
+# Install
+curl -o ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo https:&amp;#x2F;&amp;#x2F;raw.githubusercontent.com&amp;#x2F;CNCSMonster&amp;#x2F;gsudo&amp;#x2F;main&amp;#x2F;scripts&amp;#x2F;gsudo
+chmod +x ~&amp;#x2F;.local&amp;#x2F;bin&amp;#x2F;gsudo
+
+# Test it
+gsudo --reason &amp;quot;testing gsudo&amp;quot; -- whoami
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h2 id=&quot;a-detail-that-matters-ai-doesn-t-need-to-parse-wrapper-text&quot;&gt;A Detail That Matters: AI Doesn’t Need to Parse Wrapper Text&lt;&#x2F;h2&gt;
+&lt;p&gt;A typical helper tool outputs something like:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;🔐 Requesting admin privileges
+  sudo whoami
+✓ Command executed successfully
+root
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The AI has to regex its way to &lt;code&gt;root&lt;&#x2F;code&gt;. gsudo separates command output from status messages:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;stdout → root              ← AI&amp;#x27;s capture_output gets this directly
+stderr → 🔐 ... ✓ ...      ← Status messages, meant for humans
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;The AI reads clean stdout — no parsing needed.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;cross-platform&quot;&gt;Cross-Platform&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Linux&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;macOS&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Windows&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Privilege mechanism&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;code&gt;sudo -S&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;UAC&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;User interaction&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Password prompt&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Password prompt&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Click to confirm&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;Built with Python + Tkinter. Zero external dependencies.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;project&quot;&gt;Project&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;GitHub: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;gsudo&quot;&gt;CNCSMonster&#x2F;gsudo&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;Verified on Linux — macOS &#x2F; Windows pending device testing&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</description>
+      </item>
+    </channel>
+</rss>

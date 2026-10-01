@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Hyper-V</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/hyper-v/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-09-24T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/hyper-v/atom.xml</id>
+    <entry xml:lang="en">
+        <title>WSL2 Low Latency Tuning Guide</title>
+        <published>2026-09-24T00:00:00+08:00</published>
+        <updated>2026-09-24T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/"/>
+        <id>https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/">&lt;p&gt;Many developers using WSL2 on Windows 11 encounter a frustrating dilemma:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Dilemma A (Input lag &amp;amp; jittery cursor)&lt;&#x2F;strong&gt;: Typing in the terminal or holding navigation keys in modal editors like Helix or Vim feels sticky, stuttering, and disconnected;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Dilemma B (Host memory exhaustion)&lt;&#x2F;strong&gt;: By default, memory allocated to WSL2 is never released back to Windows. If left unchecked or if you forget to reclaim it, Windows runs out of RAM, leading to severe system-wide freezing.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;To solve memory retention, many guides recommend enabling Microsoft’s &lt;code&gt;autoMemoryReclaim=gradual&lt;&#x2F;code&gt;. Unfortunately, this often makes input responsiveness significantly worse. The &lt;code&gt;gradual&lt;&#x2F;code&gt; mode continuously injects Hyper-V callback interrupts (HYP interrupts) into the VM over a 30-minute span, chopping continuous keystrokes into jittery pulses.&lt;&#x2F;p&gt;
+&lt;p&gt;This guide presents a &lt;strong&gt;dual-sided co-optimization strategy&lt;&#x2F;strong&gt; that completely eliminates typing and cursor stutter while ensuring idle memory is safely and automatically returned to the Windows host.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-input-pipeline-and-latency-bottlenecks&quot;&gt;1. Input Pipeline and Latency Bottlenecks&lt;&#x2F;h2&gt;
+&lt;p&gt;To eliminate typing and navigation lag, we must inspect the full path from physical keystroke to terminal echo:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;text&quot; class=&quot;language-text &quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Keyboard Hardware → [Windows Drivers &amp;#x2F; IME &amp;#x2F; TSF] → Windows Terminal (GPU&amp;#x2F;DWM)
+                  → ConPTY (Hyper-V Boundary)
+                  → Linux PTY (&amp;#x2F;dev&amp;#x2F;pts)
+                  → Shell &amp;#x2F; Helix Editor
+                  → ANSI Redraw &amp;amp; Echo
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Along this pipeline, two hidden culprits destroy low-latency interaction:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;High-frequency interrupts from &lt;code&gt;autoMemoryReclaim=gradual&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+After 5 minutes of idle time, &lt;code&gt;gradual&lt;&#x2F;code&gt; initiates periodic cgroup reclamation passes for the next &lt;strong&gt;30 full minutes&lt;&#x2F;strong&gt;. This floods the VM with millions of Hyper-V interrupts. High-frequency key repeats collide with these interrupt windows, causing erratic cursor stutter.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Swap thrashing caused by default &lt;code&gt;swappiness=60&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+Even with plenty of physical RAM available, the Linux kernel aggressively evicts idle processes (such as terminal buffers and Language Server Protocols) into disk swap. Continuous cursor navigation triggers memory page swap-ins, causing millisecond-level I&#x2F;O stalls right in the middle of character echoes.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-windows-host-configuration-wslconfig&quot;&gt;2. Windows Host Configuration (&lt;code&gt;.wslconfig&lt;&#x2F;code&gt;)&lt;&#x2F;h2&gt;
+&lt;p&gt;Create or edit &lt;code&gt;C:\Users\&amp;lt;YourUsername&amp;gt;\.wslconfig&lt;&#x2F;code&gt; on the Windows host:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[wsl2]
+# 1. Strict CPU isolation: on a 16-thread CPU, allocate 8 cores to WSL and reserve 8 for Windows
+processors=8
+
+# 2. Hard memory ceiling: cap WSL at 16GB on a 32GB system to protect host stability
+memory=16GB
+
+# 3. Swap space
+swap=8GB
+localhostForwarding=true
+
+[experimental]
+# 4. Critical: use dropCache for instantaneous release without 30-minute interrupt pulses
+autoMemoryReclaim=dropCache
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;architectural-principles&quot;&gt;Architectural Principles&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;why-reserve-8-out-of-16-cores-for-windows&quot;&gt;Why reserve 8 out of 16 cores for Windows?&lt;&#x2F;h4&gt;
+&lt;p&gt;Keyboard hardware interrupts, debounce logic, Text Services Framework (TSF&#x2F;IME), and Windows Terminal GPU&#x2F;DWM rendering &lt;strong&gt;all execute on the Windows host&lt;&#x2F;strong&gt;.&lt;br &#x2F;&gt;
+If you allocate 10 to 12 cores to WSL, heavy background compilation (like &lt;code&gt;cargo build&lt;&#x2F;code&gt; or &lt;code&gt;go test&lt;&#x2F;code&gt;) will starve the Windows UI and input scheduler, directly leading to missed keystrokes and dropped frames. A strict 5:5 split guarantees Windows has 8 dedicated cores to keep foreground interactions buttery smooth.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;why-choose-dropcache-over-gradual&quot;&gt;Why choose &lt;code&gt;dropCache&lt;&#x2F;code&gt; over &lt;code&gt;gradual&lt;&#x2F;code&gt;?&lt;&#x2F;h4&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Mode&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Mechanism&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Input &#x2F; Cursor Impact&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Host Freeze Protection&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;gradual&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Reclaims memory incrementally over 30 minutes after 5 min idle.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Severe lag&lt;&#x2F;strong&gt;. Constant interrupt spikes cause noticeable stutter.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Protected&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Static allocation. WSL never returns memory.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Smoothest&lt;&#x2F;strong&gt;. Zero interrupt overhead.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ &lt;strong&gt;Unprotected&lt;&#x2F;strong&gt;. Host can run out of memory.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;dropCache&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Drops clean file caches (PageCache) in &lt;strong&gt;a single instant pass&lt;&#x2F;strong&gt; after 5 min idle.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Excellent&lt;&#x2F;strong&gt;. Zero sustained interrupt pulses.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;Fully protected&lt;&#x2F;strong&gt;. Safely frees host RAM.&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Known Trade-off&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+&lt;code&gt;dropCache&lt;&#x2F;code&gt; trades a brief secondary cold start upon returning for absolute host stability. After 5 minutes of idle time, file caches are emptied. When you resume heavy compilation or trigger large LSP indexings, you may see a momentary 3-second disk read spike as headers are reread from SSD. This is an optimal engineering compromise.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-wsl-linux-guest-configuration-anti-jitter-tuning&quot;&gt;3. WSL Linux Guest Configuration (Anti-Jitter Tuning)&lt;&#x2F;h2&gt;
+&lt;p&gt;Windows-side tuning must be paired with Linux kernel parameter hardening.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-tame-swap-thrashing-swappiness-10&quot;&gt;1. Tame Swap Thrashing (&lt;code&gt;swappiness=10&lt;&#x2F;code&gt;)&lt;&#x2F;h3&gt;
+&lt;p&gt;Prevent the kernel from evicting memory pages to swap when physical RAM is abundant:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. Apply immediately to active kernel
+sudo sysctl vm.swappiness=10
+
+# 2. Persist across reboots via sysctl.d (Ubuntu 24.04+)
+sudo bash -c &amp;#x27;echo &amp;quot;vm.swappiness=10&amp;quot; &amp;gt; &amp;#x2F;etc&amp;#x2F;sysctl.d&amp;#x2F;99-swappiness.conf&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-accelerate-cross-drive-access-via-metadata-mount&quot;&gt;2. Accelerate Cross-Drive Access via Metadata Mount&lt;&#x2F;h3&gt;
+&lt;p&gt;When accessing Windows drives (&lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;&lt;&#x2F;code&gt;), default mounts incur Hyper-V permission verification overhead on every &lt;code&gt;stat&lt;&#x2F;code&gt; call.&lt;&#x2F;p&gt;
+&lt;p&gt;Edit &lt;code&gt;&#x2F;etc&#x2F;wsl.conf&lt;&#x2F;code&gt; inside WSL to include:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[automount]
+enabled = true
+options = &amp;quot;metadata,umask=22,fmask=11&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-verification-and-observability&quot;&gt;4. Verification and Observability&lt;&#x2F;h2&gt;
+&lt;p&gt;Shut down WSL from Windows PowerShell to apply all changes:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl --shutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Relaunch your WSL terminal and verify runtime metrics:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. Verify CPU core count
+nproc
+
+# 2. Verify swappiness
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness
+
+# 3. Inspect memory and cache
+free -h
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;Verifying &lt;code&gt;dropCache&lt;&#x2F;code&gt; Reclamation&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+Run a build task in WSL to let &lt;code&gt;buff&#x2F;cache&lt;&#x2F;code&gt; expand. Switch away to Windows for 5 minutes of idle time, then run &lt;code&gt;free -h&lt;&#x2F;code&gt; again. If &lt;code&gt;buff&#x2F;cache&lt;&#x2F;code&gt; drops sharply and &lt;code&gt;vmmemWSL&lt;&#x2F;code&gt; memory usage in Windows Task Manager decreases accordingly, your automated reclamation loop is successfully operating.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

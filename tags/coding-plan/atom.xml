@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Coding Plan</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/coding-plan/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-07-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/coding-plan/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>智谱AI GLM 全线产品数据策略调研</title>
+        <published>2026-07-01T00:00:00+08:00</published>
+        <updated>2026-07-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/zhipu-glm-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/zhipu-glm-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/zhipu-glm-data-training-policy/">&lt;h2 id=&quot;yi-ju-hua&quot;&gt;一句话&lt;&#x2F;h2&gt;
+&lt;p&gt;智谱 GLM 的数据政策&lt;strong&gt;不能笼统概括&lt;&#x2F;strong&gt;，按产品分档区别对待：&lt;strong&gt;团队版明确承诺“数据不用于训练“&lt;&#x2F;strong&gt;；个人版和按量付费走通用条款，允许&lt;strong&gt;脱敏后&lt;&#x2F;strong&gt;用于模型训练，且无 opt-out。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-san-chong-chan-pin-shi-shen-me&quot;&gt;一、三种产品是什么&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;产品&lt;&#x2F;th&gt;&lt;th&gt;场景定义&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;个人版 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;个人开发者用 AI 编码工具写代码&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;团队版 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;团队协作编码，企业场景&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;按量付费 API&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;自建应用、SaaS、网站、机器人等任何场景&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;📎 计费&#x2F;额度&#x2F;使用限制详见：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;bigmodel.cn&#x2F;pricing&quot;&gt;产品价格页&lt;&#x2F;a&gt; &#x2F; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;overview&quot;&gt;套餐概览&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-san-chong-chan-pin-shu-ju-zheng-ce-dui-bi&quot;&gt;二、三种产品数据政策对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;政策维度&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;团队版 Coding Plan&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;个人版 Coding Plan&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;按量付费 API&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;“不用于训练” 明确承诺&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 有&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;通用协议“优化产品服务“&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 被专用条款覆盖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;通用协议“永久不可撤销授权“&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 被专用条款覆盖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;隐私政策“脱敏数据训练“&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 被专用条款覆盖&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 适用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;数据隔离&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 有资源隔离承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;无明确承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;无明确承诺&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;效力层级&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;专用条款优先&lt;&#x2F;strong&gt;：团队版《团队套餐购买协议》明确将“数据默认不用于模型训练“列为套餐内容，且协议声明“官方公布的各项业务规范与正文具备相同的约束力“，因此该承诺&lt;strong&gt;具有法律效力&lt;&#x2F;strong&gt;，优先于通用用户协议&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;通用条款兜底&lt;&#x2F;strong&gt;：个人版和按量付费没有专用条款，完全受通用用户协议和隐私政策约束&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;合同最优先&lt;&#x2F;strong&gt;：企业可签署独立合同，在合同中约定数据使用条款（最高法律效力）&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;&lt;strong&gt;注意事项&lt;&#x2F;strong&gt;：团队版措辞是“&lt;strong&gt;默认&lt;&#x2F;strong&gt;不用于“，暗示可能存在例外情形（如用户主动授权）。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-guan-jian-zheng-ju&quot;&gt;三、关键证据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;3-1-tuan-dui-ban-quan-yi-ye-tuan-dui-ban-zhuan-yong&quot;&gt;3.1 团队版权益页（团队版专用）&lt;&#x2F;h3&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;“数据默认不用于模型训练 — 提交的代码、提示词、对话内容等不会用于模型训练，保护企业核心研发资产。”&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;team&quot;&gt;团队套餐权益页&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;这是智谱目前&lt;strong&gt;唯一&lt;&#x2F;strong&gt;明确承诺“不用于训练“的产品线。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-2-tong-yong-yong-hu-xie-yi-ge-ren-ban-an-liang-fu-fei-gong-xiang&quot;&gt;3.2 通用用户协议（个人版&#x2F;按量付费共享）&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;user-agreement&quot;&gt;用户协议&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“除执行您的服务要求外，不会进行任何未获授权的使用及披露。”&lt;&#x2F;em&gt; ✅&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“可能利用您使用…过程中产生的数据，&lt;strong&gt;定位、维护和优化我们的产品和服务&lt;&#x2F;strong&gt;。”&lt;&#x2F;em&gt; ⚠️&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;“您同意授予我方在全世界范围内&lt;strong&gt;免费的、不可撤销的、永久有效的&lt;&#x2F;strong&gt;使用、复制、修改、发行和展示该等数据的权利。”&lt;&#x2F;em&gt; 🔴&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;解读&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Prompt 输入和模型调用数据可用于“优化产品和服务“（包括模型训练）&lt;&#x2F;li&gt;
+&lt;li&gt;用户授予了&lt;strong&gt;永久、不可撤销&lt;&#x2F;strong&gt;的数据使用权&lt;&#x2F;li&gt;
+&lt;li&gt;仅有“&lt;strong&gt;另有约定&lt;&#x2F;strong&gt;“（如企业合同）可豁免&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-3-tong-yong-yin-si-zheng-ce-ge-ren-ban-an-liang-fu-fei-gong-xiang&quot;&gt;3.3 通用隐私政策（个人版&#x2F;按量付费共享）&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;privacy-policy&quot;&gt;隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“平台可能会对获取的信息开展脱敏研究以优化业务，这明确包含了&lt;strong&gt;使用匿名数据进行机器学习或模型算法训练&lt;&#x2F;strong&gt;。”&lt;&#x2F;em&gt; 🔴&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;解读&lt;&#x2F;strong&gt;：通用条款采用的是**“脱敏后可用”**立场 — 不是直接拿原始数据训练，但脱敏&#x2F;匿名化处理后，平台保留用于模型训练的权利。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-4-z-ai-guo-ji-ban-yin-si-zheng-ce&quot;&gt;3.4 Z.ai 国际版隐私政策&lt;&#x2F;h3&gt;
+&lt;p&gt;⚠️ Z.ai 国际版&lt;strong&gt;区分用户类型&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;API 客户（企业&#x2F;开发者）&lt;&#x2F;strong&gt;：明确声称“&lt;strong&gt;不存储&lt;&#x2F;strong&gt;用户内容“——“processed in real-time… not saved on our servers”&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;普通用户&lt;&#x2F;strong&gt;：&lt;strong&gt;会存储&lt;&#x2F;strong&gt;——“We retain personal data for as long as it is needed… we retain it as long as you have an account”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;这与国内版（bigmodel.cn）用户协议授权“永久不可撤销使用权“形成对比，但两者都针对普通用户。详见 &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.z.ai&#x2F;legal-agreement&#x2F;privacy-policy&quot;&gt;Z.ai 隐私政策&lt;&#x2F;a&gt;。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-5-zcode-yin-si-zheng-ce-zcode-z-ai&quot;&gt;3.5 ZCode 隐私政策（zcode.z.ai）&lt;&#x2F;h3&gt;
+&lt;p&gt;ZCode 是智谱提供的编码应用，其隐私政策提到会使用数据来 &lt;strong&gt;“train and improve our models”&lt;&#x2F;strong&gt;（训练和改善模型），与国内版立场一致。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-6-di-san-fang-diao-yan-bao-gao-2026-03&quot;&gt;3.6 第三方调研报告（2026-03）&lt;&#x2F;h3&gt;
+&lt;p&gt;来源：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;yage.ai&#x2F;share&#x2F;ai-coding-data-policy-survey-20260309.html&quot;&gt;yage.ai 《AI 编程工具数据政策调研报告》&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;智谱 GLM &#x2F; CodeGeeX 标注：✅ 明确用于训练，基础套餐无 opt-out&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;是否用于训练&lt;&#x2F;th&gt;&lt;th&gt;能否 opt-out&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic Claude&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;默认用于训练（免费&#x2F;Pro）&lt;&#x2F;td&gt;&lt;td&gt;✅ 可 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;GitHub Copilot&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;企业版不用于训练&lt;&#x2F;td&gt;&lt;td&gt;✅ 个人版可 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云百炼 Token Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;明确不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;百度千帆 Token Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;明确不用于训练&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;智谱 GLM&#x2F;CodeGeeX&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 用于训练&lt;&#x2F;td&gt;&lt;td&gt;❌ 基础版无 opt-out&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Google Gemini (API)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 不用于训练&lt;&#x2F;td&gt;&lt;td&gt;—&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;⚠️ &lt;strong&gt;注意&lt;&#x2F;strong&gt;：该报告发布于 2026-03，当时可能未考虑团队版 Coding Plan 的专用条款。我们本次调研对智谱的结论已细化（见第二章），不能笼统说“用于训练“。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-xuan-yong-jian-yi&quot;&gt;四、选用建议&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;jue-ce-chang-jing&quot;&gt;决策场景&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;chang-jing-wo-zhi-xiang-di-jia-yong-glm-xie-dai-ma&quot;&gt;场景 ①：我只想低价用 GLM 写代码&lt;&#x2F;h4&gt;
+&lt;pre&gt;&lt;code&gt;我是否在意数据被用于训练？
+├── 不在意 → 个人版 Coding Plan（49元&amp;#x2F;月起，最便宜）
+└── 在意   → 团队版 Coding Plan（标准版，有数据承诺）
+              ⚠️ 但团队版 2席位起购，成本更高
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;chang-jing-wo-shi-tuan-dui-qi-ye-yao-xie-zuo-bian-ma&quot;&gt;场景 ②：我是团队&#x2F;企业，要协作编码&lt;&#x2F;h4&gt;
+&lt;pre&gt;&lt;code&gt;→ 团队版 Coding Plan（唯一选择）
+   ✅ 数据不用于训练 + 组织管理 + IP白名单 + 超额按量
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h4 id=&quot;chang-jing-wo-zai-zi-jian-ying-yong-li-ji-cheng-glm-api&quot;&gt;场景 ③：我在自建应用里集成 GLM API&lt;&#x2F;h4&gt;
+&lt;pre&gt;&lt;code&gt;我是否在意数据被用于训练？
+├── 不在意 → 按量付费 API（无工具限制，用多少付多少）
+└── 在意   → ⚠️ 困境：
+             按量付费 API 走通用条款，没有&amp;quot;不用于训练&amp;quot;承诺
+             ↓
+             可选方案：
+             1. 联系智谱商务签企业合同，约定数据不用于训练
+             2. 改用明确承诺不训练的其他厂商
+             3. 使用 GLM 开源模型本地部署
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;kuai-su-jue-ce-biao&quot;&gt;快速决策表&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;你的情况&lt;&#x2F;th&gt;&lt;th&gt;推荐产品&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;数据安全&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;月费参考&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;个人编码，不关心数据训练&lt;&#x2F;td&gt;&lt;td&gt;个人版 Coding Plan&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 默认可能训练&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;49元起&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;个人编码，在意数据训练&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan（最低配）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟢 明确承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;2席位起（较高）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;团队协作编码&lt;&#x2F;td&gt;&lt;td&gt;团队版 Coding Plan&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟢 明确承诺&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;按席位&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;自建应用集成，不关心训练&lt;&#x2F;td&gt;&lt;td&gt;按量付费 API&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟡 脱敏后可能训练&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;按量&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;自建应用集成，在意训练&lt;&#x2F;td&gt;&lt;td&gt;签合同 &#x2F; 换别家&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;🟢 合同级保障&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;面议&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;横向对比详见：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cncsmonster.github.io&#x2F;posts&#x2F;llm-data-policy-comparison&#x2F;&quot;&gt;LLM 数据政策横向对比&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wu-yin-si-feng-xian-zong-jie&quot;&gt;五、隐私风险总结&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;个人版和按量付费默认训练风险&lt;&#x2F;strong&gt;：通用用户协议授予智谱永久、不可撤销的数据使用权，隐私政策允许脱敏后用于训练&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;无 opt-out&lt;&#x2F;strong&gt;：个人版用户无法选择退出数据训练&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;条款模糊&lt;&#x2F;strong&gt;：“优化产品和服务“范围宽泛，无具体界定&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;国际版&#x2F;国内版差异&lt;&#x2F;strong&gt;：Z.ai 国际版对 API 客户声称不存储，但对普通用户会存储；国内版对所有用户授权永久使用权&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;user-agreement&quot;&gt;智谱开放平台用户协议&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;privacy-policy&quot;&gt;智谱隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;team&quot;&gt;GLM Coding Plan 团队套餐权益&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;coding-plan&#x2F;overview&quot;&gt;GLM Coding Plan 套餐概览&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.bigmodel.cn&#x2F;cn&#x2F;terms&#x2F;subscription-agreement-team&quot;&gt;智谱团队套餐购买协议&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;bigmodel.cn&#x2F;pricing&quot;&gt;智谱产品价格页&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.z.ai&#x2F;legal-agreement&#x2F;privacy-policy&quot;&gt;Z.ai 隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.z.ai&#x2F;legal-agreement&#x2F;terms-of-use&quot;&gt;Z.ai 使用条款&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;zcode.z.ai&#x2F;en&#x2F;privacy&quot;&gt;ZCode 隐私政策&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;yage.ai&#x2F;share&#x2F;ai-coding-data-policy-survey-20260309.html&quot;&gt;AI 编程工具数据政策调研报告（2026-03）&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - DeepSeek</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/deepseek/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-19T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/deepseek/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>DeepSeek API 会用我的数据训练模型吗？——条款调研</title>
+        <published>2026-05-19T00:00:00+08:00</published>
+        <updated>2026-05-19T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/deepseek-api-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/deepseek-api-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/deepseek-api-data-training-policy/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;更新于 2026-09-22&lt;&#x2F;strong&gt;：重写。原稿的结论（敏感数据别走 API）站得住，但推理有一个缺口——只读了《开放平台服务协议》一份文件，把上层的训练授权漏掉了。三份协议版本号与初版调研时点完全一致，所以不是条款变了，是读法错了。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我用 DeepSeek 开放平台 API，我的 prompt 和返回内容会被拿去训练模型吗？&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;da-an&quot;&gt;答案&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;“开放平台协议里没写训练“是真的，但从这句话推不出“不会用于训练”。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;DeepSeek 的数据规则由&lt;strong&gt;三份协议叠加&lt;&#x2F;strong&gt;构成。训练授权写在母协议《用户协议》第 4.3 条里，而《用户协议》第 1.1 条把 API 明确算作“服务“。API 场景的真实状态是&lt;strong&gt;未披露&lt;&#x2F;strong&gt;：DeepSeek 既没有承诺不使用 API 输入输出做训练，也没有声明它是否收集、留存这些内容。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;我用的是&lt;&#x2F;th&gt;&lt;th&gt;条款写了什么&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;能关吗？&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Web&#x2F;App 智能对话&lt;&#x2F;td&gt;&lt;td&gt;✅ 明确写了会用于训练（去标识化前提）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ 关闭「数据用于优化体验」&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;开放平台 API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 子协议无训练授权条款，但母协议 4.3 未被排除；隐私政策未声明收集 prompt 内容&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 开放平台无对应开关&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;guan-jian-san-fen-xie-yi-shi-die-jia-de-bu-shi-hu-xiang-ti-huan-de&quot;&gt;关键：三份协议是叠加的，不是互相替换的&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;《DeepSeek 开放平台服务协议》&lt;&#x2F;strong&gt;（更新 2026-04-22，生效 2026-04-29）首部：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“《DeepSeek开放平台服务协议》……&lt;strong&gt;作为《DeepSeek用户协议》项下所指的具体协议及其组成部分&lt;&#x2F;strong&gt;，特别适用于您作为个人或企业开发者……使用本平台提供的应用程序编程接口（API）或其他开发者工具……的活动。”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;《DeepSeek 用户协议》&lt;&#x2F;strong&gt;（更新&#x2F;生效 2025-09-05）引言：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“您在使用本服务某一特定功能时，针对该特定功能可能会另有单独的协议……&lt;strong&gt;本协议与具体协议的内容存在冲突的，以具体协议的规定为准。所有前述条款和规则构成本协议不可分割的组成部分&lt;&#x2F;strong&gt;。”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ 子协议只在“与母协议冲突“时压制母协议。子协议对训练保持沉默，不构成冲突，因此《用户协议》4.3 的训练授权对 API 场景并未被排除。&lt;&#x2F;strong&gt; 判断 API 数据的命运，不能只读开放平台协议一份文件。&lt;&#x2F;p&gt;
+&lt;p&gt;三份文件的分工：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;文件&lt;&#x2F;th&gt;&lt;th&gt;版本日期&lt;&#x2F;th&gt;&lt;th&gt;对训练说了什么&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;《用户协议》1.1 + 4.3&lt;&#x2F;td&gt;&lt;td&gt;2025-09-05&lt;&#x2F;td&gt;&lt;td&gt;1.1 服务定义含 API；4.3 &lt;strong&gt;授权&lt;&#x2F;strong&gt;将“服务所收集的输入及对应输出“用于模型训练和服务优化，并索取免费非排他许可&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;《开放平台服务协议》&lt;&#x2F;td&gt;&lt;td&gt;2026-04-29 生效&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;无&lt;&#x2F;strong&gt;训练授权条款；4.2 输入权利归用户、输出归用户；5.5 将个人信息处理&lt;strong&gt;指向隐私政策&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;《隐私政策》&lt;&#x2F;td&gt;&lt;td&gt;2026-02-10&lt;&#x2F;td&gt;&lt;td&gt;前言适用范围&lt;strong&gt;明列 API&lt;&#x2F;strong&gt;；一、2「智能对话」含训练条款；一、3「开放平台服务」只列实名信息&#x2F;邮箱&#x2F;支付订单，&lt;strong&gt;未列 prompt 内容&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;yi-ju&quot;&gt;依据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;yi-ju-1-mu-xie-yi-xie-zhao-hui-yong-yu-xun-lian-qie-qi-fu-wu-ding-yi-bao-han-api&quot;&gt;依据 1：母协议写着“会用于训练“，且其服务定义包含 API&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-terms-of-use.html&quot;&gt;《DeepSeek 用户协议》&lt;&#x2F;a&gt; 第 1.1、4.3 条（2026-09-22 抓取，版本 2025-09-05）&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;1.1 *“我们的产品及服务包括我们以网页、应用程序……供第三方网站和应用程序使用软件开发工具包（SDK）、**应用程序编程接口（API）*&lt;em&gt;以及随技术发展出现的创新形态方式向您提供的产品与服务。”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;4.3 &lt;em&gt;“为向您提供连续、高质量的服务，&lt;strong&gt;在经安全加密技术处理、严格去标识化且无法重新识别特定个人的前提下，我们可能会将服务所收集的输入及对应输出，用于模型训练和服务的优化。在此前提下，您同意授予深度求索在全球范围内一项免费的、非排他的许可使用权&lt;&#x2F;strong&gt;……如您拒绝将您的数据用于模型训练，可以在产品内通过关闭’数据用于优化体验’来选择退出。”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;（英文版同条款：&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;en-US&#x2F;deepseek-terms-of-use.html&quot;&gt;Terms of Use §4.3&lt;&#x2F;a&gt;。国内账号以中文版为准。）&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-2-zi-xie-yi-wu-xun-lian-shou-quan-dan-ba-ge-ren-xin-xi-chu-li-zhi-xiang-yin-si-zheng-ce&quot;&gt;依据 2：子协议无训练授权，但把个人信息处理指向隐私政策&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;《DeepSeek 开放平台服务协议》&lt;&#x2F;a&gt;（2026-09-22 抓取，生效 2026-04-29）&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;全文无训练授权表述（4.2 的“训练其他模型（如模型蒸馏）“是&lt;strong&gt;给用户的权利&lt;&#x2F;strong&gt;，不是 DeepSeek 取得用户数据用于自身训练的授权）&lt;&#x2F;li&gt;
+&lt;li&gt;4.2 &lt;em&gt;“您保留在提交的输入中拥有的任何权利、所有权和利益（如有）……我们将本服务输出的内容的任何权利、所有权和利益（如有）归属于您。”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;5.5 &lt;em&gt;“我们会按照[《DeepSeek隐私政策》]……收集、处理您作为个人信息主体在使用开放平台服务时产生和提供的个人信息。”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;全文&lt;strong&gt;无&lt;&#x2F;strong&gt;数据留存期限、删除机制、日志约定&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;yi-ju-3-yin-si-zheng-ce-fu-gai-api-dan-dui-api-de-prompt-nei-rong-zhi-zi-wei-ti&quot;&gt;依据 3：隐私政策覆盖 API，但对 API 的 prompt 内容只字未提&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-privacy-policy.html&quot;&gt;《DeepSeek 隐私政策》&lt;&#x2F;a&gt;（2026-09-22 抓取，版本 2026-02-10）&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;前言 &lt;em&gt;“除非本隐私政策另有说明，本隐私政策适用于我们提供的DeepSeek网页、应用程序、小程序、供第三方网站和应用程序使用的软件开发工具包（SDK）和&lt;strong&gt;应用程序编程接口（API）&lt;&#x2F;strong&gt;……”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;一、2 智能对话 &lt;em&gt;“在经安全加密技术处理和去标识化前提下，我们可能会将服务所收集的输入及对应输出，用于DeepSeek模型训练和服务的优化。”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;一、3 开放平台服务：收集清单只有实名身份信息、绑定邮箱、支付订单交易信息；末句 &lt;em&gt;“以上个人信息的收集处理仅适用于DeepSeek开放平台。”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ 真正的缺口在这里。&lt;&#x2F;strong&gt; DeepSeek 没有针对 API 场景声明它收集 prompt&#x2F;completion 内容，也没有声明不收集。而模型推理必须把完整 prompt 读进服务端——接收不等于留存，协议却没写留存多久。&lt;strong&gt;“未列入收集清单“是披露缺失，不是数据未被使用的保证。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;yi-ju-4-liu-cun-zhi-you-fa-ding-xia-xian-api-wen-dang-zhan-ling-yin-si-sheng-ming&quot;&gt;依据 4：留存只有法定下限，API 文档站零隐私声明&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;隐私政策 五、2：&lt;em&gt;“遵从法律法规有关信息留存的要求（例如：《网络安全法》规定……并按照规定留存相关的网络日志不少于六个月）”&lt;&#x2F;em&gt;；注销或删除后 &lt;em&gt;“对您的个人信息进行删除或匿名化处理”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;api-docs.deepseek.com&#x2F;zh-cn&#x2F;&quot;&gt;api-docs.deepseek.com&lt;&#x2F;a&gt;：2026-09-22 检查，全站&lt;strong&gt;没有任何&lt;&#x2F;strong&gt;关于数据留存、日志、是否存储 prompt&#x2F;completion、是否用于训练的说明&lt;&#x2F;li&gt;
+&lt;li&gt;训练条款的退出开关「数据用于优化体验」，在隐私政策 六、2.1 给出的路径是 App&#x2F;Web 的“头像—设置—数据管理“；开放平台控制台无对应开关，纯 API 账号能否行使该退出权，条款未明确&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;yi-ju-5-heng-xiang-dui-bi-zheng-mian-cheng-nuo-shi-ke-da-cheng-de-biao-zhun-deepseek-mei-zuo-dao&quot;&gt;依据 5：横向对比——“正面承诺“是可达成的标准，DeepSeek 没做到&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;付费 API 是否&lt;strong&gt;正面承诺&lt;&#x2F;strong&gt;不训练&lt;&#x2F;th&gt;&lt;th&gt;原话&lt;&#x2F;th&gt;&lt;th&gt;来源&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;OpenAI&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;&lt;em&gt;“As of March 1, 2023, data sent to the OpenAI API is not used to train or improve OpenAI models (unless you explicitly opt in).”&lt;&#x2F;em&gt; 默认滥用监控日志留存 30 天&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;your-data&quot;&gt;your-data&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Anthropic&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;&lt;em&gt;“By default, we will not use your inputs or outputs from our commercial products (e.g. Claude for Work, &lt;strong&gt;Anthropic API&lt;&#x2F;strong&gt; …) to train our models.”&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;privacy.claude.com&#x2F;en&#x2F;articles&#x2F;7996868-is-my-data-used-for-model-training&quot;&gt;privacy.claude.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Cloud Gemini&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;&lt;em&gt;“Gemini doesn’t use your prompts or its responses as data to train its models.”&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.cloud.google.com&#x2F;gemini&#x2F;docs&#x2F;discover&#x2F;data-governance&quot;&gt;data-governance&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ 无正面承诺，且母协议保留训练授权&lt;&#x2F;td&gt;&lt;td&gt;见依据 1–3&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;开放平台服务协议&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ 差别不是“DeepSeek 没写、别人写了“这么简单：别人写的是“不会“，DeepSeek 母协议写的是“可能会“。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;敏感数据不要走 DeepSeek API&lt;&#x2F;strong&gt; — 用户隐私、商业机密、代码库明文。理由不是“它一定会训练“，而是“它没有承诺不训练，且母协议保留了这项授权“&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;别把“协议没写“当成放行依据&lt;&#x2F;strong&gt; — 那是把文本评价当成了行为保证，而且要先确认没有上层协议写了&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;需要正面承诺就换厂商&lt;&#x2F;strong&gt; — 上表三家的原话可以直接引用、可审计&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;本地部署是唯一的确定性&lt;&#x2F;strong&gt; — DeepSeek 开源模型权重（MIT License），本地推理不存在这条问题链&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;留一个复核动作&lt;&#x2F;strong&gt; — 每季度重读三份协议，重点看开放平台协议是否新增数据条款、隐私政策一、3 是否开始列 prompt 内容。联系方式 &lt;a href=&quot;mailto:privacy@deepseek.com&quot;&gt;privacy@deepseek.com&lt;&#x2F;a&gt; &#x2F; &lt;a href=&quot;mailto:api-service@deepseek.com&quot;&gt;api-service@deepseek.com&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;shi-xiao-yu-ban-ben&quot;&gt;时效与版本&lt;&#x2F;h2&gt;
+&lt;p&gt;2026-09-22 逐份重抓三份协议，版本号与初版调研时点（2026-05-19）&lt;strong&gt;完全一致&lt;&#x2F;strong&gt;：用户协议 2025-09-05、隐私政策 2026-02-10、开放平台服务协议 2026-04-29 生效。条款随时会改，以上结论只反映这个时点的文本。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

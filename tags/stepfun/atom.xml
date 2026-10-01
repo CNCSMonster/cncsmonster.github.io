@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - StepFun</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/stepfun/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-06-13T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/stepfun/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>StepFun Step Plan 会用我的数据训练模型吗？——条款调研</title>
+        <published>2026-06-13T00:00:00+08:00</published>
+        <updated>2026-06-13T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/stepfun-step-plan-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/posts/stepfun-step-plan-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/stepfun-step-plan-data-training-policy/">&lt;h2 id=&quot;wen-ti&quot;&gt;问题&lt;&#x2F;h2&gt;
+&lt;p&gt;我使用 Step Plan 订阅或 StepFun API，我的代码&#x2F;对话数据会不会被拿去训练模型？&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;da-an&quot;&gt;答案&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;不会明确排除，也不会明确承诺。&lt;&#x2F;strong&gt; 三份核心文件（隐私政策、用户协议、付费服务协议）均未出现“不用于训练“或“training exclusion“等表述，英文 TOS 保留 “improve the Services” 的宽泛授权。&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;我用的是&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;会被训练吗？&lt;&#x2F;th&gt;&lt;th&gt;条款依据&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Step Plan（订阅）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;付费协议无训练条款，引用平台隐私政策&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API 按量付费&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ 未承诺排除&lt;&#x2F;td&gt;&lt;td&gt;用户协议 §6.5：“改善、优化、升级“目的&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;企业版&#x2F;私有化&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;未公开&lt;&#x2F;td&gt;&lt;td&gt;需商务对接确认&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;zheng-ju&quot;&gt;证据&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;zheng-ju-1-yin-si-zheng-ce-wu-xun-lian-xiang-guan-biao-shu&quot;&gt;证据 1：隐私政策无训练相关表述&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun 开放平台隐私政策&lt;&#x2F;a&gt;（2026-04-23）&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 复核：政策全文仍**未出现“模型训练“或“不用于训练“**等任何相关表述。数据使用目的限于“提供智能对话及内容生成服务“和“匿名化运营统计“。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;关键条款&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“我们会收集您主动输入的信息…以及服务的输出信息。我们会对上述信息进行分析与计算，以便于更好地理解您的需求和上下文语境…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;“分析与计算“可理解为实时推理所需的上下文处理，但也可能包含离线分析。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;zheng-ju-2-ying-wen-tos-bao-liu-improve-the-services&quot;&gt;证据 2：英文 TOS 保留 “improve the Services”&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;StepFun Terms of Service&lt;&#x2F;a&gt;（Section 4.1.4）&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We may use Content to provide, maintain, develop, and &lt;strong&gt;improve the Services&lt;&#x2F;strong&gt;…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;其中 “develop, and improve the Services” 可涵盖模型训练、微调、评估等用途。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;对比&lt;&#x2F;strong&gt;：OpenAI、Anthropic 的 API 条款均明确排除训练用途。StepFun 在此项显著落后。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;zheng-ju-3-step-plan-fu-fei-xie-yi-wu-xun-lian-tiao-kuan&quot;&gt;证据 3：Step Plan 付费协议无训练条款&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;来源：&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan 付费服务协议&lt;&#x2F;a&gt;（2026-05-25）&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 复核：协议正文&lt;strong&gt;无专门针对数据使用、模型训练、数据留存的条款&lt;&#x2F;strong&gt;，也未作出新增的数据训练排除或数据保留承诺。涉及数据责任的条款仅限第三方工具数据泄露由用户自行承担。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;zheng-ju-4-shu-ju-liu-cun-qi-xian-you-chu-bu-shuo-ming-dan-bu-gou-ju-ti&quot;&gt;证据 4：数据留存期限——有初步说明，但不够具体&lt;&#x2F;h3&gt;
+&lt;p&gt;隐私政策新增说明（本次复核首次明确提取）：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“仅在为提供本平台相关服务之目的所必需的期间内保留您的个人信息… 注销账户、主动删除个人信息或超出必要的期限后，将对个人信息进行删除或匿名化处理。”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;例外情况&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;遵从法律法规关于信息留存的要求&lt;&#x2F;li&gt;
+&lt;li&gt;出于财务、审计、争议解决等目的需要合理延长期限&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;缺口&lt;&#x2F;strong&gt;：“必需的期间“具体多长、“超出必要期限“的判断标准、是否有审计机制，均未说明。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;xing-ye-dui-bi&quot;&gt;行业对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;厂商&lt;&#x2F;th&gt;&lt;th&gt;服务&lt;&#x2F;th&gt;&lt;th&gt;数据训练政策&lt;&#x2F;th&gt;&lt;th&gt;透明度&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ 明确不训练&lt;&#x2F;td&gt;&lt;td&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ 明确不训练&lt;&#x2F;td&gt;&lt;td&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;小米 MiMo&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;✅ 隐私政策逐字承诺 “will not use for training”&lt;&#x2F;td&gt;&lt;td&gt;高&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云百炼&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ 不训练（通用条款）&lt;&#x2F;td&gt;&lt;td&gt;中&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;阿里云 Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;订阅&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 通用条款不训练，但订阅套餐 5.2.2 专门授权训练&lt;&#x2F;td&gt;&lt;td&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;❌ 沉默未承诺&lt;&#x2F;td&gt;&lt;td&gt;低&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;未承诺，保留 “improve the Services”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;低&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ StepFun 与 DeepSeek 处于同一梯队，显著落后于 OpenAI、Anthropic、小米 MiMo。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wo-gai-zen-me-ban&quot;&gt;我该怎么办&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;zheng-chang-shi-yong&quot;&gt;正常使用&lt;&#x2F;h3&gt;
+&lt;p&gt;协议层面未确认不训练，但 StepFun 也未明确声明会训练。如果你能接受这种模糊状态，可以继续使用，但需遵守以下习惯：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;脱敏提交&lt;&#x2F;strong&gt;：避免在 prompt 中包含公司名、人名、具体数字、内部项目代号&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;分段处理&lt;&#x2F;strong&gt;：核心算法&#x2F;敏感逻辑在本地处理，仅将通用&#x2F;抽象部分提交给 API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;余额监控&lt;&#x2F;strong&gt;：按量付费用户设置余额告警，避免欠费触发数据删除条款&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;min-gan-shu-ju-chang-jing&quot;&gt;敏感数据场景&lt;&#x2F;h3&gt;
+&lt;p&gt;如果涉及以下数据，&lt;strong&gt;不建议使用公共 API&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;用户个人信息（PII）&lt;&#x2F;li&gt;
+&lt;li&gt;金融、医疗、政务数据&lt;&#x2F;li&gt;
+&lt;li&gt;未公开的核心知识产权（专利申请前技术方案）&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;替代方案&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;改用明确承诺不训练的厂商&lt;&#x2F;strong&gt;：如小米 MiMo（隐私政策逐字承诺）、阿里云百炼 API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;本地部署&lt;&#x2F;strong&gt;：StepFun 部分模型开源（Step-3.5-Flash 等），可本地运行，数据完全不出机器&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业级隔离&lt;&#x2F;strong&gt;：联系 &lt;code&gt;platform@stepfun.com&lt;&#x2F;code&gt; 确认私有化部署或专属实例选项&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;qi-ye-qian-yue-qian-bi-wen&quot;&gt;企业签约前必问&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;能否在合同中明确约定“企业数据不用于任何模型训练“&lt;&#x2F;li&gt;
+&lt;li&gt;数据留存期限及合同终止后的删除时限&lt;&#x2F;li&gt;
+&lt;li&gt;是否提供 VPC&#x2F;专属实例&#x2F;私有化部署&lt;&#x2F;li&gt;
+&lt;li&gt;SLA 承诺及数据泄露赔偿责任&lt;&#x2F;li&gt;
+&lt;li&gt;对第三方工具的数据流转有何约束&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;can-kao-lai-yuan&quot;&gt;参考来源&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun 开放平台隐私政策&lt;&#x2F;a&gt;（2026-04-23，2026-06-13 复核）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;user-agreement.html&quot;&gt;StepFun 开放平台用户协议&lt;&#x2F;a&gt;（2026-04-08）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan 付费服务协议&lt;&#x2F;a&gt;（2026-05-25，2026-06-13 复核）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;英文 Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

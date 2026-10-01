@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 低延迟</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/di-yan-chi/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-09-24T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/di-yan-chi/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>WSL2 低延迟调优指南</title>
+        <published>2026-09-24T00:00:00+08:00</published>
+        <updated>2026-09-24T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/wsl2-low-latency-tuning-guide/"/>
+        <id>https://cncsmonster.github.io/posts/wsl2-low-latency-tuning-guide/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/wsl2-low-latency-tuning-guide/">&lt;p&gt;很多开发者在 Windows 11 下使用 WSL2 时，常常陷入一种“两难困境”：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;困境 A（输入粘滞与光标顿挫）&lt;&#x2F;strong&gt;：在终端打字、或在 Helix &#x2F; Vim 等模态编辑器里长按按键移动光标时，字符走走停停，有一种极不跟手的粘滞感；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;困境 B（宿主机内存被挤爆卡死）&lt;&#x2F;strong&gt;：如果不做限制，WSL2 占住的内存在闲置后不会主动归还 Windows，开发者一旦忘记手动清理，整台电脑就会因内存枯竭而严重卡顿甚至死机。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;为了解决内存占用，很多人照搬了网上教程开启微软的 &lt;code&gt;autoMemoryReclaim=gradual&lt;&#x2F;code&gt;。结果不仅没变好，反而让虚拟机在长达 30 分钟内持续承受密集的回调中断（HYP 中断），把光标移动切碎成了断续脉冲。&lt;&#x2F;p&gt;
+&lt;p&gt;本文分享一套经过内核级排查与架构审查的&lt;strong&gt;双端协同调优方案&lt;&#x2F;strong&gt;，既保证敲代码与光标移动的极致丝滑，又能让 WSL2 在闲置时自动将内存退还宿主机。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-shu-ru-lian-lu-yu-qia-dun-gen-yin-chai-jie&quot;&gt;一、输入链路与卡顿根因拆解&lt;&#x2F;h2&gt;
+&lt;p&gt;要解决按键和光标卡顿，必须理解从击键到终端回显的完整路径：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;text&quot; class=&quot;language-text &quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;键盘硬件 → [Windows 驱动 &amp;#x2F; IME &amp;#x2F; TSF] → Windows Terminal (GPU&amp;#x2F;DWM)
+         → ConPTY (跨 Hyper-V 边界)
+         → Linux PTY (&amp;#x2F;dev&amp;#x2F;pts)
+         → shell &amp;#x2F; Helix 编辑器
+         → ANSI 重绘回显
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;在这条链路上，有两个极其隐蔽的性能杀手：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;autoMemoryReclaim=gradual&lt;&#x2F;code&gt; 引发高频中断&lt;&#x2F;strong&gt;：&lt;br &#x2F;&gt;
+&lt;code&gt;gradual&lt;&#x2F;code&gt; 模式会在 WSL 闲置 5 分钟后，在接下来的 &lt;strong&gt;整整 30 分钟内&lt;&#x2F;strong&gt;，以每分钟为单位持续调用 cgroup 接口抽离内存。这会向虚拟机注入数以千万计的 Hyper-V 回调中断，按键事件高频撞上中断挂起窗口，导致光标与字符抽搐。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;默认 &lt;code&gt;swappiness=60&lt;&#x2F;code&gt; 触发 Swap 抖动&lt;&#x2F;strong&gt;：&lt;br &#x2F;&gt;
+即使物理内存极其宽裕，Linux 也会过早把暂不活跃的终端会话、语言服务器（LSP）换出到磁盘。光标连续移动触发上下文刷新时，被换出的内存页不得不重新从磁盘读回（Swap-in），产生毫秒级 I&#x2F;O 阻塞。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-windows-su-zhu-ji-duan-he-xin-pei-zhi-wslconfig&quot;&gt;二、Windows 宿主机端核心配置（&lt;code&gt;.wslconfig&lt;&#x2F;code&gt;）&lt;&#x2F;h2&gt;
+&lt;p&gt;在 Windows 用户目录下的 &lt;code&gt;C:\Users\&amp;lt;你的用户名&amp;gt;\.wslconfig&lt;&#x2F;code&gt; 中填入：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[wsl2]
+# 1. 核心严格隔离：16 逻辑核心宿主机分配 8 核，死守 8 核保障 Windows 桌面交互
+processors=8
+
+# 2. 内存硬上限：32GB 机器分配 16GB，给 Windows 宿主机留出安全底仓
+memory=16GB
+
+# 3. Swap 适度
+swap=8GB
+localhostForwarding=true
+
+[experimental]
+# 4. 关键：选用 dropCache 瞬时释放，根除 gradual 的 30 分钟连续中断脉冲
+autoMemoryReclaim=dropCache
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;he-xin-diao-you-yuan-li&quot;&gt;核心调优原理&lt;&#x2F;h3&gt;
+&lt;h4 id=&quot;1-wei-shen-me-16-he-su-zhu-ji-zhi-fen-8-he-gei-wsl&quot;&gt;1. 为什么 16 核宿主机只分 8 核给 WSL？&lt;&#x2F;h4&gt;
+&lt;p&gt;物理键盘驱动中断、防抖、Windows 文本服务框架（TSF&#x2F;IME）以及 Windows Terminal 的 GPU 渲染，&lt;strong&gt;全部运行在 Windows 宿主机侧&lt;&#x2F;strong&gt;。&lt;br &#x2F;&gt;
+如果把 10~12 个核心全部分给 WSL，当后台跑重型编译（如 &lt;code&gt;cargo build&lt;&#x2F;code&gt; 或 &lt;code&gt;go test&lt;&#x2F;code&gt;）时，Windows 宿主机的 UI 与输入线程会出现严重的调度饥饿（Scheduler Contention），直接引发打字吞键和光标掉帧。按 5:5 严格对半切分，Windows 永远有 8 个核心保障前台交互的绝对丝滑。&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;2-nei-cun-hui-shou-wei-he-xuan-ze-dropcache&quot;&gt;2. 内存回收为何选择 &lt;code&gt;dropCache&lt;&#x2F;code&gt;？&lt;&#x2F;h4&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;模式&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;运行机制&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;对输入&#x2F;光标的影响&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;是否防范宿主机卡死&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;gradual&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;闲置 5 分钟后，在接下来的 30 分钟内持续发起分段抽离。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;严重卡顿&lt;&#x2F;strong&gt;。虚拟机高频被中断打断，光标移动顿挫。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;满足&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;disabled&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯静态分配，WSL 内存永不缩水。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;最平稳&lt;&#x2F;strong&gt;，零外部中断。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ &lt;strong&gt;不满足&lt;&#x2F;strong&gt;。开发者忘记手动释放时 Windows 容易卡死。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;&lt;code&gt;dropCache&lt;&#x2F;code&gt;&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;闲置 5 分钟后，&lt;strong&gt;一次性瞬间释放&lt;&#x2F;strong&gt; Linux 内核中无用的文件缓存。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;优秀&lt;&#x2F;strong&gt;。瞬时完成，没有长达 30 分钟的连续脉冲。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ &lt;strong&gt;完美满足&lt;&#x2F;strong&gt;。闲置自动还内存给 Windows。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;已知权衡（代偿代价）&lt;&#x2F;strong&gt;：&lt;br &#x2F;&gt;
+&lt;code&gt;dropCache&lt;&#x2F;code&gt; 的本质是&lt;strong&gt;用切回时的微小冷启动，换取宿主机的绝对安全&lt;&#x2F;strong&gt;。闲置 5 分钟后清空缓存，切回进行重型编译或触发 LSP 全局扫描时，前 3~5 秒内会有一过性的磁盘 I&#x2F;O 尖峰（重新从 SSD 读入头文件）。这是非常划算的工程妥协。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-wsl-linux-duan-pei-tao-pei-zhi-xi-tong-ji-fang-dou&quot;&gt;三、WSL Linux 端配套配置（系统级防抖）&lt;&#x2F;h2&gt;
+&lt;p&gt;光改 Windows 侧还不够，Linux 内部需同步做好两项配置闭环。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-jiang-di-swap-qing-xiang-swappiness-10&quot;&gt;1. 降低 Swap 倾向（&lt;code&gt;swappiness=10&lt;&#x2F;code&gt;）&lt;&#x2F;h3&gt;
+&lt;p&gt;彻底杜绝内存充裕时的磁盘交换抖动：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. 立即生效当前运行态
+sudo sysctl vm.swappiness=10
+
+# 2. 持久化到 sysctl.d（Ubuntu 24.04+）
+sudo bash -c &amp;#x27;echo &amp;quot;vm.swappiness=10&amp;quot; &amp;gt; &amp;#x2F;etc&amp;#x2F;sysctl.d&amp;#x2F;99-swappiness.conf&amp;#x27;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;2-qi-yong-kua-pan-gua-zai-metadata-you-hua&quot;&gt;2. 启用跨盘挂载 metadata 优化&lt;&#x2F;h3&gt;
+&lt;p&gt;如果经常需要访问 Windows 盘符（&lt;code&gt;&#x2F;mnt&#x2F;c&#x2F;&lt;&#x2F;code&gt;），默认挂载下每次 Linux 执行权限检查都会跨 Hyper-V 产生安全审查开销。&lt;&#x2F;p&gt;
+&lt;p&gt;编辑 &lt;code&gt;&#x2F;etc&#x2F;wsl.conf&lt;&#x2F;code&gt;，追加 automount 段：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;ini&quot; class=&quot;language-ini &quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;[automount]
+enabled = true
+options = &amp;quot;metadata,umask=22,fmask=11&amp;quot;
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-sheng-xiao-yu-yan-zheng&quot;&gt;四、生效与验证&lt;&#x2F;h2&gt;
+&lt;p&gt;在 Windows PowerShell 中关闭 WSL 实例：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;powershell&quot; class=&quot;language-powershell &quot;&gt;&lt;code class=&quot;language-powershell&quot; data-lang=&quot;powershell&quot;&gt;wsl --shutdown
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;重新打开 WSL 终端，验证生效指标：&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;# 1. 验证 CPU 核心数
+nproc
+
+# 2. 验证 swappiness 是否为 10
+cat &amp;#x2F;proc&amp;#x2F;sys&amp;#x2F;vm&amp;#x2F;swappiness
+
+# 3. 观察内存与缓存状态
+free -h
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;strong&gt;验证 &lt;code&gt;dropCache&lt;&#x2F;code&gt; 自动释放&lt;&#x2F;strong&gt;：&lt;br &#x2F;&gt;
+在 WSL 终端跑一次编译，&lt;code&gt;buff&#x2F;cache&lt;&#x2F;code&gt; 会上升；切去 Windows 办公闲置 5 分钟后，切回终端再敲 &lt;code&gt;free -h&lt;&#x2F;code&gt;。如果看到 &lt;code&gt;buff&#x2F;cache&lt;&#x2F;code&gt; 明显缩减，且 Windows 任务管理器里的 &lt;code&gt;vmmemWSL&lt;&#x2F;code&gt; 内存同步下降，说明自动回收机制已健康闭环。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

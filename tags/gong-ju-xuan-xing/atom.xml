@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 工具选型</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/gong-ju-xuan-xing/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-08-30T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/gong-ju-xuan-xing/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>个人知识库与静态文档工具选型：实时预览、搜索机理与避坑实录</title>
+        <published>2026-08-30T00:00:00+08:00</published>
+        <updated>2026-08-30T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/static-doc-tools-selection-and-pitfalls/"/>
+        <id>https://cncsmonster.github.io/posts/static-doc-tools-selection-and-pitfalls/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/static-doc-tools-selection-and-pitfalls/">&lt;p&gt;为数百篇 Markdown 笔记搭建本地预览与静态发布体系时，通常会遇到两个烦心事：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;写笔记时老被打断&lt;&#x2F;strong&gt;：本地服务热重载慢，新建或者重命名文件后界面不更新，经常要手动重启服务；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;搜索不可靠（容易漏搜）&lt;&#x2F;strong&gt;：搜索引擎对分词或通配符处理有问题，明明写过的笔记却搜不出来，让人心里没底。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;he-xin-xuan-xing-su-cha-tl-dr&quot;&gt;核心选型速查（TL;DR）&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;普通个人知识库，默认首选 VitePress&lt;&#x2F;strong&gt;：数千篇以内搜索只要 1~3 毫秒，写完保存就能搜，不用额外装搜索插件，热重载极快；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;什么情况下选另外两款？&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;如果文档里必须跑 React &#x2F; Vue 等交互式 Demo，选 &lt;strong&gt;Astro Starlight&lt;&#x2F;strong&gt;；&lt;&#x2F;li&gt;
+&lt;li&gt;如果重度依赖双向链接和知识图谱（类似 Obsidian），选 &lt;strong&gt;Quartz 4.0&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-san-chong-ben-di-sou-suo-yin-qing-de-chai-bie&quot;&gt;一、三种本地搜索引擎的差别&lt;&#x2F;h2&gt;
+&lt;p&gt;搜索好不好用，根本上取决于工具内置了什么搜索引擎：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;搜索引擎&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;怎么工作的&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;优点&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;缺点与适用场景&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Lunr.js&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(老工具标配，如 MkDocs)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;浏览器端纯 JS 计算，打开网页先下载整个索引大文件&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;生态老、轻量&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;英文词干处理和即时搜索通配符容易冲突，经常搜不到结果；长文章不能精确定位到段落。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;MiniSearch&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(VitePress 默认)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯 TypeScript 编写，原生支持前缀匹配和模糊搜索&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;仅 7KB，前缀匹配好用，响应极快&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;也是一次性下载整个索引，万篇以上超大库会占用较多首屏带宽。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Pagefind&lt;&#x2F;strong&gt;&lt;br&gt;&lt;em&gt;(Starlight 标配)&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Rust 编写，打包时生成切片索引，&lt;strong&gt;按需分块下载&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;线上首屏开销低，大知识库加载快&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;依赖最终打包产物，在本地边写边预览时，无法做到保存后实时自动重建索引。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;一句话总结&lt;&#x2F;strong&gt;：在现代电脑上，几千篇笔记用 MiniSearch 搜索只要 1~3 毫秒，速度完全感觉不到延迟，而且写笔记时保存就能搜；只有笔记膨胀到几万篇、线上首屏加载太慢时，才需要换成 Pagefind。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-ben-di-shi-shi-yu-lan-re-zhong-zai-de-dai-ji-chai-yi&quot;&gt;二、本地实时预览（热重载）的代际差异&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;对比维度&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;&lt;strong&gt;上一代工具（以 MkDocs 为例）&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;&lt;strong&gt;现代工具（以 VitePress &#x2F; Starlight 为例）&lt;&#x2F;strong&gt;&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;底层实现&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Python 脚本 + 简单的文件监听&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;基于 Vite 的现代前端热重载&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;新建&#x2F;重命名文件&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;❌ 只能感知修改已有文件。新建或者重命名文章时，目录树不会自动更新，必须修改已有文件才能触发重新构建。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ 新建、修改、重命名任何 &lt;code&gt;.md&lt;&#x2F;code&gt; 文件，页面和左侧目录树都会立即刷新。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;本地与线上一致性&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;⚠️ 本地预览是动态渲染，打包产物是静态文件，偶尔出现“本地看着正常，打包上线就错乱”的问题。&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;✅ 本地开发与静态打包用同一套解析逻辑，本地什么样，打包出来就是什么样。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-gong-ju-heng-xiang-dui-bi-yu-zui-zhong-xuan-ze&quot;&gt;三、工具横向对比与最终选择&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;工具&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;底层技术&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;组件支持&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;适合谁用？&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;VitePress&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Vite + Vue 3&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;可以直接写 &lt;strong&gt;Vue 组件&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;追求省心、秒级打开、不需要折腾配置的个人技术笔记库。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Astro Starlight&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Vite + Astro + Pagefind&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;支持 &lt;strong&gt;MDX&lt;&#x2F;strong&gt;（可以混用 React、Vue 组件）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;需要写复杂交互 Demo 的技术文档、多语言开源项目文档。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Quartz 4.0&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;针对 Obsidian 定制&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;支持 Obsidian 语法&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;强依赖双链 &lt;code&gt;[[link]]&lt;&#x2F;code&gt;、悬浮卡片和关系图谱的数字花园。&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;wei-shen-me-zui-zhong-xuan-vitepress&quot;&gt;为什么最终选 VitePress？&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;搜索最省心&lt;&#x2F;strong&gt;：开箱自带 MiniSearch，不用自己找插件、写配置胶水层，几千篇笔记内搜得快、搜得准；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;写作体验好&lt;&#x2F;strong&gt;：基于 Vite 的热重载极快，新建和修改文件都不需要手动重启服务；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;维护成本低&lt;&#x2F;strong&gt;：Vue 3 生态成熟稳定，基本不需要花精力修补升级引发的配置问题。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-shi-cao-cai-keng-ji-lu&quot;&gt;四、实操踩坑记录&lt;&#x2F;h2&gt;
+&lt;p&gt;在实际配置与迁移过程中，有几处容易绊倒人的细节问题：&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-da-bao-build-shi-bao-quan-ju-dui-xiang-cuo-wu&quot;&gt;1. 打包（build）时报全局对象错误&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;现象&lt;&#x2F;strong&gt;：本地跑 &lt;code&gt;npm run dev&lt;&#x2F;code&gt; 正常，一旦执行 &lt;code&gt;npm run build&lt;&#x2F;code&gt; 打包就报错：&lt;code&gt;ReferenceError: window is not defined&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;原因&lt;&#x2F;strong&gt;：打包是在 Node.js 环境里跑的，Node.js 里根本没有浏览器的 &lt;code&gt;window&lt;&#x2F;code&gt; 对象。如果引入的第三方插件在顶层直接访问了 &lt;code&gt;window&lt;&#x2F;code&gt;，打包就会崩溃。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：把这类组件放进 &lt;code&gt;&amp;lt;ClientOnly&amp;gt;&lt;&#x2F;code&gt; 标签里，或者在 Vue 的 &lt;code&gt;onMounted()&lt;&#x2F;code&gt; 钩子函数里动态加载，确保代码只在用户的浏览器端运行。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;details&gt;
+&lt;summary&gt;补充：什么是客户端水合（Hydration）？&lt;&#x2F;summary&gt;
+&lt;p&gt;现代静态文档工具在打包时，会先由 Node.js 把 Markdown 渲染成纯静态的 HTML 网页。此时页面加载极快，但上面的按钮是“死”的（还没有绑定点击事件）。&lt;&#x2F;p&gt;
+&lt;p&gt;等用户的浏览器下载完 JavaScript 代码后，Vue 或 React 会扫描这具 HTML 骨架，把点击事件和交互逻辑“挂”上去——这个&lt;strong&gt;把一具静态 HTML 激活成可交互网页的过程&lt;&#x2F;strong&gt;就叫“水合”（Hydration）。&lt;&#x2F;p&gt;
+&lt;p&gt;因为 &lt;code&gt;onMounted()&lt;&#x2F;code&gt; 钩子只会在浏览器端激活时执行，打包阶段会自动跳过，所以把依赖 &lt;code&gt;window&lt;&#x2F;code&gt; 的代码放进去就能避开报错。&lt;&#x2F;p&gt;
+&lt;&#x2F;details&gt;
+&lt;h3 id=&quot;2-markdown-li-de-mo-ban-bian-liang-yu-vue-yu-fa-chong-tu&quot;&gt;2. Markdown 里的模板变量与 Vue 语法冲突&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;现象&lt;&#x2F;strong&gt;：笔记里如果记录了包含 &lt;code&gt;{{ variable }}&lt;&#x2F;code&gt; 的代码或文本（例如 Jinja、Ansible 配置），会被误当成 Vue 表达式解析，直接报错构建失败。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：行内写用反引号包裹（&lt;code&gt;`{{ variable }}`&lt;&#x2F;code&gt;）；如果是多行代码块，在最外层加上 &lt;code&gt;::: v-pre&lt;&#x2F;code&gt; 标记，告诉编译器跳过这块代码的解析。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-lie-biao-qian-que-shao-kong-xing-dao-zhi-pai-ban-cuo-luan&quot;&gt;3. 列表前缺少空行导致排版错乱&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;现象&lt;&#x2F;strong&gt;：在编辑器里明明是列表，渲染出来后却缩进全无，挤成了一整行普通文字。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;原因&lt;&#x2F;strong&gt;：部分解析器规定列表前面必须空一行，否则会把列表强行拼到上一段落里当成普通文字。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;解决&lt;&#x2F;strong&gt;：所有数字列表（&lt;code&gt;1.&lt;&#x2F;code&gt;）或小圆点列表（&lt;code&gt;-&lt;&#x2F;code&gt;）前后，都严格留一行空行。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

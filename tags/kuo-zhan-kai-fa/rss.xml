@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM 的博客 - 扩展开发</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>zh</language>
+      <atom:link href="https://cncsmonster.github.io/tags/kuo-zhan-kai-fa/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Sun, 24 May 2026 00:00:00 +0000</lastBuildDate>
+      <item>
+          <title>pi-local-ocr 扩展的设计过程</title>
+          <pubDate>Sun, 24 May 2026 00:00:00 +0000</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/posts/pi-local-ocr-design/</link>
+          <guid>https://cncsmonster.github.io/posts/pi-local-ocr-design/</guid>
+          <description xml:base="https://cncsmonster.github.io/posts/pi-local-ocr-design/">&lt;p&gt;为没有 vision 能力的模型做了一个本地 OCR 扩展，让模型通过 EasyOCR 读取图片中的文字和表格。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;guan-jian-jue-ce&quot;&gt;关键决策&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;决策&lt;&#x2F;th&gt;&lt;th&gt;选择&lt;&#x2F;th&gt;&lt;th&gt;原因&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Extension vs Skill&lt;&#x2F;td&gt;&lt;td&gt;Extension&lt;&#x2F;td&gt;&lt;td&gt;20 token vs 500 token 上下文污染，TypeBox 参数校验，零幻觉&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;EasyOCR vs PaddleOCR&lt;&#x2F;td&gt;&lt;td&gt;EasyOCR&lt;&#x2F;td&gt;&lt;td&gt;PaddleOCR 预编译二进制要求 AVX512，本机 SIGILL 崩溃&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;表格重建方式&lt;&#x2F;td&gt;&lt;td&gt;坐标聚类&lt;&#x2F;td&gt;&lt;td&gt;EasyOCR 无原生表格识别，用 y 坐标分组行 + x 坐标排序列补偿&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;语言栈&lt;&#x2F;td&gt;&lt;td&gt;Python subprocess&lt;&#x2F;td&gt;&lt;td&gt;中文 OCR 的最强生态在 Python，Node.js 无可用方案&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;he-xin-dong-cha&quot;&gt;核心洞察&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-mei-you-xian-cheng-de-ben-shen-jiu-shi-jia-zhi&quot;&gt;1. “没有现成的“本身就是价值&lt;&#x2F;h3&gt;
+&lt;p&gt;调研了四层才确认空白：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;skills.sh 市场 → 有 OCR skill，全是 Markdown 指令&lt;&#x2F;li&gt;
+&lt;li&gt;pi-package 生态（216 个仓库）→ 0 个 OCR 扩展&lt;&#x2F;li&gt;
+&lt;li&gt;GitHub 代码搜索 → “pi coding agent” + ocr = 0&lt;&#x2F;li&gt;
+&lt;li&gt;npm 包搜索 → 0&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-extension-he-skill-de-ben-zhi-chai-ju&quot;&gt;2. Extension 和 Skill 的本质差距&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;维度&lt;&#x2F;th&gt;&lt;th&gt;Skill（Markdown 指令）&lt;&#x2F;th&gt;&lt;th&gt;Extension（注册工具）&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;每次上下文消耗&lt;&#x2F;td&gt;&lt;td&gt;~500 token&lt;&#x2F;td&gt;&lt;td&gt;~20 token&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;参数校验&lt;&#x2F;td&gt;&lt;td&gt;无，靠 LLM 自觉&lt;&#x2F;td&gt;&lt;td&gt;TypeBox schema 强制&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;出错概率&lt;&#x2F;td&gt;&lt;td&gt;每次调用都有&lt;&#x2F;td&gt;&lt;td&gt;几乎为零&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;所有有外部依赖的工具都应该用 extension。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;3-cpu-jian-rong-xing-gong-neng-xuan&quot;&gt;3. CPU 兼容性 &amp;gt; 功能炫&lt;&#x2F;h3&gt;
+&lt;p&gt;PaddleOCR 的 PP-Structure 很牛，但 SIGILL 崩溃 — 要求 AVX512。EasyOCR 功能稍逊，但任何 x86 CPU 都能跑。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;biao-ge-zhong-jian-suan-fa&quot;&gt;表格重建算法&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;y 坐标接近 → 同一行&lt;&#x2F;li&gt;
+&lt;li&gt;行内按 x 坐标排序 → 列&lt;&#x2F;li&gt;
+&lt;li&gt;股票代码被 OCR 合并时正则拆分&lt;&#x2F;li&gt;
+&lt;li&gt;输出 Markdown 表格&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;an-zhuang&quot;&gt;安装&lt;&#x2F;h2&gt;
+&lt;pre data-lang=&quot;bash&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pi install git:github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-local-ocr
+bash ~&amp;#x2F;.pi&amp;#x2F;agent&amp;#x2F;git&amp;#x2F;github.com&amp;#x2F;CNCSMonster&amp;#x2F;pi-local-ocr&amp;#x2F;scripts&amp;#x2F;setup.sh
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;GitHub: &lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;CNCSMonster&#x2F;pi-local-ocr&quot;&gt;CNCSMonster&#x2F;pi-local-ocr&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+</description>
+      </item>
+    </channel>
+</rss>

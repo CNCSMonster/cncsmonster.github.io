@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 编程助手</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/bian-cheng-zhu-shou/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-06-01T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/bian-cheng-zhu-shou/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Qwen Code 如何自动学习你的编程习惯？AutoSkill 机制深度解析</title>
+        <published>2026-06-01T00:00:00+08:00</published>
+        <updated>2026-06-01T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-autoskill-deep-dive/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-autoskill-deep-dive/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-autoskill-deep-dive/">&lt;p&gt;在使用 Qwen Code 一段时间后，你可能注意到 &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; 目录下凭空多出了几个 skill——&lt;code&gt;skill-review&lt;&#x2F;code&gt;、&lt;code&gt;skill-testing&lt;&#x2F;code&gt;——它们的 frontmatter 里标记着 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;。这些不是你写的，也没人手动创建过。&lt;&#x2F;p&gt;
+&lt;p&gt;这是 Qwen Code 的 &lt;strong&gt;AutoSkill 机制&lt;&#x2F;strong&gt;：一种程序性记忆的自动提炼能力。本文基于源码逆向和设计文档，完整拆解这个机制的工作原理、安全设计和学术渊源。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;autoskill-shi-shen-me&quot;&gt;AutoSkill 是什么&lt;&#x2F;h2&gt;
+&lt;p&gt;一句话：&lt;strong&gt;会话结束后，Qwen Code 会在后台自动判断你刚才的操作流程是否值得复用，如果值得，就把它保存为一个项目级 skill。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;它和 Auto Memory 的定位不同：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;维度&lt;&#x2F;th&gt;&lt;th&gt;Auto Memory&lt;&#x2F;th&gt;&lt;th&gt;AutoSkill&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;记忆类型&lt;&#x2F;td&gt;&lt;td&gt;陈述性（用户是谁、项目背景）&lt;&#x2F;td&gt;&lt;td&gt;程序性（如何做某类任务）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;触发时机&lt;&#x2F;td&gt;&lt;td&gt;每次会话结束&lt;&#x2F;td&gt;&lt;td&gt;会话内工具调用 ≥ 20 次&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;写入目标&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;memory&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;内容性质&lt;&#x2F;td&gt;&lt;td&gt;用户偏好、项目上下文&lt;&#x2F;td&gt;&lt;td&gt;可复用的操作步骤、最佳实践&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;简单说，Memory 记住“你是谁“，AutoSkill 记住“你怎么做事“。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;hong-fa-tiao-jian&quot;&gt;触发条件&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;会话结束
+  ├─ toolCallCount ≥ 20 ?        &amp;#x2F;&amp;#x2F; 密度不足 → skip
+  ├─ skillsModifiedInSession ?   &amp;#x2F;&amp;#x2F; 本轮已手动操作 skill → skip
+  └─ 都满足 → scheduleSkillReview()
+               └─ fork 独立子 agent（8 轮上限，2 分钟超时）
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;只有当一次会话中工具调用足够密集（≥ 20 次），且用户没有手动编辑过 skill 文件时，才会触发。这避免了在简单问答会话中产生低质量 skill。&lt;&#x2F;p&gt;
+&lt;p&gt;触发后，系统 fork 一个独立的 review agent（不是主对话的延续），最多运行 8 轮、2 分钟超时，对会话内容进行评估和提炼。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;quan-xian-sha-xiang-he-xin-an-quan-she-ji&quot;&gt;权限沙箱：核心安全设计&lt;&#x2F;h2&gt;
+&lt;p&gt;AutoSkill 最精妙的部分是它的安全机制。review agent 被关在一个严格的沙箱里：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;工具&lt;&#x2F;th&gt;&lt;th&gt;权限&lt;&#x2F;th&gt;&lt;th&gt;安全机制&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;read_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 项目根目录内&lt;&#x2F;td&gt;&lt;td&gt;防止读取 &lt;code&gt;~&#x2F;.aws&#x2F;credentials&lt;&#x2F;code&gt; 等敏感文件并注入到 SKILL.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;ls&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 项目根目录内&lt;&#x2F;td&gt;&lt;td&gt;同上&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;write_file&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 仅 &lt;code&gt;.qwen&#x2F;skills&#x2F;&amp;lt;name&amp;gt;&#x2F;SKILL.md&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;只能创建&lt;strong&gt;不存在&lt;&#x2F;strong&gt;的文件（防覆盖）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;code&gt;edit&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;⚠️ 仅 &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; 内 + 目标文件必须含 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td&gt;不能改用户手写的 skill&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;核心原则：&lt;strong&gt;auto-skill 只能动自己创建的东西，绝不能碰用户手写的 skill。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;source-auto-skill-bao-hu-ji-zhi&quot;&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; 保护机制&lt;&#x2F;h3&gt;
+&lt;p&gt;双重防线：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;硬约束（权限管理器）&lt;&#x2F;strong&gt;：&lt;code&gt;edit&lt;&#x2F;code&gt; 前读取 frontmatter，无 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; 则拒绝&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;软约束（system prompt）&lt;&#x2F;strong&gt;：“You may ONLY modify skill files that contain ‘source: auto-skill’”&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;用户若将自己创建的 skill 也加上 &lt;code&gt;source: auto-skill&lt;&#x2F;code&gt;，即表示允许 review agent 后续自动更新它。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;fang-ming-cheng-chong-tu-fu-gai&quot;&gt;防名称冲突覆盖&lt;&#x2F;h3&gt;
+&lt;pre data-lang=&quot;typescript&quot; class=&quot;language-typescript &quot;&gt;&lt;code class=&quot;language-typescript&quot; data-lang=&quot;typescript&quot;&gt;&amp;#x2F;&amp;#x2F; write_file 只允许创建新文件
+try {
+  await fs.stat(ctx.filePath);
+  return &amp;#x27;deny&amp;#x27;;  &amp;#x2F;&amp;#x2F; 文件已存在 → 拒绝
+} catch (err) {
+  if (err.code === &amp;#x27;ENOENT&amp;#x27;) return &amp;#x27;allow&amp;#x27;;  &amp;#x2F;&amp;#x2F; 不存在 → 允许创建
+  return &amp;#x27;deny&amp;#x27;;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;这意味着：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;创建新 skill → &lt;code&gt;write_file&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;更新已有 auto-skill → 必须用 &lt;code&gt;edit&lt;&#x2F;code&gt; ✅&lt;&#x2F;li&gt;
+&lt;li&gt;覆盖任何已有文件 → 拒绝 ❌&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;fang-symlink-chuan-yue&quot;&gt;防 symlink 穿越&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;assertRealProjectSkillPath()&lt;&#x2F;code&gt; 用 &lt;code&gt;fs.realpath()&lt;&#x2F;code&gt; 解析真实路径，确认在 &lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt; 内，防止通过符号链接写入项目外的位置。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xue-shu-yuan-yuan&quot;&gt;学术渊源&lt;&#x2F;h2&gt;
+&lt;pre&gt;&lt;code&gt;Trace2Skill 论文（arXiv: 2603.25158）
+    ↓
+Hermes Agent（Nous Research，开源）——prompt 原始来源
+    ↓ Qwen Code 设计文档：&amp;quot;移植自 Hermes _SKILL_REVIEW_PROMPT，只做最小化适配&amp;quot;
+Qwen Code AutoSkill
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Qwen Code 设计文档明确提到：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;review agent 使用的提示语直接移植自 Hermes &lt;code&gt;_SKILL_REVIEW_PROMPT&lt;&#x2F;code&gt;，只做最小化适配。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Hermes 的原始 prompt 远比 Qwen 版本详细——包含 CLASS-LEVEL 技能组织、偏好嵌入、protected skills、Do NOT capture 列表等。Qwen 版本做了大幅精简，聚焦于“非平凡方法“和“试错过程“的提炼。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;hermes-vs-qwen-code&quot;&gt;Hermes vs Qwen Code&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;&lt;&#x2F;th&gt;&lt;th&gt;Hermes&lt;&#x2F;th&gt;&lt;th&gt;Qwen Code&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;触发时机&lt;&#x2F;td&gt;&lt;td&gt;会话内 agent 直接调用 + 会话后后台 review&lt;&#x2F;td&gt;&lt;td&gt;仅会话后后台 fork&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;保护机制&lt;&#x2F;td&gt;&lt;td&gt;ContextVar 追踪写入来源 + tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;source: auto-skill&lt;&#x2F;code&gt; frontmatter + 文件级权限管理器&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;写入范围&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;~&#x2F;.hermes&#x2F;skills&#x2F;&lt;&#x2F;code&gt;（全局）&lt;&#x2F;td&gt;&lt;td&gt;&lt;code&gt;.qwen&#x2F;skills&#x2F;&lt;&#x2F;code&gt;（项目级）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Prompt 复杂度&lt;&#x2F;td&gt;&lt;td&gt;详细（含技能组织、偏好嵌入等）&lt;&#x2F;td&gt;&lt;td&gt;精简（聚焦可复用操作流程）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;yu-qi-ta-agent-dui-bi&quot;&gt;与其他 Agent 对比&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Agent&lt;&#x2F;th&gt;&lt;th&gt;自动提炼程序性 skill&lt;&#x2F;th&gt;&lt;th&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Hermes Agent&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 有（会话内 + 会话后）&lt;&#x2F;td&gt;&lt;td&gt;最早的开源实现，有 tool whitelist + protected skills&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Qwen Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;✅ 有（会话后）&lt;&#x2F;td&gt;&lt;td&gt;移植 Hermes prompt + 文件级权限沙箱&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Claude Code&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;Auto Memory 只记录陈述性知识，不提炼操作流程&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Cursor&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;Skills 全部手动创建&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Pi&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;Skills 全部手动创建，Memory 手动管理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Codex CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;内置 skills + AGENTS.md 扩展，无自动提炼&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Gemini CLI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;❌ 没有&lt;&#x2F;td&gt;&lt;td&gt;手动创建 SKILL.md，Memory 读取 GEMINI.md&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;目前只有 Hermes 和 Qwen Code 实现了自动提炼程序性 skill 的能力，其他主流 AI coding agent 都还停留在手动管理阶段。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;can-kao-lian-jie&quot;&gt;参考链接&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;QwenLM&#x2F;qwen-code&#x2F;blob&#x2F;main&#x2F;docs&#x2F;design&#x2F;skill-nudge&#x2F;skill-nudge.md&quot;&gt;设计文档&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;实现源码：&lt;code&gt;packages&#x2F;core&#x2F;src&#x2F;memory&#x2F;skillReviewAgentPlanner.ts&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;首次提交：2026-05-09（&lt;code&gt;#3673&lt;&#x2F;code&gt;），默认开启：2026-05-27（&lt;code&gt;#4547&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2603.25158&quot;&gt;Trace2Skill 论文&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>
