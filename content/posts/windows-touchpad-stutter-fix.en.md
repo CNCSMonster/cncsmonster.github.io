@@ -1,7 +1,7 @@
 +++
-title = "Fixing Windows Touchpad Cursor Stutter and Teleporting: Root Cause Analysis"
+title = "Fixing Touchpad Stutter on Windows"
 date = 2026-10-07T00:00:00+08:00
-slug = "windows-touchpad-stutter-teleport-troubleshooting"
+slug = "windows-touchpad-stutter-fix"
 [taxonomies]
     tags = ["Windows 11", "Hardware", "Troubleshooting", "Intel", "Touchpad"]
 +++
