@@ -1,0 +1,115 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>Fixing Touchpad Stutter on Windows | CCM's Blog</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM's Blog" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM's Blog" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/ hreflang=zh rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM's Blog</a><div class=nav-links><div class=search-container><input placeholder="Search articles..." class=search-input id=search-input><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>Home</a><a href=https://cncsmonster.github.io/posts/>Blog</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> Ebooks</a><a href=https://cncsmonster.github.io/open-source/>Projects</a><a href=https://cncsmonster.github.io/about/>About</a><a title="Subscribe to blog updates" class=nav-subscribe href=https://cncsmonster.github.io/subscribe/> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a class=lang-link href=https://cncsmonster.github.io/posts/windows-touchpad-stutter-fix/ title=切换到中文>中文</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>Fixing Touchpad Stutter on Windows</h1><div class=post-meta><time datetime=2026-10-07T00:00:00+08:00>2026-10-07</time><div class=post-tags><a class=tag href=https://cncsmonster.github.io/en/tags/windows-11/>#Windows 11</a><a class=tag href=https://cncsmonster.github.io/en/tags/hardware/>#Hardware</a><a class=tag href=https://cncsmonster.github.io/en/tags/troubleshooting/>#Troubleshooting</a><a class=tag href=https://cncsmonster.github.io/en/tags/intel/>#Intel</a><a class=tag href=https://cncsmonster.github.io/en/tags/touchpad/>#Touchpad</a></div></div></header><div class=post-layout><div class=post-content><blockquote><p>Baseline Environment: Windows 11 (24H2) / Intel Core Ultra / Xiaomi Redmi Book Pro 14 2026</blockquote><h2 id=1-quick-self-check-30-seconds>1. Quick Self-Check (30 Seconds)</h2><p><strong>Symptoms</strong>: When moving the cursor with the touchpad on a Windows laptop on battery power, the cursor intermittently freezes for roughly 100–400ms, then suddenly snaps (teleports) to the finger’s latest position.<p><strong>Diagnostic Criteria (Matches this issue if all three hold)</strong>:<ul><li><strong>Plugging in fixes it immediately</strong>: Highly reproducible on battery power (DC mode), but disappears instantly when plugged into the charger (AC mode).<li><strong>Keyboard works flawlessly</strong>: Typing continuously remains perfectly responsive, without dropped keystrokes, lag, or input latency.<li><strong>Always freezes on the initial stroke after a brief pause</strong>: Cursor tracking is not uniformly slow. Instead, the freeze occurs specifically on the first stroke after pausing for a second; continuous movement remains smooth.</ul><h2 id=2-solution-3-steps-to-fix-completely>2. Solution (3 Steps to Fix Completely)</h2><h3 id=step-1-disable-i2c-controller-power-management>Step 1: Disable I2C Controller Power Management</h3><ol><li><p>Press <code>Win + X</code> and select <strong>Device Manager</strong>.</p><li><p>Expand <strong>System devices</strong> and locate:</p> <ul><li><code>Intel(R) Serial IO I2C Host Controller - E450</code><li><code>Intel(R) Serial IO I2C Host Controller - E451</code></ul><li><p>Double-click each controller to open its <strong>Properties</strong> → switch to the <strong>Power Management</strong> tab.</p><li><p><strong>Uncheck</strong>: <code>Allow the computer to turn off this device to save power</code>, then click <strong>OK</strong> to save.</p></ol><h3 id=step-2-disable-intel-gpu-panel-self-refresh-psr>Step 2: Disable Intel GPU “Panel Self Refresh (PSR)”</h3><ol><li>Open <strong>Intel Graphics Software</strong> (or Intel Graphics Command Center).<li>Click <strong>Display</strong> in the left navigation sidebar.<li>Scroll down to the <strong>Power</strong> / <strong>Energy Saving</strong> section.<li>Toggle <strong>Panel Self Refresh (PSR)</strong> to <strong>Off</strong>.</ol><h3 id=step-3-mandatory-restart-the-computer>Step 3: [Mandatory] Restart the Computer</h3><ul><li><strong>Required Action</strong>: After modifying both settings above, you <strong>must reboot the system</strong> (<code>Start menu</code> → <code>Restart</code>).<li><strong>Mechanism</strong>: The I2C host controller is a motherboard system bus device. Its runtime power management policy is loaded during initial system boot and <strong>cannot be hot-reloaded dynamically from Device Manager</strong>. Without a full restart, the previous power policy remains resident in memory.</ul><h2 id=3-verification-battery-trade-off>3. Verification & Battery Trade-off</h2><ul><li><strong>Observed Result (Verified)</strong>: After unplugging the power cable, touchpad tracking feels identical to AC plugged-in operation—stuttering and teleportation are completely eliminated.<li><strong>Battery Trade-off (⚠️ Theoretical estimate; unverified by full-discharge benchmarks)</strong>: Disabling PSR keeps the GPU display engine and eDP link transmitting frames continuously. Based on typical Intel mobile power models, disabling PSR reduces battery life by an estimated <strong>5%–10%</strong> during static workloads (e.g., pure typing or reading—shifting roughly a 10-hour battery life to 9–9.5 hours), which remains well within acceptable limits.</ul><hr><h2 id=4-common-pitfalls-why-intuitive-fixes-fail>4. Common Pitfalls (Why Intuitive Fixes Fail)</h2><p>When encountering touchpad lag, developers frequently try adjusting sensitivity or killing background tasks, but these standard remedies do not solve this issue:<ul><li>⚠️ <strong>Pitfall 1: Adjusting pointer speed or enabling “Enhance pointer precision”</strong> <ul><li><strong>Why it fails</strong>: The freeze stems from hardware link dormancy and wake handshakes, not insufficient DPI sampling. Increasing pointer speed merely amplifies the jump distance when the cursor catches up.</ul><li>⚠️ <strong>Pitfall 2: Hunting background tasks or killing startup programs</strong> <ul><li><strong>Why it fails</strong>: Typing remains perfectly responsive, proving that CPU scheduling and the DWM compositor are not bottlenecked. The bottleneck resides exclusively on specific bus and display pipelines.</ul><li>⚠️ <strong>Pitfall 3: Disabling “Display Power Saving Technology (DPST)”</strong> <ul><li><strong>Why it fails</strong>: DPST adjusts backlight PWM brightness dynamically based on image content (causing brightness shifts), without disrupting frame transmission timing. The feature responsible for putting the display engine to sleep is <strong>PSR (Panel Self Refresh)</strong>.</ul><li>⚠️ <strong>Pitfall 4: Modifying Device Manager settings without restarting</strong> <ul><li><strong>Why it fails</strong>: Testing immediately after toggling settings without rebooting will still produce stutters, leading users to falsely assume the fix did not work. The bus driver’s power policy only updates upon a reboot.</ul></ul><h2 id=5-deep-dive-root-causes-explained>5. Deep Dive: Root Causes Explained</h2><h3 id=5-1-why-does-typing-stay-smooth-while-the-touchpad-sleeps>5.1 Why Does Typing Stay Smooth While the Touchpad Sleeps?</h3><p><strong>Root Cause</strong>: The keyboard and touchpad operate on physically isolated power domains. To maximize battery endurance, Windows enforces strict “device-level autonomy”—active keyboard usage does not signal the I2C bus to stay awake. If the touchpad stays idle for roughly one second, its bus cuts power. Using it again triggers a hardware wake handshake, creating a perceptible freeze on the first stroke.<ul><li><strong>Keyboard Path (Always Active)</strong>: Keyboard (continuous typing) → EC (Embedded Controller) → Permanent power rail (<code>D0</code>) → <strong>Completely smooth</strong><li><strong>Isolation Boundary</strong>: ⚡ <strong>Physical Power Domain Isolation</strong> (OS does not broadcast activity across separate buses; idle devices sleep autonomously)<li><strong>Touchpad Path (Independent Sleep)</strong>: Touchpad (idle for ~1s) → I2C Host Controller → Cuts power (<code>D3</code>) → <strong>Next touch requires wake handshake (Stutter & Teleport)</strong></ul><blockquote><p><strong>Hardware Detail</strong>: The touchpad communicates over <code>Intel Serial IO I2C Host Controller - E451</code>. Keeping each peripheral independent is an intentional operating system design trade-off to maximize battery benchmark scores.</blockquote><h3 id=5-2-dual-layer-hardware-latency-resonance>5.2 Dual-Layer Hardware Latency Resonance</h3><p>Under battery power, two separate aggressive power-saving mechanisms engage simultaneously, compounding the perceived delay:<h4 id=layer-1-i2c-bus-selective-suspend-100-300ms-typical-wake-handshake>Layer 1: I2C Bus Selective Suspend (~100–300ms typical wake handshake)</h4><p>Windows defaults to enabling runtime power management on the I2C Host Controller. When touchpad input ceases for 0.5–1 second, the controller transitions from active state <code>D0</code> to low-power state <code>D3hot</code>. When a finger touches down, the bus powers up, resynchronizes clocks, and completes handshake renegotiation with the touchpad controller, which typically consumes <strong>100–300ms</strong> per bus specifications. Coordinates gathered during this window accumulate in local FIFO buffers and are flushed in a sudden burst once the link is re-established, causing the cursor to jump.<h4 id=layer-2-intel-gpu-panel-self-refresh-200-400ms-typical-link-wake-latency>Layer 2: Intel GPU Panel Self Refresh (~200–400ms typical link wake latency)</h4><p>When the screen is static, the Intel iGPU display engine sleeps, instructing the eDP panel to refresh autonomously from its embedded frame buffer. When the cursor starts moving, the GPU detects frame changes, restarts its display clocks, and re-engages the eDP link, which typically requires <strong>200–400ms</strong> per eDP specifications. Even if I2C coordinates have reached the OS input stack, display pixels remain temporarily frozen, amplifying the delay into severe visual stutter.</div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#1-quick-self-check-30-seconds>1. Quick Self-Check (30 Seconds)</a><li><a href=#2-solution-3-steps-to-fix-completely>2. Solution (3 Steps to Fix Completely)</a> <ul><li><a href=#step-1-disable-i2c-controller-power-management>Step 1: Disable I2C Controller Power Management</a><li><a href=#step-2-disable-intel-gpu-panel-self-refresh-psr>Step 2: Disable Intel GPU “Panel Self Refresh (PSR)”</a><li><a href=#step-3-mandatory-restart-the-computer>Step 3: [Mandatory] Restart the Computer</a></ul><li><a href=#3-verification-battery-trade-off>3. Verification & Battery Trade-off</a><li><a href=#4-common-pitfalls-why-intuitive-fixes-fail>4. Common Pitfalls (Why Intuitive Fixes Fail)</a><li><a href=#5-deep-dive-root-causes-explained>5. Deep Dive: Root Causes Explained</a> <ul><li><a href=#5-1-why-does-typing-stay-smooth-while-the-touchpad-sleeps>5.1 Why Does Typing Stay Smooth While the Touchpad Sleeps?</a><li><a href=#5-2-dual-layer-hardware-latency-resonance>5.2 Dual-Layer Hardware Latency Resonance</a> <ul><li><a href=#layer-1-i2c-bus-selective-suspend-100-300ms-typical-wake-handshake>Layer 1: I2C Bus Selective Suspend (~100–300ms typical wake handshake)</a><li><a href=#layer-2-intel-gpu-panel-self-refresh-200-400ms-typical-link-wake-latency>Layer 2: Intel GPU Panel Self Refresh (~200–400ms typical link wake latency)</a></ul></ul></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>Copyright：</strong> This work is licensed under <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en rel=noopener target=_blank>CC BY-NC-SA 4.0</a>. Please provide attribution and share alike.</div></footer><section class=comments id=comments><h2>Comments</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=en data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=next href=https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/>WSL2 Low Latency Tuning Guide →</a></nav></main><footer class=site-footer><p>© 2026 CCM. Powered by Zola.<div class=footer-links><a href=https://cncsmonster.github.io/>↑ Back to Home</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>Archive</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>Ebooks</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.en.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">Loading search...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">No results found</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>

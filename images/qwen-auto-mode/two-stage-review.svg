@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="850" viewBox="0 0 700 850" role="img" aria-labelledby="title">
+<title id="title">Classifier · 两阶段审查</title>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#334155"/></marker></defs>
+<rect width="700" height="850" fill="#f8fafc"/>
+<g font-family="sans-serif">
+<g><rect x="40" y="70" width="620" height="85" rx="12" fill="#dbeafe" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="99" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">同一份 Transcript</text>
+<text x="350.0" y="127" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">作为 Stage 1 与 Stage 2 的审查输入</text>
+</g>
+<path d="M350 155 V185" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="185" width="620" height="215" rx="12" fill="#dcfce7" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="214" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">Stage 1：快速判断</text>
+<text x="350.0" y="242" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">模型：同一个 fastModel</text>
+<text x="350.0" y="268" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">分析过程：不返回</text>
+<text x="350.0" y="294" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">输出预算：256 tokens</text>
+<text x="350.0" y="320" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">默认超时：10 秒</text>
+<text x="350.0" y="346" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">返回结果：是否阻断（shouldBlock）</text>
+</g>
+<path d="M350 400 V435" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="120" y="435" width="460" height="60" rx="12" fill="#fef3c7" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="464" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">仅 Stage 1 返回 shouldBlock=true 时复核</text>
+</g>
+<path d="M350 495 V530" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="530" width="620" height="280" rx="12" fill="#dbeafe" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="559" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">Stage 2：复核</text>
+<text x="350.0" y="587" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">模型：同一个 fastModel</text>
+<text x="350.0" y="613" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">分析过程：返回文本分析</text>
+<text x="350.0" y="639" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">输出预算：4096 tokens</text>
+<text x="350.0" y="665" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">默认超时：30 秒</text>
+<text x="350.0" y="691" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">返回结果：分析过程、阻断结论、判断理由</text>
+<text x="350.0" y="717" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">{thinking, shouldBlock, reason}</text>
+</g>
+<text x="350" y="40" text-anchor="middle" fill="#172033" font-size="23" font-weight="700">Classifier · 两阶段审查</text>
+</g>
+</svg>

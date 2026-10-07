@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Touchpad</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/touchpad/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-10-07T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/touchpad/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Fixing Touchpad Stutter on Windows</title>
+        <published>2026-10-07T00:00:00+08:00</published>
+        <updated>2026-10-07T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/windows-touchpad-stutter-fix/"/>
+        <id>https://cncsmonster.github.io/en/posts/windows-touchpad-stutter-fix/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/windows-touchpad-stutter-fix/">&lt;blockquote&gt;
+&lt;p&gt;Baseline Environment: Windows 11 (24H2) &#x2F; Intel Core Ultra &#x2F; Xiaomi Redmi Book Pro 14 2026&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;1-quick-self-check-30-seconds&quot;&gt;1. Quick Self-Check (30 Seconds)&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Symptoms&lt;&#x2F;strong&gt;: When moving the cursor with the touchpad on a Windows laptop on battery power, the cursor intermittently freezes for roughly 100–400ms, then suddenly snaps (teleports) to the finger’s latest position.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Diagnostic Criteria (Matches this issue if all three hold)&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Plugging in fixes it immediately&lt;&#x2F;strong&gt;: Highly reproducible on battery power (DC mode), but disappears instantly when plugged into the charger (AC mode).&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Keyboard works flawlessly&lt;&#x2F;strong&gt;: Typing continuously remains perfectly responsive, without dropped keystrokes, lag, or input latency.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Always freezes on the initial stroke after a brief pause&lt;&#x2F;strong&gt;: Cursor tracking is not uniformly slow. Instead, the freeze occurs specifically on the first stroke after pausing for a second; continuous movement remains smooth.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;2-solution-3-steps-to-fix-completely&quot;&gt;2. Solution (3 Steps to Fix Completely)&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;step-1-disable-i2c-controller-power-management&quot;&gt;Step 1: Disable I2C Controller Power Management&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Press &lt;code&gt;Win + X&lt;&#x2F;code&gt; and select &lt;strong&gt;Device Manager&lt;&#x2F;strong&gt;.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;Expand &lt;strong&gt;System devices&lt;&#x2F;strong&gt; and locate:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Intel(R) Serial IO I2C Host Controller - E450&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Intel(R) Serial IO I2C Host Controller - E451&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;Double-click each controller to open its &lt;strong&gt;Properties&lt;&#x2F;strong&gt; → switch to the &lt;strong&gt;Power Management&lt;&#x2F;strong&gt; tab.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Uncheck&lt;&#x2F;strong&gt;: &lt;code&gt;Allow the computer to turn off this device to save power&lt;&#x2F;code&gt;, then click &lt;strong&gt;OK&lt;&#x2F;strong&gt; to save.&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;step-2-disable-intel-gpu-panel-self-refresh-psr&quot;&gt;Step 2: Disable Intel GPU “Panel Self Refresh (PSR)”&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Open &lt;strong&gt;Intel Graphics Software&lt;&#x2F;strong&gt; (or Intel Graphics Command Center).&lt;&#x2F;li&gt;
+&lt;li&gt;Click &lt;strong&gt;Display&lt;&#x2F;strong&gt; in the left navigation sidebar.&lt;&#x2F;li&gt;
+&lt;li&gt;Scroll down to the &lt;strong&gt;Power&lt;&#x2F;strong&gt; &#x2F; &lt;strong&gt;Energy Saving&lt;&#x2F;strong&gt; section.&lt;&#x2F;li&gt;
+&lt;li&gt;Toggle &lt;strong&gt;Panel Self Refresh (PSR)&lt;&#x2F;strong&gt; to &lt;strong&gt;Off&lt;&#x2F;strong&gt;.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;step-3-mandatory-restart-the-computer&quot;&gt;Step 3: [Mandatory] Restart the Computer&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Required Action&lt;&#x2F;strong&gt;: After modifying both settings above, you &lt;strong&gt;must reboot the system&lt;&#x2F;strong&gt; (&lt;code&gt;Start menu&lt;&#x2F;code&gt; → &lt;code&gt;Restart&lt;&#x2F;code&gt;).&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Mechanism&lt;&#x2F;strong&gt;: The I2C host controller is a motherboard system bus device. Its runtime power management policy is loaded during initial system boot and &lt;strong&gt;cannot be hot-reloaded dynamically from Device Manager&lt;&#x2F;strong&gt;. Without a full restart, the previous power policy remains resident in memory.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;3-verification-battery-trade-off&quot;&gt;3. Verification &amp;amp; Battery Trade-off&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Observed Result (Verified)&lt;&#x2F;strong&gt;: After unplugging the power cable, touchpad tracking feels identical to AC plugged-in operation—stuttering and teleportation are completely eliminated.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Battery Trade-off (⚠️ Theoretical estimate; unverified by full-discharge benchmarks)&lt;&#x2F;strong&gt;: Disabling PSR keeps the GPU display engine and eDP link transmitting frames continuously. Based on typical Intel mobile power models, disabling PSR reduces battery life by an estimated &lt;strong&gt;5%–10%&lt;&#x2F;strong&gt; during static workloads (e.g., pure typing or reading—shifting roughly a 10-hour battery life to 9–9.5 hours), which remains well within acceptable limits.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-common-pitfalls-why-intuitive-fixes-fail&quot;&gt;4. Common Pitfalls (Why Intuitive Fixes Fail)&lt;&#x2F;h2&gt;
+&lt;p&gt;When encountering touchpad lag, developers frequently try adjusting sensitivity or killing background tasks, but these standard remedies do not solve this issue:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;Pitfall 1: Adjusting pointer speed or enabling “Enhance pointer precision”&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Why it fails&lt;&#x2F;strong&gt;: The freeze stems from hardware link dormancy and wake handshakes, not insufficient DPI sampling. Increasing pointer speed merely amplifies the jump distance when the cursor catches up.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;Pitfall 2: Hunting background tasks or killing startup programs&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Why it fails&lt;&#x2F;strong&gt;: Typing remains perfectly responsive, proving that CPU scheduling and the DWM compositor are not bottlenecked. The bottleneck resides exclusively on specific bus and display pipelines.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;Pitfall 3: Disabling “Display Power Saving Technology (DPST)”&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Why it fails&lt;&#x2F;strong&gt;: DPST adjusts backlight PWM brightness dynamically based on image content (causing brightness shifts), without disrupting frame transmission timing. The feature responsible for putting the display engine to sleep is &lt;strong&gt;PSR (Panel Self Refresh)&lt;&#x2F;strong&gt;.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;Pitfall 4: Modifying Device Manager settings without restarting&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Why it fails&lt;&#x2F;strong&gt;: Testing immediately after toggling settings without rebooting will still produce stutters, leading users to falsely assume the fix did not work. The bus driver’s power policy only updates upon a reboot.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;5-deep-dive-root-causes-explained&quot;&gt;5. Deep Dive: Root Causes Explained&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;5-1-why-does-typing-stay-smooth-while-the-touchpad-sleeps&quot;&gt;5.1 Why Does Typing Stay Smooth While the Touchpad Sleeps?&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Root Cause&lt;&#x2F;strong&gt;: The keyboard and touchpad operate on physically isolated power domains. To maximize battery endurance, Windows enforces strict “device-level autonomy”—active keyboard usage does not signal the I2C bus to stay awake. If the touchpad stays idle for roughly one second, its bus cuts power. Using it again triggers a hardware wake handshake, creating a perceptible freeze on the first stroke.&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Keyboard Path (Always Active)&lt;&#x2F;strong&gt;: Keyboard (continuous typing) → EC (Embedded Controller) → Permanent power rail (&lt;code&gt;D0&lt;&#x2F;code&gt;) → &lt;strong&gt;Completely smooth&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Isolation Boundary&lt;&#x2F;strong&gt;: ⚡ &lt;strong&gt;Physical Power Domain Isolation&lt;&#x2F;strong&gt; (OS does not broadcast activity across separate buses; idle devices sleep autonomously)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Touchpad Path (Independent Sleep)&lt;&#x2F;strong&gt;: Touchpad (idle for ~1s) → I2C Host Controller → Cuts power (&lt;code&gt;D3&lt;&#x2F;code&gt;) → &lt;strong&gt;Next touch requires wake handshake (Stutter &amp;amp; Teleport)&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Hardware Detail&lt;&#x2F;strong&gt;: The touchpad communicates over &lt;code&gt;Intel Serial IO I2C Host Controller - E451&lt;&#x2F;code&gt;. Keeping each peripheral independent is an intentional operating system design trade-off to maximize battery benchmark scores.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;5-2-dual-layer-hardware-latency-resonance&quot;&gt;5.2 Dual-Layer Hardware Latency Resonance&lt;&#x2F;h3&gt;
+&lt;p&gt;Under battery power, two separate aggressive power-saving mechanisms engage simultaneously, compounding the perceived delay:&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;layer-1-i2c-bus-selective-suspend-100-300ms-typical-wake-handshake&quot;&gt;Layer 1: I2C Bus Selective Suspend (~100–300ms typical wake handshake)&lt;&#x2F;h4&gt;
+&lt;p&gt;Windows defaults to enabling runtime power management on the I2C Host Controller. When touchpad input ceases for 0.5–1 second, the controller transitions from active state &lt;code&gt;D0&lt;&#x2F;code&gt; to low-power state &lt;code&gt;D3hot&lt;&#x2F;code&gt;. When a finger touches down, the bus powers up, resynchronizes clocks, and completes handshake renegotiation with the touchpad controller, which typically consumes &lt;strong&gt;100–300ms&lt;&#x2F;strong&gt; per bus specifications. Coordinates gathered during this window accumulate in local FIFO buffers and are flushed in a sudden burst once the link is re-established, causing the cursor to jump.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;layer-2-intel-gpu-panel-self-refresh-200-400ms-typical-link-wake-latency&quot;&gt;Layer 2: Intel GPU Panel Self Refresh (~200–400ms typical link wake latency)&lt;&#x2F;h4&gt;
+&lt;p&gt;When the screen is static, the Intel iGPU display engine sleeps, instructing the eDP panel to refresh autonomously from its embedded frame buffer. When the cursor starts moving, the GPU detects frame changes, restarts its display clocks, and re-engages the eDP link, which typically requires &lt;strong&gt;200–400ms&lt;&#x2F;strong&gt; per eDP specifications. Even if I2C coordinates have reached the OS input stack, display pixels remain temporarily frozen, amplifying the delay into severe visual stutter.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

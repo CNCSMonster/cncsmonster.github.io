@@ -1,0 +1,115 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Read in English" class=lang-link href=https://cncsmonster.github.io/en/>EN</a></div></div></nav></header><main class=site-main><section class=hero><h1>欢迎来到 CCM 的个人主页</h1><p class=hero-subtitle>开发者 · 开源爱好者 · 终身学习者</section><section class=modules-grid><div class="module-card blog-module"><div class=module-icon>✍️</div><h2><a href=https://cncsmonster.github.io/posts/>博客文章</a></h2><p>技术文章、教程，以及我的学习记录<ul class=module-links><li><a href=https://cncsmonster.github.io/posts/windows-touchpad-stutter-fix/>Windows 触摸板卡顿与瞬移排查</a><li><a href=https://cncsmonster.github.io/posts/wsl2-low-latency-tuning-guide/>WSL2 低延迟调优指南</a><li><a href=https://cncsmonster.github.io/posts/qwen-code-auto-mode-deep-dive/>Qwen Code Auto Mode 深度分析</a><li><a href=https://cncsmonster.github.io/posts/pyo3-usage-and-pitfalls/>PyO3 用法与踩坑</a><li><a href=https://cncsmonster.github.io/posts/ppt-master-skill-internals/>PPT Master Skill 深度调研：从 SVG 中转、网页可视化批注到原生可编辑 PPTX</a></ul><a class=view-all href=https://cncsmonster.github.io/posts/>查看全部文章 →</a></div><div class="module-card ebooks-module"><div class=module-icon>📚</div><h2><a href=https://cncsmonster.github.io/ebooks/>电子书</a></h2><p>我的 mdBook 技术电子书——系统性学习笔记<ul class=module-links><li><a href=https://cncsmonster.github.io/ebooks/learn-claude-code-notes/>Learn Claude Code Notes - Claude Code 学习笔记</a><li><a href=https://cncsmonster.github.io/ebooks/rust-patterns-notes/>Rust Patterns Notes - Rust 设计模式电子书</a></ul><a class=view-all href=https://cncsmonster.github.io/ebooks/>查看全部电子书 →</a></div><div class="module-card projects-module"><div class=module-icon>🚀</div><h2><a href=https://cncsmonster.github.io/open-source/>开源项目</a></h2><p>我的开源项目与贡献<ul class=module-links><li><a href=https://cncsmonster.github.io/open-source/dotfiles/>Dotfiles - 笔者的开发环境配置</a><li><a href=https://cncsmonster.github.io/open-source/xdotter/>xdotter - 轻量级点文件管理器</a><li><a href=https://cncsmonster.github.io/open-source/gen-mdbook-summary/>gen-mdbook-summary - mdBook 目录生成工具</a><li><a href=https://cncsmonster.github.io/open-source/gsudo/>gsudo — AI Agent 图形化提权前端</a><li><a href=https://cncsmonster.github.io/open-source/qwen-code-clipboard-fix/>Qwen Code PR #4647：修复 Linux/WSL2 剪贴板图片粘贴</a></ul><a class=view-all href=https://cncsmonster.github.io/open-source/>查看全部项目 →</a></div></section></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">搜索加载中...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">未找到相关结果</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>
