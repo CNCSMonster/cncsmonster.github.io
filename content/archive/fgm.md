@@ -2,7 +2,7 @@
 title = 'FGM - Go 工具链版本管理器（已归档）'
 date = 2024-09-21T23:35:50+08:00
 tags = ['Go', 'Rust', '工具链', '开源项目']
-weight = 1
+aliases = ["/posts/shi-yong-fgmguan-li-goban-ben/", "/posts/使用fgm管理Go版本/"]
 +++
 
 > ⚠️ **注意：这个项目已归档**

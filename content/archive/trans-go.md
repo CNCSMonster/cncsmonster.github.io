@@ -2,7 +2,7 @@
 title = 'Trans-Go - 命令行英文翻译工具（已归档）'
 date = 2024-12-14T23:27:01+08:00
 tags = ['Go', 'LLM', '翻译', '命令行工具']
-weight = 2
+aliases = ["/posts/ji-yu-llm-de-ming-ling-xing-ying-wen-fan-yi-gong-ju-trans-go/", "/posts/基于 llm 的命令行英文翻译工具 trans-go/"]
 +++
 
 > ⚠️ **注意：这个项目已归档**

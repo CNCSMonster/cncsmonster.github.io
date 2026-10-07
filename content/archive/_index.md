@@ -1,6 +1,6 @@
 +++
 title = "Archived Posts"
-sort_by = "weight"
+sort_by = "date"
 template = "archive.html"
 page_template = "page.html"
 paginate_reversed = true

@@ -2,7 +2,7 @@
 title = "Qwen Code Auto Mode Classifier: Two-Stage LLM Approval Mechanism"
 date = 2026-07-29T00:00:00+08:00
 slug = "qwen-code-auto-mode-classifier-en"
-weight = 20
+aliases = ["/en/posts/qwen-code-auto-mode-classifier-en/"]
 [taxonomies]
     tags = ["Qwen Code", "AI Agent", "LLM", "Security", "Coding Assistant"]
 +++

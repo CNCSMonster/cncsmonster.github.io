@@ -151,21 +151,53 @@ Project description...
 
 ### Archive Outdated Content
 
-Move old posts to `content/archive/` when they become outdated:
+When a post becomes outdated (project discontinued, replaced by a better approach), **archive it instead of deleting it** — old bookmarks must keep working. Four steps:
 
-```markdown
-+++
-title = 'Old Post'
-date = 2024-01-01T00:00:00+08:00
-tags = ['deprecated']
-archived = true
-+++
+1. **Move both language versions** out of the post list:
 
-> ⚠️ This content is archived and may no longer be accurate.
-> See [alternative] for current approaches.
+   ```bash
+   git mv content/posts/<file>.md content/archive/
+   git mv content/posts/<file>.en.md content/archive/   # if it exists
+   ```
 
-Original content...
-```
+2. **Front matter** — add `aliases` (no `weight` needed: the archive list sorts by `date`, which every post has — a page missing `date` is not built at all, and CI treats that warning as a failure):
+
+   ```toml
+   +++
+   title = "Old Post"
+   date = 2024-01-01T00:00:00+08:00
+   aliases = ["/posts/<old-slug>/"]   # zh page; the .en.md uses "/en/posts/<old-slug>/"
+   +++
+   ```
+
+   The alias generates a redirect page at the old URL, so existing bookmarks land on the archive page (the URL hash is preserved). Where to find the old slug:
+
+   - the `slug` front-matter field of the post, or
+   - the directory name under `public/posts/` from the old build, or
+   - build the filename in a scratch Zola site — Chinese filenames become pinyin (e.g. `使用fgm管理Go版本` → `shi-yong-fgmguan-li-goban-ben`); posts published before the 2026-04 Hugo→Zola migration may instead use percent-encoded Unicode.
+
+   > An archived slug + alias is **permanently reserved** — never reuse it for a new post. Zola fails the build on path collisions, so CI catches the mistake (rename the new post).
+
+3. **Archive banner** at the top of the body (bilingual): why it is archived + what replaces it + confirmation the link still works:
+
+   ```markdown
+   > ⚠️ **注意：这篇文章已归档**
+   >
+   > `<project>` 已停止维护，本方案已被 **`<replacement>`** 取代。
+   > 本文仅供历史参考，请勿再按文中方式使用。
+   ```
+
+4. **Verify**:
+
+   ```bash
+   bash tools/check-pairs.sh   # both language versions moved together (CI runs this too)
+   zola build                  # 0 errors; CI fails the deploy on ANY warning
+   # public/posts/<old-slug>/index.html exists (redirect to /archive/...)
+   # public/archive/<slug>/index.html contains the archive banner
+   # post gone from public/posts/index.html, listed in public/archive/index.html
+   ```
+
+> Do **not** add a fictional `archived = true` front-matter field — no template reads it. Visibility is controlled purely by directory (`posts/` vs `archive/`) plus the banner.
 
 ## Configuration
 

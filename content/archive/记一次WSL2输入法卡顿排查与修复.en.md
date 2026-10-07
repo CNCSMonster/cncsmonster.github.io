@@ -1,6 +1,7 @@
 +++
 title = "How I Fixed WSL2 Input Method Lag — A Debugging Story"
 date = 2026-05-15T00:00:00+08:00
+aliases = ["/en/posts/ji-yi-ci-wsl2shu-ru-fa-qia-dun-pai-cha-yu-xiu-fu/"]
 [taxonomies]
     tags = ["WSL2", "IME", "Lag", "Troubleshooting", "swap", "swappiness", "排查"]
 +++

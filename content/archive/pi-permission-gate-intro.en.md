@@ -2,9 +2,16 @@
 title = "Add a Security Gate to Your Pi Coding Agent: pi-permission-gate"
 date = 2026-05-30T00:00:00+08:00
 slug = "pi-permission-gate-security-extension"
+aliases = ["/en/posts/pi-permission-gate-security-extension/"]
 [taxonomies]
     tags = ["Pi", "Extension", "Security", "Code Agent"]
 +++
+
+> ⚠️ **Note: This post has been archived**
+>
+> The `pi-permission-gate` project is no longer maintained. This approach has been superseded by the more advanced **pi-approval-mode extension** (auto mode with an AI classifier, now a private project). The post is kept in the archive for historical reference only — **do not follow the installation steps below**.
+>
+> If you bookmarked this page: the link still works, but the content is no longer updated.
 
 > Worried about accidentally deleting files or leaking API keys while using Pi? Try `pi-permission-gate` — a rule-based permission interceptor that asks before sensitive operations and blocks dangerous commands automatically.
 

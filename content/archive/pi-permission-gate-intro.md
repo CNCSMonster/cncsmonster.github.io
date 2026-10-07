@@ -2,9 +2,16 @@
 title = "给 Pi 编码代理加一道安全门：pi-permission-gate"
 date = 2026-05-30T00:00:00+08:00
 slug = "pi-permission-gate-security-extension"
+aliases = ["/posts/pi-permission-gate-security-extension/"]
 [taxonomies]
     tags = ["Pi", "Extension", "Security", "Code Agent"]
 +++
+
+> ⚠️ **注意：这篇文章已归档**
+>
+> `pi-permission-gate` 项目已停止维护，本方案已被更先进的 **pi-approval-mode 扩展**（Auto 模式 + AI 分类器审批，现为私有项目）取代。本文保留在归档区仅供历史参考，**请勿再按文中的安装方式使用**。
+>
+> 如果你收藏了本文：链接仍然有效，内容不再更新。
 
 > 如果你用 Pi 写代码时担心误删文件、泄露密钥，试试 `pi-permission-gate` —— 一个基于规则的权限拦截扩展，敏感操作先确认，危险命令自动拒。
 
