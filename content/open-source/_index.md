@@ -3,6 +3,11 @@ title = "Open Source Activities"
 sort_by = "weight"
 template = "section.html"
 page_template = "page.html"
+
+# weight 约定：按发布时间升序编号，越晚发布越重（留空档便于插队）。
+# 展示层倒序（extra.reverse_order → templates/），最重=最新出现在顶部。
+[extra]
+reverse_order = true
 +++
 
 My open source projects and contributions.

@@ -24,8 +24,13 @@
     </div>
 
     {# Posts list #}
+    {# weight 升序（轻在前）；设了 extra.reverse_order 的 section 倒序展示，最新（最重）在顶部 #}
+    {% set pages = section.pages %}
+    {% if section.extra.reverse_order %}
+    {% set pages = section.pages | reverse %}
+    {% endif %}
     <div class="posts-list">
-        {% for page in section.pages %}
+        {% for page in pages %}
         <article class="post-card" data-tags="{% if page.taxonomies.tags %}{% for tag in page.taxonomies.tags %}{{ tag | slugify }}{% if not loop.last %} {% endif %}{% endfor %}{% endif %}">
             <div class="post-card-content">
                 <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
