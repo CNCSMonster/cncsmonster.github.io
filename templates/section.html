@@ -35,7 +35,13 @@
             <div class="post-card-content">
                 <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
                 <div class="post-card-meta">
+                    {% if page.updated %}
+                    <time datetime="{{ page.updated }}" title="创建于 {{ page.date | date(format="%Y-%m-%d") }}">
+                        {% if page.lang == "en" %}Updated {{ page.updated | date(format="%Y-%m-%d") }}{% else %}更新于 {{ page.updated | date(format="%Y-%m-%d") }}{% endif %}
+                    </time>
+                    {% else %}
                     <time datetime="{{ page.date }}">{{ page.date | date(format="%Y-%m-%d") }}</time>
+                    {% endif %}
                 </div>
                 {% if page.summary %}
                 <p class="post-summary">{{ page.summary }}</p>

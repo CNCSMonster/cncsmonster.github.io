@@ -1,6 +1,6 @@
 +++
 title = "Blog Posts"
-sort_by = "date"
+sort_by = "update_date"
 template = "section.html"
 page_template = "page.html"
 paginate_reversed = true
