@@ -1,19 +1,20 @@
 +++
-title = 'Pi Session Branch Summary Localization Design and Extension Implementation'
+title = 'Pi Session Summary Localization: Design and Extension Implementation'
 date = 2026-10-12T02:22:55+08:00
+updated = 2026-10-17T00:00:00+08:00
 tags = ['Pi', 'Agent', 'Localization', 'Extension Development']
 weight = 10
 +++
 
 ## 1. What This Article Covers
 
-An analysis of why Pi Coding Agent generates English summaries when switching conversation tree branches (via `/tree` backtracking), and the design and implementation of a global Chinese summary replacement based on the official `session_before_tree` extension lifecycle event.
+Pi writes **two kinds** of structured summary into a session, and both templates are hard-coded in English in the core: the **branch summary** written when you backtrack with `/tree`, and the **compaction summary** written when a long session is compacted. The result is English headings showing up inside a Chinese conversation.
+
+This article takes both paths apart and gives a localization approach for each: the branch summary goes through **instruction replacement** (swap the prompt, nothing else), while the compaction summary goes through **takeover** (the core offers no "swap the words" slot, so the extension must call the model itself and hand back a finished summary).
 
 ## 2. Background and Observed Behavior
 
-In Chinese-language technical research and documentation sessions, when the user switches and backtracks a conversation branch with `/tree`, Pi inserts a `<summary>` node into the conversation history as a compressed-context memory.
-
-Even though the entire conversation is in Chinese, the auto-generated summary is still forced into an English structure with English headings:
+**Case one: branch backtracking.** In Chinese-language technical research and documentation sessions, when the user switches and backtracks a branch with `/tree`, Pi inserts a `<summary>` node into the conversation history as context memory. Although the whole conversation is in Chinese, the summary is still forced into an English structure:
 
 ```markdown
 <summary>
@@ -28,15 +29,23 @@ Summary of that exploration:
 ...
 ```
 
-While logically accurate, the native English summary creates a reading barrier in a Chinese context. A fully Chinese structured prompt aims to provide a zero-friction reading experience and preserve information-retrieval efficiency during technical retrospectives.
+**Case two: context compaction.** In a long session, once the context approaches the window limit (or on a manual `/compact`), Pi folds the earlier history into a checkpoint summary, after which only "system prompt + summary + recent messages" are carried forward. That summary has an English skeleton too:
+
+```markdown
+## Goal
+## Constraints & Preferences
+## Critical Context
+```
+
+Both kinds appear in the same Chinese conversation, reading as continuous mixed Chinese-English text. The native English summaries are logically sound; they simply add a reading barrier in a Chinese-language context.
 
 ## 3. Source-Code Probing
 
-Pi is a fully open-source project (official repo: [earendil-works/pi](https://github.com/earendil-works/pi)). Reviewing its core source reveals the underlying mechanism of branch-summary generation:
+Pi is a fully open-source project (official repo: [earendil-works/pi](https://github.com/earendil-works/pi)). The line numbers below were measured against the locally installed v1.0.4 `dist/`.
 
-### 3.1 Hard-Coded Default Prompt
+### 3.1 Branch Backtracking: Hard-Coded Default Prompt
 
-In the core module `packages/coding-agent/src/core/compaction/branch-summarization.ts:258`, Pi defines a constant template `BRANCH_SUMMARY_PROMPT`:
+The branch summary template is the core constant `BRANCH_SUMMARY_PROMPT` (`dist/core/compaction/branch-summarization.js`):
 
 ```typescript
 const BRANCH_SUMMARY_PROMPT = `Create a structured summary of this conversation branch for context when returning later.
@@ -69,11 +78,11 @@ Use this EXACT format:
 Keep each section concise. Preserve exact file paths, function names, and error messages.`;
 ```
 
-Regardless of the system locale or the user's interaction language, the system always assembles its prompt from this English template before sending it to the summary model.
+Independent of the system locale and the user's interaction language, the core assembles its prompt from this English template by default.
 
-### 3.2 Official Extension Hook and Event Sequence
+### 3.2 Branch Backtracking: Interception Path and Sequence
 
-After the branch switch is confirmed and before the summary-model call is dispatched, the Pi core broadcasts a lifecycle event to the extension layer via its event bus. The overall collaboration sequence is:
+After the branch switch is confirmed and before the summary-model call is dispatched, the core broadcasts a lifecycle event to the extension layer over its event bus:
 
 <div align="center" style="margin: 20px 0;">
 <svg viewBox="0 0 800 400" width="100%" height="auto" style="max-width: 800px; font-family: system-ui, -apple-system, sans-serif; background: transparent; border-radius: 8px; border: 1px solid rgba(128,128,128,0.25);" xmlns="http://www.w3.org/2000/svg">
@@ -114,51 +123,127 @@ After the branch switch is confirmed and before the summary-model call is dispat
 </svg>
 </div>
 
+### 3.3 Context Compaction: Triggers and One Hard-Coded English Template
+
+- **Triggers** (`dist/core/agent-session.js`): manual `/compact` (`reason="manual"`, :2221), context reaching the threshold (`"threshold"`, :2512), and other automatic paths.
+- **Templates** (`dist/core/compaction/compaction.js`): the main `SUMMARIZATION_PROMPT` (:379) demanding "Use this EXACT format"; plus `UPDATE_SUMMARIZATION_PROMPT` (:447) for incremental updates and `TURN_PREFIX_SUMMARIZATION_PROMPT` (:663) for split prefixes.
+
+In other words, whether a compaction summary comes out in English or Chinese has nothing to do with the conversation language — only with the core template.
+
+### 3.4 The Key Difference: One Path Has a "Swap the Words" Slot, the Other Does Not
+
+| Dimension | Branch backtracking (`session_before_tree`) | Context compaction (`session_before_compact`) |
+|---|---|---|
+| Result contract | `SessionBeforeTreeResult`: accepts `customInstructions` + `replaceInstructions` | `SessionBeforeCompactResult`: only `cancel` and `compaction` |
+| Semantics | **Swap-the-words slot**: the core runs its own pipeline, you only replace the prompt | **Hand-in-a-finished-product slot**: either abort, or hand the whole summary to the core |
+| Minimum extension duty | Supply a Chinese prompt | Call the model yourself and fill in the contract fields |
+
+(Line numbers: `dist/core/extensions/types.d.ts:1102` for the compact result, `:1106-1116` for the tree result.)
+
+In one sentence: **a branch summary can "just swap the words"; a compaction summary can only "compute it yourself and hand in the paper."**
+
+### 3.5 Failure Means Fallback: Degrade, Do Not Corrupt
+
+The core consumes `result?.compaction` (`agent-session.js:2201`); when it is empty, `_runDefaultCompaction` (:2140) runs the English default. If an extension handler throws, the event bus catches it, reports it, and leaves the result undefined — the same fallback. In short: **when in doubt, let the core finish in English.** The session never breaks or stalls; the only cost is that this one summary is not Chinese.
+
 ## 4. Design Choices
 
-Three technical approaches were considered for the localization requirement:
+### 4.1 Branch Summary: Three Routes
 
 | Approach | Mechanism | Pros | Cons | Verdict |
-|----------|-----------|------|------|:-------:|
-| **A. Source patch** | Patch the globally-installed npm package directly | Most thorough; no plugin-system dependency | Modifies core source; breaks on host upgrade | ❌ Rejected |
-| **B. Extension-provided summary** | Extension intercepts and calls an external model to summarize | Maximum flexibility | Adds extra model-config burden; bypasses built-in token budget and streaming control | ❌ Rejected |
-| **C. Full instruction replacement (this approach)** | Use `session_before_tree` to inject `replaceInstructions: true`, making the core fully override the built-in English template with a Chinese prompt | Reuses all of Pi core's retry, budget-truncation, and authenticated-model-call capabilities; relies only on the public event contract, so host upgrades are unlikely to break it | Only works on Pi versions that support the relevant event | ✅ Adopted |
+|------|------|------|------|:----:|
+| **A. Source patch** | Patch the installed npm package directly | Most thorough; no dependency on the plugin system | Rewrites core source; breaks on host upgrade | ❌ Rejected |
+| **B. Extension-provided summary** | Extension intercepts and calls a model itself | Maximum flexibility | Extra model configuration burden; bypasses the core's token budget and streaming control | ❌ Rejected |
+| **C. Full instruction replacement (this approach)** | Inject `replaceInstructions: true` via `session_before_tree`, so the core fully replaces the English template with a Chinese prompt | Reuses the core's retry, budget truncation, and authenticated model calls | Only works on Pi versions supporting that event | ✅ Adopted |
+
+### 4.2 Compaction: No Swap Slot, Only Takeover
+
+The same three-route analysis collapses into one for compaction:
+
+- Source patch: rejected, same reason as above;
+- **Takeover**: formally the same as route B, but this time it is not "most flexible, therefore best" — it is the **only path that does not patch the core**. The official `docs/compaction.md` documents the `return { compaction: {...} }` usage, and `examples/extensions/custom-compaction.ts` is a complete reference implementation.
+
+The cost moves with the responsibility: the core no longer covers for you, so the contract fields (`firstKeptEntryId`, `tokensBefore`, `usage`, file lists) and failure degradation are all yours. Sections 5.3–5.6 exist because of that cost.
 
 ## 5. Core Contract and Engineering Delivery
 
-### 5.1 Minimal Extension Contract
+### 5.1 Branch Summary: Minimal Extension Contract
 
-Under approach C, the extension's responsibility is strictly limited to **intercepting and replacing the instructions when the event fires** — it never touches the underlying model inference or network communication.
-
-The core contract only needs to return a control tuple at the `session_before_tree` stage:
+The extension's only job is to **intercept and replace the instructions when the event fires**; it never touches model inference or networking:
 
 ```typescript
 pi.on("session_before_tree", async () => {
     return {
-        replaceInstructions: true,                     // required: declare full override of the default English template
+        replaceInstructions: true,                     // required: declare a full override of the default English template
         customInstructions: CHINESE_BRANCH_SUMMARY_PROMPT // inject the equivalent Chinese template
     };
 });
 ```
 
+> **Note**: `replaceInstructions: true` must be set explicitly; otherwise the core appends the Chinese prompt after the English template and produces mixed-language output.
+
 ### 5.2 Prompt Structure Design
 
-The Chinese prompt uses a **1:1 isomorphic translation** of Pi's native template to preserve the logical density and reading experience of the summary.
+The Chinese prompt is **1:1 isomorphic** with the core template — same skeleton, different language: it keeps the five sections (`## 目标`, `## 约束与偏好`, `## 进展`, `## 关键决策`, `## 下一步`) and the second-level heading structure. The consumer is an LLM, so structural fidelity is what preserves recovery quality; the visible result is all-Chinese.
 
-**Design requirements**:
+### 5.3 Compaction: The Four Steps of Takeover
 
-- **Same skeleton**: retain the five sections — `## 目标` (Goal), `## 约束与偏好` (Constraints & Preferences), `## 进展` (Progress), `## 关键决策` (Key Decisions), `## 下一步` (Next Steps);
-- **Consistent hierarchy**: keep the second-level heading structure, leveraging Markdown's collapsible behavior to improve readability.
+```typescript
+pi.on("session_before_compact", async (event, ctx) => {
+  // 1) Guard: missing preparation contract fields → notify + hand back to the English default
+  // 2) Gather: messagesToSummarize + turnPrefixMessages (split) covered in one pass
+  // 3) Generate: serialize with convertToLlm + serializeConversation → Chinese template → model
+  // 4) Submit: { compaction: { summary, firstKeptEntryId, tokensBefore, usage, details } }
+});
+```
 
-### 5.3 Implementation
+Two things **must reuse the core rather than be reinvented**:
 
-The full implementation is available in the open-source repository:
+- Serialization goes through the package exports `convertToLlm` + `serializeConversation`, keeping the same truncation behavior as the core;
+- `firstKeptEntryId` and `tokensBefore` come straight from `preparation` — never compute them yourself.
 
-- Repo: [CNCSMonster/pi-chinese-branch-summary](https://github.com/CNCSMonster/pi-chinese-branch-summary)
+### 5.4 Split Turn: Takeover Must Cover Both Input Blocks
 
-## 6. Architectural Takeaway: Replace the Instructions, Not the Engine
+`findCutPoint` picks the cut point by accumulating `keepRecentTokens` (20k by default) from newest to oldest, and never cuts inside a tool result. When the cut lands inside a turn, the discarded content comes in two blocks: `messagesToSummarize` (earlier history) and `turnPrefixMessages` (the partial turn before the cut). The core merges both into a single summary.
 
-The pattern distilled from this approach — "Instruction Replacement over Engine Takeover" — has lasting reusable value:
+If an extension summarizes only the first block, the second is **discarded and absent from the summary — the half-turn's scene silently disappears**. A takeover implementation must therefore cover `[...messagesToSummarize, ...turnPrefixMessages]` in one call (exactly what the official example does). The trade-off: a single call must budget output for both blocks, so on very long spans the summary granularity is slightly coarser.
 
-1. **Minimal invasiveness**: when the host (harness) already has a mature budget manager, retry logic, and network pipeline, extensions should first look for a "prompt/parameter replacement point" rather than a "logic replacement point";
-2. **Forward compatibility**: extensions should depend only on the host's public events and parameter contracts, never touching its internal implementation. As long as the contract remains stable, internal refactors and version upgrades in the host should not require changes in the extension;
+### 5.5 Accounting and File Lists: Omissions Fail Silently
+
+- **`usage` must be filled in**: the session totals only read the entry field (`dist/core/usage-totals.js:58` reads `entry.usage` for `compaction` entries); there is no side channel for accounting. Omitting it makes that spend vanish — with no error.
+- **File lists must be maintained by the extension**: for `fromHook` summaries, the core does not automatically attach the `<read-files>/<modified-files>` block, so skipping it breaks the cumulative chain across compactions. The implementation therefore replicates `computeFileLists` / `formatFileOperations` against the core's `FileOperations{read,written,edited}` semantics.
+
+### 5.6 Failure Philosophy and the Fallback Matrix
+
+The rule: **when anything is uncertain → notify + hand back to the core's English default**.
+
+| Condition | Handling |
+|---|---|
+| Split turn | No longer falls back (§5.4 single-pass coverage) |
+| Empty summary / model call error / aborted signal | Notify + fall back |
+| Contract field drift (Pi upgrade) | Guard probe + notify + fall back |
+| Handler throws an unknown error | Event bus catches → falls back |
+| Normal takeover | One info notification (message count / tokensBefore / split or not) |
+
+Every fallback emits a warning notification; there is no silent fallback — otherwise you would believe you are reading Chinese while it has been English all along.
+
+### 5.7 Implementation and Tests
+
+- Branch backtracking: `extensions/chinese-branch-summary.ts`
+- Context compaction: `extensions/chinese-compaction.ts`
+- Tests: `node --test --experimental-strip-types tests/*.test.ts`, 10/10 green (covering full split coverage, merging `/compact` instructions, and the failure/fallback family)
+- Repository: [CNCSMonster/pi-chinese-branch-summary](https://github.com/CNCSMonster/pi-chinese-branch-summary)
+
+## 6. Architectural Takeaways
+
+**One — the two modes are decided by the host contract's "slot type."** It is not a question of which mode is better, but of which slot the host offers: with a swap slot you only swap the words — less work, forward-compatible, the core keeps covering for you; with only a finished-product slot you must take over — more freedom, but contract fidelity and failure degradation are entirely yours.
+
+**Two — there is only one criterion: depend on public event contracts, never on core internals.** As long as the contract holds, the core can be refactored freely; when the contract changes, the guard probe falls back visibly instead of failing silently.
+
+**Three — the classic takeover mistake is to rewrite the core's work on the side.** Serialization, token budgets, file lists, usage semantics — the core already defines each of them; reusing them is more faithful than reinventing them.
+
+## 7. Evidence Notes
+
+Verified against v1.0.4 in this round: `compaction.js:379/447/663`, `types.d.ts:1102/1106-1116`, `agent-session.js:2140/2201/2221/2512`, `usage-totals.js:58`, plus 10/10 tests passing.
+
+Not re-verified line by line; carried over from earlier records: the branch-summary template line number (recorded as `branch-summarization.ts:258` back on v0.48.x, not re-verified on 1.0.4), the third trigger path `overflow`, and the event bus's try/catch details for handler errors.
