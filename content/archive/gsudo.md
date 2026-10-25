@@ -1,11 +1,28 @@
 +++
-title = 'gsudo — AI Agent 图形化提权前端'
+title = 'gsudo — AI Agent 图形化提权前端（已归档）'
 date = 2026-05-11T00:00:00+08:00
+updated = 2026-10-25T00:00:00+08:00
 tags = ['Python', 'Tkinter', 'Agent Skill', '开源项目', '跨平台']
-weight = 4
+aliases = ["/open-source/gsudo/"]
 +++
 
-**零依赖、跨平台的 GUI 提权代理，让 AI Coding Agent 在后台安全执行特权命令。**
+> ⚠️ **注意：这个项目已归档**
+>
+> `gsudo` 项目已停止维护与更新。在日常开发机中，同用户 GUI 弹窗提权属于可用性便利层，无法作为防范恶意代码或提示词注入的安全边界（便利层 ≠ 安全边界）。
+>
+> **替代方案**：采用多 Agent 协同架构（将特权任务委派给具有独立沙箱环境、且配置为“总是询问”的专用特权 Worker Agent），或由 Agent 呈报命令由人类在真实终端手动执行 `sudo`。宿主机不再保留或使用该工具。
+>
+> 如果你收藏了本项目：原链接已自动重定向至此归档页，内容保留仅供历史设计参考。
+
+**零依赖、跨平台的 GUI 提权代理，解决 AI Coding Agent 在无交互 TTY 环境下响应提权确认的可用性桥梁（历史方案）。**
+
+> ⚠️ **适用边界与安全声明（便利层不是安全边界）**
+>
+> gsudo 的核心定位是解决**“无 TTY 环境下 sudo 无法交互”的可用性问题**，它**属于便利层，不是安全沙箱，也不能替代系统的强隔离**。
+>
+> - **适用场景**：一次性临时 VM、与人类账户彻底隔离的专用沙箱，或明确接受同用户代码执行风险的受信任单用户开发机（Agent 仅处理离线可信任务）。
+> - **不适用场景**：Agent 与人类同用户运行、且会读取网页/Issue/第三方未审核依赖等不可信外部内容。在同用户权限下，若发生提示词注入（Prompt Injection），恶意代码可监听管道或投毒 wrapper，前端 GUI 密码弹窗无法作为抵御提权失守的安全边界。
+> - **更佳实践**：生产开发建议保持 Agent 在普通非特权用户下运行；遇到系统依赖变更时由 Agent 呈报命令、人类在独立终端手动执行 `sudo`，或将 Agent 运行在无持久提权权限的一次性 Docker / DevContainer 容器中。
 
 ## 解决什么问题
 
@@ -70,10 +87,9 @@ sudo apt install python3-tk
 # 安装
 curl -o ~/.local/bin/gsudo https://raw.githubusercontent.com/CNCSMonster/gsudo/main/scripts/gsudo
 chmod +x ~/.local/bin/gsudo
-
-# 作为 Agent Skill 注册
-ln -sf /path/to/gsudo ~/.agents/skills/gsudo
 ```
+
+> ℹ️ **说明**：将 gsudo 作为默认自动触发的 Agent Skill 注册机制已于 2026-10-25 停止推荐并从技能库下线，防止同用户 Agent 拥有隐式提权触发通道。脚本仍可作为命令行工具在受信任/隔离开发环境中按需使用。
 
 ## 验证状态
 

@@ -1,10 +1,19 @@
 +++
-title = "gsudo：给你的 AI Coding Agent 装个图形化 sudo"
+title = "gsudo：给你的 AI Coding Agent 装个图形化 sudo（已归档）"
 date = 2026-05-11T00:00:00+08:00
+updated = 2026-10-25T00:00:00+08:00
 slug = "gsudo-ai-agent-gui-sudo"
+aliases = ["/posts/gsudo-ai-agent-gui-sudo/"]
 [taxonomies]
     tags = ["AI Code CLI", "Agent Skill", "开源项目", "工具", "Open Source", "Tools"]
 +++
+
+> ⚠️ **注意：这篇文章已归档**
+>
+> `gsudo` 项目已停止维护与更新，本方案已被**多 Agent 隔离协作模式（由配置为“总是询问”的独立特权 Worker Agent 执行）或终端手动 sudo** 取代。
+> 本文保留在归档区仅供历史设计参考，**请勿再按文中的安装方式在生产环境使用**。
+>
+> 如果你收藏了本文：原链接已自动重定向至此归档页。
 
 **AI 在终端里写代码时突然要 sudo 权限——然后它就卡住了。而你正在前台干别的事，根本没看见。**
 
@@ -88,3 +97,5 @@ Python + Tkinter 实现，零外部依赖。
 
 - GitHub: [CNCSMonster/gsudo](https://github.com/CNCSMonster/gsudo)
 - Linux 实机测试通过，macOS / Windows 待设备验证
+
+> 2026-10-25 补充：作为 Agent 默认自动提权 Skill 的用法已停用并从技能库下线，本文保留作为图形化提权前端与非交互 TTY 适配的设计参考。

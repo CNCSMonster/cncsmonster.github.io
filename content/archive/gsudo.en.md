@@ -1,11 +1,28 @@
 +++
-title = "gsudo — A GUI Privilege-Escalation Frontend for AI Agents"
+title = "gsudo — A GUI Privilege-Escalation Frontend for AI Agents (Archived)"
 date = 2026-05-11T00:00:00+08:00
+updated = 2026-10-25T00:00:00+08:00
 tags = ["Python", "Tkinter", "Agent Skill", "Open Source", "Cross-Platform"]
-weight = 4
+aliases = ["/en/open-source/gsudo/"]
 +++
 
-**Zero-dependency, cross-platform GUI sudo frontend — lets AI Coding Agents safely execute privileged commands in the background.**
+> ⚠️ **Note: This project has been archived**
+>
+> The `gsudo` project is no longer maintained. On daily developer machines, same-user GUI privilege escalation is a convenience layer, not a security boundary (a convenience layer ≠ a security boundary).
+>
+> **Alternative**: Adopt a multi-agent orchestration pattern (delegating privileged tasks to a dedicated worker agent running inside an isolated sandbox with mandatory "always-ask" approval mode), or have the agent print commands for human execution directly in a trusted terminal. This tool has been retired from production hosts.
+>
+> If you bookmarked this project: the original link automatically redirects to this archive page for historical design reference.
+
+**Zero-dependency, cross-platform GUI sudo frontend — bridging privilege escalation for AI Coding Agents in non-interactive TTY environments (historical project).**
+
+> ⚠️ **Scope & Security Boundary Notice (A Convenience Layer, Not a Security Boundary)**
+>
+> gsudo is designed strictly as a **usability bridge for non-interactive TTY environments where `sudo` prompts cannot be answered**. It is **a convenience layer, not a security sandbox, and does not replace OS-level isolation**.
+>
+> - **Suitable**: Ephemeral VMs, dedicated isolated accounts, or trusted single-user dev machines where the agent processes strictly trusted offline workloads.
+> - **Unsuitable**: Environments where the agent runs under the same OS user account as the human and ingests untrusted inputs (web browsing, GitHub Issues, unverified dependencies). Under same-user execution, prompt injections can spy on pipes or poison wrappers — a GUI password dialog cannot serve as a reliable barrier against root compromise.
+> - **Best Practice**: Keep agents strictly unprivileged on production host machines. Have the agent print required system commands for the human to review and execute manually in a trusted terminal, or isolate the agent inside an ephemeral Docker container / DevContainer.
 
 ## What Problem Does This Solve?
 
@@ -70,10 +87,9 @@ sudo apt install python3-tk
 # Install
 curl -o ~/.local/bin/gsudo https://raw.githubusercontent.com/CNCSMonster/gsudo/main/scripts/gsudo
 chmod +x ~/.local/bin/gsudo
-
-# Register as Agent Skill
-ln -sf /path/to/gsudo ~/.agents/skills/gsudo
 ```
+
+> ℹ️ **Note**: Registering gsudo as a default auto-triggered Agent Skill has been deprecated as of 2026-10-25 to eliminate automated privilege escalation vectors from same-user agents. The script remains available as a standalone CLI utility for manual or isolated sandbox environments.
 
 ## Verification Status
 

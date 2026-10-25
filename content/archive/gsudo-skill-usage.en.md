@@ -1,10 +1,19 @@
 +++
-title = "gsudo: A Graphical sudo Frontend for Your AI Coding Agent"
+title = "gsudo: A Graphical sudo Frontend for Your AI Coding Agent (Archived)"
 date = 2026-05-11T00:00:00+08:00
+updated = 2026-10-25T00:00:00+08:00
 slug = "gsudo-ai-agent-gui-sudo"
+aliases = ["/en/posts/gsudo-ai-agent-gui-sudo/"]
 [taxonomies]
     tags = ["AI Code CLI", "Agent Skill", "Open Source", "Tools", "工具", "开源项目"]
 +++
+
+> ⚠️ **Note: This post has been archived**
+>
+> The `gsudo` project is no longer maintained. This approach has been superseded by a **multi-agent isolation pattern (delegating privileged tasks to an isolated worker agent with mandatory "always-ask" approval mode) or manual terminal sudo**.
+> This post is preserved in the archive for historical design reference only — **do not follow the installation instructions on production environments**.
+>
+> If you bookmarked this page: the original link automatically redirects to this archive page.
 
 **Your AI is writing code in the terminal, suddenly needs sudo privileges — and gets stuck. Meanwhile, you're doing something else in the foreground and don't even notice.**
 
@@ -88,3 +97,5 @@ Built with Python + Tkinter. Zero external dependencies.
 
 - GitHub: [CNCSMonster/gsudo](https://github.com/CNCSMonster/gsudo)
 - Verified on Linux — macOS / Windows pending device testing
+
+> 2026-10-25 Note: Using gsudo as an auto-triggered Agent Skill has been deprecated and removed from the active skill registry. This article is preserved as a design reference for graphical privilege frontends and non-interactive TTY handling.
