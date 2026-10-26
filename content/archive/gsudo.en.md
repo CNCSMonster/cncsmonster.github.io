@@ -2,103 +2,128 @@
 title = "gsudo — A GUI Privilege-Escalation Frontend for AI Agents (Archived)"
 date = 2026-05-11T00:00:00+08:00
 updated = 2026-10-25T00:00:00+08:00
-tags = ["Python", "Tkinter", "Agent Skill", "Open Source", "Cross-Platform"]
 aliases = ["/en/open-source/gsudo/"]
+tags = ["Python", "Tkinter", "Agent Skill", "Open Source", "Cross-Platform"]
 +++
 
 > ⚠️ **Note: This project has been archived**
 >
-> The `gsudo` project is no longer maintained. On daily developer machines, same-user GUI privilege escalation is a convenience layer, not a security boundary (a convenience layer ≠ a security boundary).
+> `gsudo` is no longer maintained. It solved a usability problem — an agent with no tty cannot answer a `sudo` prompt — not a security problem.
 >
-> **Alternative**: Adopt a multi-agent orchestration pattern (delegating privileged tasks to a dedicated worker agent running inside an isolated sandbox with mandatory "always-ask" approval mode), or have the agent print commands for human execution directly in a trusted terminal. This tool has been retired from production hosts.
+> What I do now: privileged commands are run by the human in a real terminal, or delegated to a dedicated worker inside an isolated environment with Always-Ask approval. The tool is no longer installed on my daily machine.
 >
-> If you bookmarked this project: the original link automatically redirects to this archive page for historical design reference.
+> If you bookmarked this article: the old link redirects here; the content is kept for historical reference.
 
-**Zero-dependency, cross-platform GUI sudo frontend — bridging privilege escalation for AI Coding Agents in non-interactive TTY environments (historical project).**
+## In One Sentence
 
-> ⚠️ **Scope & Security Boundary Notice (A Convenience Layer, Not a Security Boundary)**
->
-> gsudo is designed strictly as a **usability bridge for non-interactive TTY environments where `sudo` prompts cannot be answered**. It is **a convenience layer, not a security sandbox, and does not replace OS-level isolation**.
->
-> - **Suitable**: Ephemeral VMs, dedicated isolated accounts, or trusted single-user dev machines where the agent processes strictly trusted offline workloads.
-> - **Unsuitable**: Environments where the agent runs under the same OS user account as the human and ingests untrusted inputs (web browsing, GitHub Issues, unverified dependencies). Under same-user execution, prompt injections can spy on pipes or poison wrappers — a GUI password dialog cannot serve as a reliable barrier against root compromise.
-> - **Best Practice**: Keep agents strictly unprivileged on production host machines. Have the agent print required system commands for the human to review and execute manually in a trusted terminal, or isolate the agent inside an ephemeral Docker container / DevContainer.
+gsudo solves the usability problem of "an agent has no TTY, so `sudo` cannot prompt"; it is usable on trusted single-user dev machines (where the agent handles no untrusted content, or is isolated from the human), but it is not a security boundary.
 
-## What Problem Does This Solve?
+## Decision Table
 
-AI Agents running in non-root terminals need `sudo` for privileged operations — but `sudo` requires an interactive tty for password input. The agent's subprocess has no tty. Result: command fails, agent deadlocks, or hallucinates.
+| Scenario | What to do |
+|----------|------------|
+| Not applicable · agent runs as the same user and reads web pages / issues / third-party code | Do not give it a privilege channel; run the command in a human terminal, or delegate to an isolated worker |
+| Applicable · agent is isolated from the human account (separate user / container / VM) | gsudo is usable, but the real boundary is the isolation, not the dialog |
+| Applicable · one-off VM destroyed after the task | Cheapest safe form; throwaway beats any dialog |
+| Not applicable · multi-tenant / shared hosts, long-running untrusted code, root compromise unacceptable | root-owned allowlist, precise sudoers rules, isolated VM |
 
-gsudo inserts a GUI confirmation layer between the agent and the system: the agent calls `gsudo`, the user confirms and enters credentials via a graphical window, the command runs as root, and the output returns to the agent.
+"Isolated from the human" means a permission boundary, not a session boundary: a separate OS user, a container, or a VM. Different terminals or different agent instances under the same user do not count.
 
-## Core Design
+## Why It Is Not a Security Boundary
 
-### stdout/stderr Separation
+- **Structural fact**: the password passes through a component running as your user. Same-user processes can read pipes and environments, and can poison wrappers. Switching to Tkinter, zenity, or pkexec only changes the UI or the authentication entry point; it does not change who owns the password path.
+- **Threat model**: the main risk is same-user code execution — a prompt-injected agent, a malicious dependency, an editor extension. It does not require full account takeover; conversely, once the account is compromised, gsudo's marginal contribution is root persistence, not a new entry point.
+- **Approval layers**: harness allow/deny and the sudo password prompt are two layers, and neither replaces the other. If a human can run `sudo` in a real terminal, gsudo adds nothing.
+- **Tk 9.0**: broken rendering is a usability issue (observed under Tk 9.0 + WSLg, where `ttk.Button` text was invisible); it does not change the security conclusion. Switching to zenity/GTK fixes only the UI.
 
-```
-stdout → raw command output (AI can parse directly)
-stderr → gsudo banner + status (human-readable)
-```
+## What I Do Instead
 
-When the agent runs `gsudo whoami` with `capture_output=True`, `stdout` is simply `root`. No regex-parsing wrapper text required.
+The reason for retiring it is not that the dialog was poorly built. It answered the wrong question: it treated "the agent has no tty" as the core problem and left "who may escalate, and under what constraints" untouched.
 
-### Why Custom Tkinter Instead of pkexec
+Same-user GUI dialogs have two more side effects:
 
-| | gsudo (sudo -S + Tkinter) | pkexec |
-|---|---------------------------|--------|
-| Command preview | ✅ Full command + AI-generated reason shown | ❌ Not customizable |
-| Cross-platform | ✅ Linux/macOS/Windows | ❌ Linux only |
-| Environment variables | ✅ Fully preserved | ❌ Strictly sanitized |
-| Dependencies | Zero (Python stdlib) | Requires PolicyKit |
+- A dialog cannot tell "a human is reading" from "a human is clicking on reflex"; the more prompts you approve, the less each one means.
+- Every added confirmation makes people believe there is one more security boundary, which relaxes the pressure to isolate.
 
-`sudo -S` reads the password from stdin pipe — `subprocess.run` passes it directly. gsudo itself runs without root privileges.
+Choose by environment, highest priority first:
 
-### Cross-Platform Adaptation
+| Need | Approach | Source of the boundary (cost) |
+|------|----------|-------------------------------|
+| Occasional package installs or config changes | Agent prints the command; the human runs `sudo` in a real terminal | Human tty + human judgement (lowest) |
+| Frequent escalation with automation | Dedicated privileged worker: separate user / container / VM, approval set to Always-Ask | Isolation + per-request approval (medium) |
+| One-off experimentation | Temporary VM / container, destroyed afterwards | Disposal, no need to trust individual behaviour (medium) |
+| Strong audit requirements | root-owned allowlist scripts, precise sudoers rules | Policy files the same user cannot rewrite (high) |
+
+One-line rule: **first ask whether the privilege can be locked into a box you throw away, not whether a human can click one more confirmation.**
+
+## Key Evidence
+
+1. **No TTY**: `tty` → `not a tty`; `sudo -n true` → `sudo: interactive authentication is required`. This is the only legitimate reason for gsudo to exist.
+2. **Same-user readability of the password path**: with `ptrace_scope=1`, `/proc/<pid>/mem` was denied, but `/proc/<pid>/fd/4` yielded the plaintext password (measured 2026-10-05; not re-run during later review — the original record stands). The mechanism holds, and it is the direct basis for "not a security boundary".
+3. **Fixed password path**: the source passes the password via `subprocess.run(["sudo", "-S", ...], input=password + "\n")`; the sudo-timestamp probe added later only reduces repeated typing and does not change the path.
+
+The pkexec comparison and references remain in the pre-archive verification record and are not repeated here.
+
+## Original Design (Archive Record)
+
+The following records the trade-offs made before 2026-10-25. It is kept for traceability, not as a current recommendation.
+
+### The Problem
+
+When an AI runs in a terminal, the terminal itself is not launched as root. When the AI needs `sudo xxx`, `sudo` asks the terminal for a password — but the AI's bash/subprocess environment has no interactive tty, so the password cannot be entered and the command simply fails.
+
+That produced three failure modes:
+
+1. **Retry loops** — the agent sees "permission denied" and retries forever
+2. **Hallucination** — the agent treats error output as command results and continues with fabricated data
+3. **Giving up** — the agent concludes it lacks permission and abandons the task
+
+gsudo's answer at the time was to move the confirmation from the terminal into a GUI, sidestepping the missing tty. That fixed usability, not security.
+
+### Core Design
+
+**stdout/stderr separation**: stdout carries raw command output (directly parseable by the agent), stderr carries the gsudo banner and status (for humans). `gsudo whoami` with `capture_output=True` yields `root` on stdout — no regex-parsing of wrapper text.
+
+**GUI instead of terminal interaction**: `sudo`'s prompt goes to stderr, and the agent's bash environment has no tty; even with a `sudo -S` pipe, stdin is awkward to control. So gsudo drew its own Tkinter window that does one thing: show the command and the reason, then take the password.
+
+**Cross-platform, but platform-adaptive**:
 
 | | Linux | macOS | Windows |
 |---|-------|-------|---------|
-| Privilege mechanism | `sudo -S` | `sudo -S` | `Start-Process -Verb RunAs` |
-| GUI interaction | Password field | Password field | Confirm button |
-| System dialog | None | None | UAC (secure desktop, cannot bypass) |
-| Password | ✅ | ✅ | ❌ (UAC is intent confirmation, not auth) |
+| Mechanism | `sudo -S` | `sudo -S` | `Start-Process -Verb RunAs` |
+| Interaction | Password prompt | Password prompt | Confirm button |
+| System dialog | None | None | UAC |
+| Password | ✅ | ✅ | ❌ (UAC only needs a click) |
 
-On Windows, PowerShell commands are base64-encoded to prevent injection.
+Windows needs no password field — UAC is designed for intent confirmation, not identity verification.
 
-### Multi-Instance Concurrency
+**No queueing, no lock**: an early version used a global file lock to stop windows from stealing focus. The later judgement was that several agents needing privilege at once should all pop up, and the human decides the order; the lock only left later instances stuck in their terminals.
 
-No global lock. Multiple agents needing privilege simultaneously get simultaneous dialogs — the user decides which to handle first. A lock would leave later instances hanging in the terminal.
+### Key Decisions
 
-### No Password Caching
+**Why not pkexec**: the dialog is not customizable, so the command preview and the agent-generated reason cannot be shown; it is not cross-platform; environment variables are stripped. `sudo -S` passes the password over stdin and keeps the environment intact.
 
-`sudo` has its own timestamp — gsudo adds no extra caching. Privilege escalation should always require explicit user confirmation.
+**Why Tkinter**: it ships with Python, so installing Python is enough; PyQt/wxPython need compilation or pip, and added dependencies raise the barrier. The goal was "copy the script and run it".
 
-## Tech Stack
+**Two windows on Windows**: after gsudo's confirmation, its window closes and the UAC dialog appears. UAC runs on the secure desktop (Winlogon Desktop), which ordinary programs cannot inject into or bypass. Accept the limit: keep the gsudo window light (command preview only) and let the system own the final confirmation.
 
-- Python 3.6+
-- Tkinter (ttk) — standard library, zero install
-- Linux/macOS: `sudo -S` stdin password pipe
-- Windows: PowerShell + base64 encoding → UAC
+**Why v1.0 did not cache the password**: v1.0 judged that `sudo`'s own timestamp mechanism (`timestamp_timeout`) was enough, so gsudo added no extra cache and re-prompted on every call. A later implementation probed the sudo timestamp first: when the cache is valid it shows a simplified confirmation (one click, no password), and a full password dialog only when it has expired. An intermediate "trust window" (five minutes of auto-approval after a checkbox) was withdrawn for trading intent for a countdown; see [the trust-window retrospective](/en/archive/gsudo-trust-window-lesson/).
 
-## Quick Start
+### Implementation Notes
 
-```bash
-# Dependency (Linux only)
-sudo apt install python3-tk
+- **PowerShell injection defence**: commands are never assembled by string concatenation (a quote in the command would break the syntax); they are passed via `EncodedCommand` with base64 (UTF-16LE).
+- **Enter / Esc**: supported in both the password and result windows; Tkinter binds on a widget take precedence over root binds, so `<Return>` is bound on the password field to avoid clashing with the global binding.
+- **Red flash**: the status label started out red, so "running…" flashed red too; it was changed to grey while running and red only on error.
 
-# Install
-curl -o ~/.local/bin/gsudo https://raw.githubusercontent.com/CNCSMonster/gsudo/main/scripts/gsudo
-chmod +x ~/.local/bin/gsudo
-```
+### Verification Status
 
-> ℹ️ **Note**: Registering gsudo as a default auto-triggered Agent Skill has been deprecated as of 2026-10-25 to eliminate automated privilege escalation vectors from same-user agents. The script remains available as a standalone CLI utility for manual or isolated sandbox environments.
+Last verified 2026-10-05 on Linux.
 
-## Verification Status
+**Passed**: Linux GUI password dialog, Enter trigger, result window persistence; stdout/stderr separation; wrong-password detection and retry; syntax compilation.
 
-| Platform | Status |
-|----------|:------:|
-| Linux | ✅ Verified on real hardware |
-| macOS | ❌ No device |
-| Windows | ❌ No desktop environment |
+**Not verified**: macOS (no device); Windows UAC (no desktop environment); `alwaysOnTop` compatibility across window managers; non-GUI fallback; concurrent multi-instance dialogs.
 
 ## Project Link
 
-- GitHub: [CNCSMonster/gsudo](https://github.com/CNCSMonster/gsudo)
+- GitHub: [CNCSMonster/gsudo](https://github.com/CNCSMonster/gsudo) (archived repository, read-only)
+- Archived: 2026-10-25

@@ -2,103 +2,128 @@
 title = 'gsudo — AI Agent 图形化提权前端（已归档）'
 date = 2026-05-11T00:00:00+08:00
 updated = 2026-10-25T00:00:00+08:00
-tags = ['Python', 'Tkinter', 'Agent Skill', '开源项目', '跨平台']
 aliases = ["/open-source/gsudo/"]
+tags = ['Python', 'Tkinter', 'Agent Skill', '开源项目', '跨平台']
 +++
 
 > ⚠️ **注意：这个项目已归档**
 >
-> `gsudo` 项目已停止维护与更新。在日常开发机中，同用户 GUI 弹窗提权属于可用性便利层，无法作为防范恶意代码或提示词注入的安全边界（便利层 ≠ 安全边界）。
+> `gsudo` 已停止维护。它解决的是“Agent 拿不到 tty、sudo 无法提示”的可用性问题，不是提权安全问题。
 >
-> **替代方案**：采用多 Agent 协同架构（将特权任务委派给具有独立沙箱环境、且配置为“总是询问”的专用特权 Worker Agent），或由 Agent 呈报命令由人类在真实终端手动执行 `sudo`。宿主机不再保留或使用该工具。
+> 现在的做法：需要提权的命令由人在真实终端执行，或把这类任务交给隔离环境里的专用 Worker，审批配置为 Always-Ask。日常开发机上不再保留这个工具。
 >
-> 如果你收藏了本项目：原链接已自动重定向至此归档页，内容保留仅供历史设计参考。
+> 如果你之前收藏过这篇文章：原链接会自动跳转到本页，内容保留作历史参考。
 
-**零依赖、跨平台的 GUI 提权代理，解决 AI Coding Agent 在无交互 TTY 环境下响应提权确认的可用性桥梁（历史方案）。**
+## 一句话结论
 
-> ⚠️ **适用边界与安全声明（便利层不是安全边界）**
->
-> gsudo 的核心定位是解决**“无 TTY 环境下 sudo 无法交互”的可用性问题**，它**属于便利层，不是安全沙箱，也不能替代系统的强隔离**。
->
-> - **适用场景**：一次性临时 VM、与人类账户彻底隔离的专用沙箱，或明确接受同用户代码执行风险的受信任单用户开发机（Agent 仅处理离线可信任务）。
-> - **不适用场景**：Agent 与人类同用户运行、且会读取网页/Issue/第三方未审核依赖等不可信外部内容。在同用户权限下，若发生提示词注入（Prompt Injection），恶意代码可监听管道或投毒 wrapper，前端 GUI 密码弹窗无法作为抵御提权失守的安全边界。
-> - **更佳实践**：生产开发建议保持 Agent 在普通非特权用户下运行；遇到系统依赖变更时由 Agent 呈报命令、人类在独立终端手动执行 `sudo`，或将 Agent 运行在无持久提权权限的一次性 Docker / DevContainer 容器中。
+gsudo 解决“Agent 无 TTY、sudo 无法提示”的可用性问题；在受信任的单用户开发机（Agent 不处理不可信内容，或与人类隔离）上可以用，但它不是安全边界。
 
-## 解决什么问题
+## 判定清单
 
-AI Agent 在非 root 终端中运行时，`sudo` 需要交互式 tty 输入密码——但 Agent 的 subprocess 环境里没有 tty。结果：命令失败、Agent 卡死或产生幻觉。
+| 场景 | 该怎么做 |
+|------|----------|
+| 不适用 · Agent 与人类同用户，且会读网页 / Issue / 第三方代码 | 不给提权通道；由人类在真实终端执行，或委派给隔离的专用 Worker |
+| 适用 · Agent 与人类账户隔离（独立用户 / 容器 / VM） | 可以用 gsudo，但真正的边界是隔离本身，不是弹窗 |
+| 适用 · 一次性 VM，任务结束即销毁 | 成本最低的“安全”形态；用完即弃比任何弹窗都可靠 |
+| 不适用 · 多租户 / 共享主机、长期运行不可信代码、root 失守不可接受 | root-owned 白名单、sudoers 精确授权、隔离 VM |
 
-gsudo 在 Agent 和系统之间插入一个 GUI 确认层：Agent 调用 `gsudo`，用户通过图形窗口确认并输入密码，命令以 root 执行，输出返回 Agent。
+“与人类隔离”指权限边界隔离，不是会话隔离：独立系统用户、容器或 VM 才算；同一个用户下的不同终端、不同 Agent 实例都不算。
 
-## 核心设计
+## 为什么它不是安全边界
 
-### stdout/stderr 分离
+- **结构性事实**：密码经过以本用户身份运行的组件。同用户进程可以读管道与环境、可以投毒 wrapper；换 Tkinter、zenity 或 pkexec 只改 UI 或认证入口，改不了“密码路径归用户所有”这个属性。
+- **威胁模型**：主要风险是同用户代码执行——提示词注入后的 Agent、恶意依赖、编辑器扩展。它不要求账号被完全接管；反过来，账号已失守时 gsudo 的增量是 root 持久化，而不是唯一入口。
+- **审批层**：TUI / harness 的 allow-deny 与 sudo 密码输入是两层，不能互相替代。能让人在真实终端里跑 `sudo` 时，gsudo 没有额外价值。
+- **Tk 9.0**：渲染崩坏是可用性问题（当时在 Tk 9.0 + WSLg 下观察到 `ttk.Button` 文字不可见），不改变安全结论；换 zenity/GTK 只修 UI。
 
-```
-stdout → 命令原始输出（Agent 可直接 parse）
-stderr → gsudo 横幅 + 状态（给人看的）
-```
+## 现在的做法
 
-Agent 调用 `gsudo whoami`，`capture_output=True` 拿到的 `stdout` 就是 `root`。不需要正则解析包装文本。
+停止维护的理由不是“弹窗做得不好”，而是它答错了问题：把“Agent 拿不到 tty”当成核心矛盾，把“谁能提权、提权后受什么约束”留在了原地。
 
-### 为什么自绘 Tkinter 而不是用 pkexec
+同一用户权限下的 GUI 弹窗还有两个副作用：
 
-| | gsudo (sudo -S + Tkinter) | pkexec |
-|----|---------------------------|--------|
-| 命令预览 | ✅ 完整展示命令和 AI 生成的原因 | ❌ 不可定制 |
-| 跨平台 | ✅ Linux/macOS/Windows | ❌ Linux only |
-| 环境变量 | ✅ 完整保留 | ❌ 严格清理 |
-| 依赖 | 零（Python stdlib） | 需安装 PolicyKit |
+- 弹窗无法区分“人类在看”和“人类在条件反射地点确认”，确认次数越多，单次确认的信息价值越低；
+- 每加一道确认，都会让人误以为多了一层安全边界，从而放松对隔离的要求。
 
-`sudo -S` 从 stdin 管道读密码，`subprocess.run` 直接传。不需要 root 权限运行 gsudo 本身。
+按环境档次选，优先级从高到低：
 
-### 跨平台自适应
+| 需求 | 做法 | 边界来源（成本） |
+|------|------|------------------|
+| 偶尔装包、改配置 | Agent 呈报命令，人类在真实终端 `sudo` | 人类 TTY + 人的判断（最低） |
+| 需要频繁提权且要自动化 | 专用特权 Worker：独立用户 / 容器 / VM，审批配置为 Always-Ask | 隔离 + 逐次审批（中） |
+| 一次性折腾 | 临时 VM / 容器，用完即毁 | 环境销毁，无需信任个体行为（中） |
+| 需要强审计 | root-owned 白名单脚本、sudoers 精确授权 | 策略文件不可被同用户改写（高） |
+
+选择标准一句话：**先问“能不能把这段权限关进一个用完就扔的盒子”，而不是“能不能让人再多点一次确认”。**
+
+## 关键证据
+
+1. **无 TTY 事实**：`tty` → `not a tty`；`sudo -n true` → `sudo: interactive authentication is required`。这是 gsudo 存在的唯一正当理由。
+2. **同用户可读密码路径**：`ptrace_scope=1` 下 `/proc/<pid>/mem` 被拒，但 `/proc/<pid>/fd/4` 读到明文密码（2026-10-05 实测；后续复核未重跑该实验，保留原始记录）。机制成立，这是“不是安全边界”的直接依据。
+3. **密码路径固定**：源码用 `subprocess.run(["sudo", "-S", ...], input=password + "\n")` 传密码；后来加入的 sudo timestamp 探测只减少重复输入，不改管道路径。
+
+pkexec 对比与参考资料一并保留在归档前的验证记录中，此处不再展开。
+
+## 当时的设计（归档记录）
+
+以下记录 2026-10-25 之前的实现取舍，用于追溯，不作为当前推荐用法。
+
+### 问题
+
+AI 在终端里运行时，终端本身不是用 root 权限启动的。当 AI 需要执行 `sudo xxx` 时，`sudo` 会向终端索要密码——但 AI 的 bash/subprocess 环境里没有可交互的 tty，密码输不进去，命令直接失败。
+
+结果就是三种坏情况：
+
+1. **反复重试卡死** — AI 看到 permission denied 就循环重试
+2. **幻觉** — AI 把 sudo 错误输出当成命令结果，虚构数据继续执行
+3. **放弃任务** — AI 意识到自己没权限，尝试替代方案也失败，最后告诉用户“我无法完成这个任务，因为缺乏权限”
+
+gsudo 当时的解法是把提权确认从终端搬到 GUI，绕开“AI 拿不到可交互 tty”这一限制。它修好的是可用性，没有修好安全边界。
+
+### 核心设计
+
+**stdout/stderr 分离**：stdout 输出命令原始结果（AI 可直接 parse），stderr 输出 gsudo 横幅与状态（给人看）。AI 调用 `gsudo whoami`，`capture_output=True` 拿到的 `stdout` 就是 `root`，不需要正则解析包装文本。
+
+**GUI 窗口而非终端交互**：`sudo` 的密码提示在 stderr，AI 的 bash 环境拿不到 tty；即使用 `sudo -S` 管道，stdin 在 agent 环境里也不好控制。所以自绘 Tkinter 窗口，只做一件事：展示命令和原因，让用户输密码。
+
+**跨平台但平台自适应**：
 
 | | Linux | macOS | Windows |
 |----|-------|-------|---------|
 | 提权机制 | `sudo -S` | `sudo -S` | `Start-Process -Verb RunAs` |
-| GUI 交互 | 密码框 | 密码框 | 确认按钮 |
-| 系统弹窗 | 无 | 无 | UAC（安全桌面，不可绕过） |
-| 密码 | ✅ | ✅ | ❌（UAC 设计为意图确认，非身份验证） |
+| GUI 交互 | 输密码 | 输密码 | 点确认 |
+| 系统弹窗 | 无 | 无 | UAC |
+| 密码 | ✅ | ✅ | ❌（UAC 只需点“是”） |
 
-Windows 上 PowerShell 命令通过 base64 编码传递，防止注入。
+Windows 上不需要密码字段——UAC 的设计哲学是“意图确认”而非“身份验证”。
 
-### 多实例并发
+**不排队，不锁**：最早加过全局文件锁防止多窗口抢焦点。后来判断几个 AI 实例同时要权限就应该同时弹窗，由人决定先处理哪个；锁反而让后面的实例卡在终端里不动。
 
-不加全局锁。几个 Agent 同时需要提权，就同时弹窗——用户自己决定先处理哪个。锁反而让后面的实例在终端里卡住不动。
+### 关键决策
 
-### 不缓存密码
+**为什么不用 pkexec**：弹窗不可定制，无法展示命令预览和 AI 生成的原因说明；不跨平台；环境变量被严格清理。`sudo -S` 用 stdin 管道传密码，环境变量完整保留。
 
-`sudo` 有自己的 timestamp，gsudo 不做额外缓存。提权操作每次都应该让用户确认。
+**为什么用 Tkinter**：它是 Python 标准库，装 Python 就有；PyQt/wxPython 需要编译或 pip，增加依赖就是增加使用门槛。当时的目标是“复制脚本就能用”。
 
-## 技术栈
+**Windows 上的两层窗口**：gsudo 确认后窗口关闭，系统 UAC 弹窗才出现。UAC 运行在安全桌面（Winlogon Desktop），普通程序无法注入或绕过。接受这个限制，把 gsudo 窗口做轻（只做命令预览），最终确认交给系统。
 
-- Python 3.6+
-- Tkinter (ttk) — 标准库，零安装
-- Linux/macOS: `sudo -S` stdin 密码管道
-- Windows: PowerShell + base64 编码 → UAC
+**为什么 v1.0 不缓存密码**：v1.0 的判断是 `sudo` 自己的 timestamp 机制（`timestamp_timeout`）已经够用，gsudo 不再叠加一层缓存，每次调用都弹窗重新确认。后续实现改成了先探测 sudo timestamp：缓存有效时只弹简化确认（点一下，不输密码），过期才弹完整密码框。同期尝试过的“信任窗口”（勾选后 5 分钟内自动放行）因为“用倒计时偷换信任意图”被撤销，复盘见 [《gsudo 信任窗口撤销复盘》](/archive/gsudo-trust-window-lesson/)。
 
-## 快速开始
+### 实现细节
 
-```bash
-# 依赖（Linux only）
-sudo apt install python3-tk
+- **PowerShell 防注入**：不用字符串拼接拼命令（命令里出现引号就会破坏语法），改用 `EncodedCommand` + base64（UTF-16LE）。
+- **Enter / Esc**：密码框与结果窗口都支持；Tkinter 的 widget bind 优先级高于 root bind，所以在密码框上单独绑定 `<Return>`，避免与全局绑定冲突。
+- **红色闪屏**：状态 Label 初始化为红色，导致“正在执行”也一红而过；改为执行中灰色、仅错误时红色。
 
-# 安装
-curl -o ~/.local/bin/gsudo https://raw.githubusercontent.com/CNCSMonster/gsudo/main/scripts/gsudo
-chmod +x ~/.local/bin/gsudo
-```
+### 验证状态
 
-> ℹ️ **说明**：将 gsudo 作为默认自动触发的 Agent Skill 注册机制已于 2026-10-25 停止推荐并从技能库下线，防止同用户 Agent 拥有隐式提权触发通道。脚本仍可作为命令行工具在受信任/隔离开发环境中按需使用。
+最后验证于 2026-10-05，Linux 实机。
 
-## 验证状态
+**已通过**：Linux GUI 密码弹窗 + Enter 触发 + 结果窗口保持；stdout/stderr 输出分离；密码错误检测 + 重试；语法编译通过。
 
-| 平台 | 状态 |
-|------|:----:|
-| Linux | ✅ 实机测试通过 |
-| macOS | ❌ 无设备 |
-| Windows | ❌ 无桌面环境 |
+**未验证**：macOS（无设备）；Windows UAC（无桌面环境）；`alwaysOnTop` 多窗口管理器兼容性；非 GUI 环境 fallback；多实例并发弹窗。
 
 ## 项目链接
 
-- GitHub: [CNCSMonster/gsudo](https://github.com/CNCSMonster/gsudo)
+- GitHub：[CNCSMonster/gsudo](https://github.com/CNCSMonster/gsudo)（仓库已归档，只读）
+- 归档日期：2026-10-25
