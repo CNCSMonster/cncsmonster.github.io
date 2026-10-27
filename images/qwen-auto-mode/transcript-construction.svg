@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="990" viewBox="0 0 700 990" role="img" aria-labelledby="title">
+<title id="title">Transcript · 审查上下文构造</title>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#334155"/></marker></defs>
+<rect width="700" height="990" fill="#f8fafc"/>
+<g font-family="sans-serif">
+<g><rect x="40" y="70" width="620" height="150" rx="12" fill="#dbeafe" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="99" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">输入：最近 40 条会话消息 + 当前调用</text>
+<text x="350.0" y="127" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">用户原始文本 / 主 Agent 的回复</text>
+<text x="350.0" y="153" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">历史工具调用 / 工具执行结果</text>
+<text x="350.0" y="179" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">当前待审工具调用</text>
+</g>
+<path d="M350 220 V255" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="255" width="620" height="110" rx="12" fill="#fee2e2" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="284" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">不写入 Transcript</text>
+<text x="350.0" y="312" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">主 Agent 的回复、工具执行结果</text>
+<text x="350.0" y="338" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">主会话 System Prompt 也不会复制过来</text>
+</g>
+<path d="M350 365 V400" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="400" width="620" height="110" rx="12" fill="#dcfce7" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="429" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">原样保留</text>
+<text x="350.0" y="457" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">最近 40 条会话消息中的用户文本</text>
+<text x="350.0" y="483" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">不做摘要或改写</text>
+</g>
+<path d="M350 510 V545" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="545" width="620" height="110" rx="12" fill="#dcfce7" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="574" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">改写历史调用</text>
+<text x="350.0" y="602" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">将窗口内的历史工具调用转成普通文本</text>
+</g>
+<path d="M350 655 V690" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="690" width="620" height="110" rx="12" fill="#fef3c7" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="719" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">投影当前调用</text>
+<text x="350.0" y="747" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">按工具类型提取安全相关参数</text>
+<text x="350.0" y="773" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">仅 edit 和 write_file 的长内容预览限制为前 300 字符</text>
+</g>
+<path d="M350 800 V835" fill="none" stroke="#334155" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g><rect x="40" y="835" width="620" height="120" rx="12" fill="#dcfce7" stroke="#64748b" stroke-width="1.5"/>
+<text x="350.0" y="864" text-anchor="middle" fill="#172033" font-size="18" font-weight="700">输出：Transcript</text>
+<text x="350.0" y="892" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">用户原始文本 + 历史调用文本</text>
+<text x="350.0" y="918" text-anchor="middle" fill="#172033" font-size="17" font-weight="500">+ 当前调用参数投影</text>
+</g>
+<text x="350" y="40" text-anchor="middle" fill="#172033" font-size="23" font-weight="700">Transcript · 审查上下文构造</text>
+</g>
+</svg>

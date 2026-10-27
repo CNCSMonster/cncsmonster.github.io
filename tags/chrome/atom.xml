@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - Chrome</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/chrome/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-09-17T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/chrome/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>浏览器自动化 MCP 选型：chrome-devtools-mcp 与 Obscura</title>
+        <published>2026-09-17T00:00:00+08:00</published>
+        <updated>2026-09-17T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/"/>
+        <id>https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/">&lt;p&gt;给 AI coding agent 配置浏览器访问能力时，核心要在&lt;strong&gt;人机协作体验&lt;&#x2F;strong&gt;、&lt;strong&gt;内存占用&lt;&#x2F;strong&gt;与&lt;strong&gt;反爬表现&lt;&#x2F;strong&gt;之间做权衡。本文对比 Google 官方的 &lt;code&gt;chrome-devtools-mcp&lt;&#x2F;code&gt; 与轻量 Rust 实现的 &lt;code&gt;Obscura&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xuan-xing-jie-lun&quot;&gt;选型结论&lt;&#x2F;h2&gt;
+&lt;p&gt;两者在使用体验和定位上是完全不同的两类工具：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;chrome-devtools-mcp 是“可视化协作工作台”&lt;&#x2F;strong&gt;：它直接运行桌面真实 Chrome。桌面上有可见窗口，你能实时看着 AI 点选，人和 AI 可以&lt;strong&gt;同屏接力操作&lt;&#x2F;strong&gt;（遇到复杂筛选、内部权限确认或验证时，你随手拿鼠标帮 AI 操作一步，AI 接着往下跑；也能直接复用你电脑日常已登录的 Cookie）。代价是&lt;strong&gt;极其吃内存（单实例约 1.5 GB）&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Obscura 是“后台静默批处理工具”&lt;&#x2F;strong&gt;：它是纯 Rust + V8 的无头运行时，专为静默脚本设计。&lt;strong&gt;完全没有桌面窗口，无法直接人机同屏接力&lt;&#x2F;strong&gt;；但&lt;strong&gt;内存极其轻巧（仅 23 MB，降了 98%）&lt;&#x2F;strong&gt;，且自带伪装抹平了 &lt;code&gt;webdriver&lt;&#x2F;code&gt; 特征。适合跑在后台安安静静抓数据、查文档、填常规表单。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;he-xin-dui-bi-yi-lan&quot;&gt;核心对比一览&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;维度&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;chrome-devtools-mcp（Google 官方）&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Obscura（Rust + V8）&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;协作体验&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;支持桌面可见窗口&lt;&#x2F;strong&gt;：人与 AI 可同屏接力（人操作一步、AI 接着操作）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;无桌面窗口&lt;&#x2F;strong&gt;：纯后台黑盒运行，无法直接接管操作&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;内存开销&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;极重（空闲约 1450 MB，容易影响本地编译并发）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;极轻（空闲仅 23 MB）&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;反爬特征&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;原生 headless 漏洞明显（&lt;code&gt;webdriver=true&lt;&#x2F;code&gt;，UA 带 &lt;code&gt;HeadlessChrome&lt;&#x2F;code&gt;）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;自带伪装（隐藏 webdriver，模拟自洽假身份）&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;表单与交互&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;完整支持表单录入、点击、导航、账号登录&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;完整支持表单录入、点击、导航、账号登录&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;会话继承&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;支持直接挂载本地日常 Chrome Profile（直接复用已有 Cookie）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯沙箱环境，无法继承本地日常登录态&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;使用建议&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;需要同屏接力、复用日常登录态、做前端深度性能诊断时选用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;后台批量查文档、抓取网页、自动化填表、多 Agent 并发时首选&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;guan-jian-shi-ce-shu-ju&quot;&gt;关键实测数据&lt;&#x2F;h2&gt;
+&lt;p&gt;测试环境：WSL2 &#x2F; Ubuntu 24.04，测试目标为 &lt;code&gt;example.com&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-nei-cun-shi-ce&quot;&gt;1. 内存实测&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: center&quot;&gt;运行状态&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Obscura &lt;code&gt;serve&lt;&#x2F;code&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Chrome headless&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: center&quot;&gt;空闲状态&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;23 MB&lt;&#x2F;strong&gt;（1 进程）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;1452 MB（14 进程）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: center&quot;&gt;页面加载后&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;26 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;1561 MB（15 进程）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;两者有约 50~60 倍的量级差异。在机器跑大型编译任务或多 Agent 并发访问时，Chrome 对系统资源的抢占非常明显。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-fan-pa-zhi-wen-shi-ce&quot;&gt;2. 反爬指纹实测&lt;&#x2F;h3&gt;
+&lt;p&gt;Chrome 原生 headless 有两个最经典的特征暴露点：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;navigator.webdriver === true&lt;&#x2F;code&gt;；&lt;&#x2F;li&gt;
+&lt;li&gt;User-Agent 明晃晃带着 &lt;code&gt;HeadlessChrome&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;很多站点以此直接拦截流量。Obscura 开启 &lt;code&gt;--stealth&lt;&#x2F;code&gt; 后，将 &lt;code&gt;webdriver&lt;&#x2F;code&gt; 抹平为 &lt;code&gt;false&lt;&#x2F;code&gt;，并输出了一套自洽的 Windows &#x2F; Chrome 145 身份配置。但需注意其实测 &lt;code&gt;getContext(&#x27;webgl&#x27;)&lt;&#x2F;code&gt; 返回 &lt;code&gt;null&lt;&#x2F;code&gt;，面对高阶硬件级 WAF 仍有暴露可能。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-pei-zhi&quot;&gt;快速配置&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-chrome-devtools-mcp&quot;&gt;1. chrome-devtools-mcp&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;jsonc&quot;&gt;&amp;quot;chrome-devtools&amp;quot;: {
+  &amp;quot;command&amp;quot;: &amp;quot;npx&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;-y&amp;quot;, &amp;quot;chrome-devtools-mcp@latest&amp;quot;],
+  &amp;quot;description&amp;quot;: &amp;quot;Chrome DevTools MCP&amp;quot;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;默认即为有头模式（可见窗口）；若希望纯后台静默，可追加 &lt;code&gt;--headless&lt;&#x2F;code&gt;。要求本机已安装桌面 Chrome。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;2-obscura-an-zhuang-yu-pei-zhi&quot;&gt;2. Obscura（安装与配置）&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;bash&quot;&gt;# 下载 stealth 预编译包解压至 ~&#x2F;.local&#x2F;bin
+curl -L -o obscura.tar.gz &amp;quot;https:&#x2F;&#x2F;github.com&#x2F;h4ckf0r0day&#x2F;obscura&#x2F;releases&#x2F;download&#x2F;v0.2.2&#x2F;obscura-x86_64-linux-stealth.tar.gz&amp;quot;
+tar -xzf obscura.tar.gz
+mkdir -p ~&#x2F;.local&#x2F;bin &amp;amp;&amp;amp; mv obscura obscura-worker ~&#x2F;.local&#x2F;bin&#x2F;
+chmod +x ~&#x2F;.local&#x2F;bin&#x2F;obscura ~&#x2F;.local&#x2F;bin&#x2F;obscura-worker
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP 配置：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;jsonc&quot;&gt;&amp;quot;obscura&amp;quot;: {
+  &amp;quot;command&amp;quot;: &amp;quot;obscura&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;mcp&amp;quot;, &amp;quot;--stealth&amp;quot;, &amp;quot;--allow-private-network&amp;quot;],
+  &amp;quot;description&amp;quot;: &amp;quot;Obscura lightweight headless browser MCP&amp;quot;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;避坑提示（Clash TUN 模式）&lt;&#x2F;strong&gt;：&lt;br &#x2F;&gt;
+若本机开启了 Clash TUN 模式，fake-ip 机制会将域名解析到 &lt;code&gt;198.18.x.x&lt;&#x2F;code&gt;，会撞上 Obscura 内置的 SSRF 防护而断网。配置中必须传入 &lt;code&gt;--allow-private-network&lt;&#x2F;code&gt; 才能正常联网。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+</feed>
