@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 硬件</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/ying-jian/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-10-07T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/ying-jian/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Windows 触摸板卡顿与瞬移排查</title>
+        <published>2026-10-07T00:00:00+08:00</published>
+        <updated>2026-10-07T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/windows-touchpad-stutter-fix/"/>
+        <id>https://cncsmonster.github.io/posts/windows-touchpad-stutter-fix/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/windows-touchpad-stutter-fix/">&lt;blockquote&gt;
+&lt;p&gt;基准环境：Windows 11 (24H2) &#x2F; Intel Core Ultra &#x2F; Xiaomi Redmi Book Pro 14 2026&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;1-xian-xiang-zi-jian-30-miao-pan-duan&quot;&gt;1. 现象自检（30 秒判断）&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;故障表现&lt;&#x2F;strong&gt;：在 Windows 笔记本上用触摸板滑动时，光标间歇性“卡住不动”约 100–400ms，随后突然跳跃追赶至手指最新位置（先定格、后瞬移）。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;快速鉴别（三条全中即为此问题）&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;接电即愈&lt;&#x2F;strong&gt;：仅在电池供电（DC 模式）下频繁复现；插上充电器（AC 模式）后瞬间恢复平滑。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;键盘完全正常&lt;&#x2F;strong&gt;：连续敲击键盘打字极度顺畅，无任何吞字、卡顿或延迟。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;短暂停顿后必卡&lt;&#x2F;strong&gt;：不是指针整体匀速变慢，而是手指停顿片刻后的“首发动作”高频冻结，连续滑动中基本正常。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;2-jie-jue-fang-an-3-bu-che-di-jie-jue&quot;&gt;2. 解决方案（3 步彻底解决）&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;step-1-jin-yong-i2c-kong-zhi-qi-sheng-dian&quot;&gt;Step 1：禁用 I2C 控制器省电&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;按 &lt;code&gt;Win + X&lt;&#x2F;code&gt; 打开 &lt;strong&gt;设备管理器&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;展开 &lt;strong&gt;系统设备&lt;&#x2F;strong&gt;，找到：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Intel(R) Serial IO I2C Host Controller - E450&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Intel(R) Serial IO I2C Host Controller - E451&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;分别双击打开两个控制器的 &lt;strong&gt;属性&lt;&#x2F;strong&gt; → 切换至 &lt;strong&gt;电源管理&lt;&#x2F;strong&gt; 选项卡。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;取消勾选&lt;&#x2F;strong&gt;：&lt;code&gt;允许计算机关闭此设备以节约电源&lt;&#x2F;code&gt;，点击确定保存。&lt;&#x2F;p&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;step-2-guan-bi-intel-xian-qia-mian-ban-zi-shua-xin-psr&quot;&gt;Step 2：关闭 Intel 显卡“面板自刷新（PSR）”&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;打开 &lt;strong&gt;Intel Graphics Software&lt;&#x2F;strong&gt;（英特尔显卡软件 &#x2F; 显卡控制中心）。&lt;&#x2F;li&gt;
+&lt;li&gt;在左侧主导航栏中点击 &lt;strong&gt;显示器&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;滚动到页面底部的 &lt;strong&gt;节能&lt;&#x2F;strong&gt; 区域。&lt;&#x2F;li&gt;
+&lt;li&gt;将 &lt;strong&gt;面板自刷新（Panel Self Refresh &#x2F; PSR）&lt;&#x2F;strong&gt; 开关拨至 &lt;strong&gt;关闭&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;step-3-bi-xu-zhi-xing-zhong-qi-dian-nao&quot;&gt;Step 3：【必须执行】重启电脑&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;核心动作&lt;&#x2F;strong&gt;：完成上述两处配置修改后，&lt;strong&gt;必须重启电脑&lt;&#x2F;strong&gt;（&lt;code&gt;开始菜单&lt;&#x2F;code&gt; → &lt;code&gt;重启&lt;&#x2F;code&gt;）。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;生效机制&lt;&#x2F;strong&gt;：I2C 控制器属于系统级主板总线设备，运行时电源策略在系统开机引导阶段加载，&lt;strong&gt;在设备管理器中修改后无法热重载&lt;&#x2F;strong&gt;。未重启前旧策略依然驻留内存，必须重启后新策略才能加载生效。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;3-xiu-fu-xiao-guo-yu-dai-jia&quot;&gt;3. 修复效果与代价&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;修复效果（实测确认）&lt;&#x2F;strong&gt;：拔掉电源线测试，触摸板光标操控体感与接电模式完全一致，彻底消除卡顿瞬移。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;功耗代价（⚠️ 理论估算，未做全周期放电实测）&lt;&#x2F;strong&gt;：关闭 PSR 后，GPU 显示引擎与 eDP 链路持续推帧。参考 Intel 功耗模型，在日常纯打字、阅读等静态画面场景下，预计整机电池续航折损约 &lt;strong&gt;5%–10%&lt;&#x2F;strong&gt;（如原 10 小时续航变为约 9–9.5 小时），处于正常可用区间。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-chang-jian-pai-cha-wu-qu-wei-shen-me-yi-xia-zhi-jue-chang-shi-wu-xiao&quot;&gt;4. 常见排查误区（为什么以下直觉尝试无效）&lt;&#x2F;h2&gt;
+&lt;p&gt;面对触摸板光标卡顿，开发者常会尝试调节系统灵敏度或排查后台占用，但这些常规手段往往无法解决该问题：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;踩坑 1：去调鼠标指针速度 &#x2F; 开启“增强指针精确度”&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;错因&lt;&#x2F;strong&gt;：卡顿本质是硬件链路通信中断与唤醒延迟，不是 DPI 采样过低。调大指针速度只会让卡顿后的瞬移跳跃距离更大。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;踩坑 2：去排查自启动软件、查杀后台进程&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;错因&lt;&#x2F;strong&gt;：键盘打字全程流畅无阻塞，反证 CPU 调度与桌面渲染无任何性能拥塞，瓶颈在特定的外设总线与显示管线上。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;踩坑 3：试图关闭“显示节能技术（DPST）”来解决卡顿&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;错因&lt;&#x2F;strong&gt;：DPST（Display Power Saving Technology）只根据画面明暗动态调节背光 PWM 亮度（表现为屏幕忽明忽暗），不影响帧传输时序；真正关断显示引擎推帧的是 &lt;strong&gt;PSR（面板自刷新）&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;li&gt;⚠️ &lt;strong&gt;踩坑 4：改了设备管理器设置但未重启电脑&lt;&#x2F;strong&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;错因&lt;&#x2F;strong&gt;：许多人改完勾选后拔线测试发现依然卡顿，误以为该方法无效。实际上是总线驱动电源策略未重新加载，必须重启。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;5-shen-ceng-yuan-li-wei-shen-me-hui-zhe-yang&quot;&gt;5. 深层原理：为什么会这样？&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;5-1-wei-shen-me-da-zi-liu-chang-hong-mo-ban-que-hui-tou-tou-xiu-mian&quot;&gt;5.1 为什么打字流畅，触摸板却会偷偷休眠？&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;核心原因&lt;&#x2F;strong&gt;：键盘与触摸板在硬件上走完全独立的供电通道。系统为了省电坚持“设备独立自治”——键盘再忙也不会阻止触摸板休眠；触摸板只要停顿约 1 秒就会被切断供电。再次使用时必须硬件重新握手，造成首发动作卡顿。&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;键盘链路（常驻活跃）&lt;&#x2F;strong&gt;：键盘（持续键入） → EC 控制芯片 → 电路常驻供电（D0） → &lt;strong&gt;全程平滑流畅&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;隔离机制（互不通气）&lt;&#x2F;strong&gt;：⚡ &lt;strong&gt;电源域物理隔离&lt;&#x2F;strong&gt;（系统不跨总线广播活跃信号，谁闲谁休眠）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;触摸板链路（独立断电）&lt;&#x2F;strong&gt;：触摸板（停顿 1 秒） → I2C 总线控制器 → 自动切断供电（D3） → &lt;strong&gt;再触碰需唤醒重连（卡顿瞬移）&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;硬件背景&lt;&#x2F;strong&gt;：触摸板挂载于 &lt;code&gt;Intel Serial IO I2C Host Controller - E451&lt;&#x2F;code&gt;。各外设按键互不联动，是操作系统为了最大化电池续航跑分刻意为之的设计权衡。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;5-2-liang-ceng-ying-jian-yan-chi-de-die-jia-gong-zhen&quot;&gt;5.2 两层硬件延迟的叠加共振&lt;&#x2F;h3&gt;
+&lt;p&gt;该问题是电池模式下两个独立省电机制同时激活并叠加的结果：&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;di-yi-ceng-i2c-zong-xian-selective-suspend-xie-yi-dian-xing-huan-xing-wo-shou-shi-yan-yue-100-300ms&quot;&gt;第一层：I2C 总线 Selective Suspend（协议典型唤醒握手时延约 100–300ms）&lt;&#x2F;h4&gt;
+&lt;p&gt;Windows 默认对 I2C Host Controller 启用运行时电源管理。当触摸板停止操作约 0.5–1 秒时，控制器从工作状态 &lt;code&gt;D0&lt;&#x2F;code&gt; 跌入低功耗状态 &lt;code&gt;D3hot&lt;&#x2F;code&gt;。手指再次触碰时，总线重新上电并与从端触摸板固件建立握手重同步，依据总线规范典型耗时约 &lt;strong&gt;100–300ms&lt;&#x2F;strong&gt;。在此期间触摸板固件采集的坐标积压在本地 FIFO 缓冲中，总线恢复后突发倾倒，造成“瞬移”。&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;di-er-ceng-intel-gpu-panel-self-refresh-lian-lu-dian-xing-huan-xing-shi-yan-yue-200-400ms&quot;&gt;第二层：Intel GPU Panel Self Refresh（链路典型唤醒时延约 200–400ms）&lt;&#x2F;h4&gt;
+&lt;p&gt;当屏幕画面处于静态（打字停顿、阅读时），Intel iGPU 显示引擎进入休眠，通知 eDP 面板使用内置显存自刷新。手指滑动导致光标需要重绘时，GPU 侦测到帧变更、重新拉起时钟并唤醒 eDP 链路首帧传输，依据 eDP 协议规范典型耗时约 &lt;strong&gt;200–400ms&lt;&#x2F;strong&gt;。即使 I2C 坐标已到达操作系统，屏幕像素仍被冻结，放大为明显的肉眼卡顿。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

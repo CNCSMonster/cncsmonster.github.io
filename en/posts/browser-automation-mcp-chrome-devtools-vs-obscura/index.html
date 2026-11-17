@@ -1,0 +1,130 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>Browser Automation MCP Decision: chrome-devtools-mcp vs. Obscura | CCM's Blog</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM's Blog" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM's Blog" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/ hreflang=zh rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM's Blog</a><div class=nav-links><div class=search-container><input placeholder="Search articles..." class=search-input id=search-input><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>Home</a><a href=https://cncsmonster.github.io/posts/>Blog</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> Ebooks</a><a href=https://cncsmonster.github.io/open-source/>Projects</a><a href=https://cncsmonster.github.io/about/>About</a><a title="Subscribe to blog updates" class=nav-subscribe href=https://cncsmonster.github.io/subscribe/> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a class=lang-link href=https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/ title=切换到中文>中文</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>Browser Automation MCP Decision: chrome-devtools-mcp vs. Obscura</h1><div class=post-meta><time datetime=2026-09-17T00:00:00+08:00>2026-09-17</time><div class=post-tags><a class=tag href=https://cncsmonster.github.io/en/tags/mcp/>#MCP</a><a class=tag href=https://cncsmonster.github.io/en/tags/browser-automation/>#Browser Automation</a><a class=tag href=https://cncsmonster.github.io/en/tags/chrome/>#Chrome</a><a class=tag href=https://cncsmonster.github.io/en/tags/agent/>#Agent</a></div></div></header><div class=post-layout><div class=post-content><p>When equipping an AI coding agent with browser automation capabilities, developers must balance <strong>human-agent collaboration</strong>, <strong>memory overhead</strong>, and <strong>bot-detection resilience</strong>. This post evaluates Google’s official <code>chrome-devtools-mcp</code> against <code>Obscura</code>, a lightweight headless browser built with Rust and V8.<h2 id=the-core-verdict>The Core Verdict</h2><p>These two tools serve fundamentally different workflows:<ul><li><strong><code>chrome-devtools-mcp</code> is a visual collaborative workspace</strong>: It drives a real desktop Chrome instance. Because a visible desktop window is available, you can observe the agent’s actions in real time and <strong>take turns interacting with the browser</strong> (e.g., handling complex filtering, approving security dialogs, or passing CAPTCHAs by hand before letting the agent resume). It also reuses existing login sessions from your everyday Chrome profile. The tradeoff is <strong>heavy memory consumption (~1.5 GB per instance)</strong>.<li><strong><code>Obscura</code> is a silent background batch-runner</strong>: A headless runtime built on Rust + V8, stripped of any GUI frontend. <strong>It does not open desktop windows and cannot support live co-browsing</strong>; however, it has an <strong>exceptionally small memory footprint (idle at just 23 MB, 98% lower)</strong> and conceals obvious headless indicators like <code>navigator.webdriver</code>. It is ideal for quiet background documentation lookups, data scraping, and basic form automation.</ul><h3 id=feature-comparison>Feature Comparison</h3><table><thead><tr><th style=text-align:left>Dimension<th style=text-align:left>chrome-devtools-mcp (Official)<th style=text-align:left>Obscura (Rust + V8)<tbody><tr><td style=text-align:left><strong>Collaboration</strong><td style=text-align:left><strong>Visible desktop window</strong>: Human and agent can share the browser session turn-by-turn<td style=text-align:left><strong>Headless only</strong>: Runs silently in the background without UI handoff<tr><td style=text-align:left><strong>Memory Footprint</strong><td style=text-align:left>Heavy (idle ~1450 MB, easily stresses concurrent compiler workloads)<td style=text-align:left><strong>Minimal (idle ~23 MB)</strong><tr><td style=text-align:left><strong>Bot Detection</strong><td style=text-align:left>Headless Chrome exposes obvious flags (<code>webdriver=true</code>, <code>HeadlessChrome</code> in UA)<td style=text-align:left><strong>Built-in stealth</strong> (masks <code>webdriver</code>, synthesizes consistent fake profile)<tr><td style=text-align:left><strong>Form Interactions</strong><td style=text-align:left>Full support for typing, clicking, navigating, and logging in<td style=text-align:left>Full support for typing, clicking, navigating, and logging in<tr><td style=text-align:left><strong>Session Inheritance</strong><td style=text-align:left>Can attach to your existing local Chrome profile (reuses logged-in cookies)<td style=text-align:left>Isolated sandbox; cannot directly inherit desktop profiles<tr><td style=text-align:left><strong>Recommendation</strong><td style=text-align:left>Use when co-browsing, session reuse, or deep DevTools diagnostics are required<td style=text-align:left>Best for concurrent agents, background docs fetching, and mass crawling</table><h2 id=benchmark-data>Benchmark Data</h2><p>Environment: WSL2 / Ubuntu 24.04, target URL: <code>example.com</code>.<h3 id=1-memory-usage>1. Memory Usage</h3><table><thead><tr><th style=text-align:center>State<th style=text-align:center>Obscura <code>serve</code><th style=text-align:center>Chrome headless<tbody><tr><td style=text-align:center>Idle<td style=text-align:center><strong>23 MB</strong> (1 process)<td style=text-align:center>1452 MB (14 processes)<tr><td style=text-align:center>Post Page Load<td style=text-align:center><strong>26 MB</strong><td style=text-align:center>1561 MB (15 processes)</table><p>The 50x–60x gap in memory footprint is real. While running heavy compilation jobs or orchestrating multiple concurrent sub-agents, Chrome headless can quickly starve system RAM.<h3 id=2-fingerprinting-bot-detection>2. Fingerprinting & Bot Detection</h3><p>Default headless Chrome leaks two glaring signals:<ul><li><code>navigator.webdriver === true</code><li>User-Agent prominently displaying <code>HeadlessChrome</code></ul><p>Many websites block incoming traffic based on these two checks alone. When started with <code>--stealth</code>, Obscura resets <code>navigator.webdriver</code> to <code>false</code> and presents a consistent Windows / Chrome 145 fingerprint. Note, however, that <code>getContext('webgl')</code> evaluates to <code>null</code>, which advanced anti-bot systems may still flag.<h2 id=setup-configuration>Setup & Configuration</h2><h3 id=1-chrome-devtools-mcp>1. chrome-devtools-mcp</h3><pre><code data-lang=jsonc>"chrome-devtools": {
+  "command": "npx",
+  "args": ["-y", "chrome-devtools-mcp@latest"],
+  "description": "Chrome DevTools MCP"
+}
+</code></pre><blockquote><p>Defaults to headed mode (visible window). Append <code>--headless</code> if you prefer silent execution. Requires local Chrome.</blockquote><h3 id=2-obscura-setup>2. Obscura Setup</h3><pre><code data-lang=bash># Download and unpack the prebuilt stealth binary into ~/.local/bin
+curl -L -o obscura.tar.gz "https://github.com/h4ckf0r0day/obscura/releases/download/v0.2.2/obscura-x86_64-linux-stealth.tar.gz"
+tar -xzf obscura.tar.gz
+mkdir -p ~/.local/bin && mv obscura obscura-worker ~/.local/bin/
+chmod +x ~/.local/bin/obscura ~/.local/bin/obscura-worker
+</code></pre><p>MCP server configuration:<pre><code data-lang=jsonc>"obscura": {
+  "command": "obscura",
+  "args": ["mcp", "--stealth", "--allow-private-network"],
+  "description": "Obscura lightweight headless browser MCP"
+}
+</code></pre><blockquote><p><strong>Clash TUN Mode Gotcha</strong>:<br> In TUN mode, Clash’s fake-ip resolver maps all domains to <code>198.18.x.x</code>. This triggers Obscura’s internal SSRF guard and cuts off outbound requests. Passing <code>--allow-private-network</code> is mandatory in such environments to allow normal web access.</blockquote></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#the-core-verdict>The Core Verdict</a> <ul><li><a href=#feature-comparison>Feature Comparison</a></ul><li><a href=#benchmark-data>Benchmark Data</a> <ul><li><a href=#1-memory-usage>1. Memory Usage</a><li><a href=#2-fingerprinting-bot-detection>2. Fingerprinting & Bot Detection</a></ul><li><a href=#setup-configuration>Setup & Configuration</a> <ul><li><a href=#1-chrome-devtools-mcp>1. chrome-devtools-mcp</a><li><a href=#2-obscura-setup>2. Obscura Setup</a></ul></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>Copyright：</strong> This work is licensed under <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en rel=noopener target=_blank>CC BY-NC-SA 4.0</a>. Please provide attribution and share alike.</div></footer><section class=comments id=comments><h2>Comments</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=en data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=prev href=https://cncsmonster.github.io/en/posts/wsl2-low-latency-tuning-guide-en/>← WSL2 Low Latency Tuning Guide</a><a class=next href=https://cncsmonster.github.io/en/posts/pyo3-usage-and-pitfalls-en/>PyO3 Usage and Pitfalls →</a></nav></main><footer class=site-footer><p>© 2026 CCM. Powered by Zola.<div class=footer-links><a href=https://cncsmonster.github.io/>↑ Back to Home</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>Archive</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>Ebooks</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.en.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">Loading search...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">No results found</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>

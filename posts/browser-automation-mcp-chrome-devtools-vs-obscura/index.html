@@ -1,0 +1,130 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>浏览器自动化 MCP 选型：chrome-devtools-mcp 与 Obscura | CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Read in English" class=lang-link href=https://cncsmonster.github.io/en/posts/browser-automation-mcp-chrome-devtools-vs-obscura/>EN</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>浏览器自动化 MCP 选型：chrome-devtools-mcp 与 Obscura</h1><div class=post-meta><time datetime=2026-09-17T00:00:00+08:00>2026-09-17</time><div class=post-tags><a class=tag href=https://cncsmonster.github.io/tags/mcp/>#MCP</a><a class=tag href=https://cncsmonster.github.io/tags/browser-automation/>#Browser Automation</a><a class=tag href=https://cncsmonster.github.io/tags/chrome/>#Chrome</a><a class=tag href=https://cncsmonster.github.io/tags/agent/>#Agent</a></div></div></header><div class=post-layout><div class=post-content><p>给 AI coding agent 配置浏览器访问能力时，核心要在<strong>人机协作体验</strong>、<strong>内存占用</strong>与<strong>反爬表现</strong>之间做权衡。本文对比 Google 官方的 <code>chrome-devtools-mcp</code> 与轻量 Rust 实现的 <code>Obscura</code>。<h2 id=xuan-xing-jie-lun>选型结论</h2><p>两者在使用体验和定位上是完全不同的两类工具：<ul><li><strong>chrome-devtools-mcp 是“可视化协作工作台”</strong>：它直接运行桌面真实 Chrome。桌面上有可见窗口，你能实时看着 AI 点选，人和 AI 可以<strong>同屏接力操作</strong>（遇到复杂筛选、内部权限确认或验证时，你随手拿鼠标帮 AI 操作一步，AI 接着往下跑；也能直接复用你电脑日常已登录的 Cookie）。代价是<strong>极其吃内存（单实例约 1.5 GB）</strong>。<li><strong>Obscura 是“后台静默批处理工具”</strong>：它是纯 Rust + V8 的无头运行时，专为静默脚本设计。<strong>完全没有桌面窗口，无法直接人机同屏接力</strong>；但<strong>内存极其轻巧（仅 23 MB，降了 98%）</strong>，且自带伪装抹平了 <code>webdriver</code> 特征。适合跑在后台安安静静抓数据、查文档、填常规表单。</ul><h3 id=he-xin-dui-bi-yi-lan>核心对比一览</h3><table><thead><tr><th style=text-align:left>维度<th style=text-align:left>chrome-devtools-mcp（Google 官方）<th style=text-align:left>Obscura（Rust + V8）<tbody><tr><td style=text-align:left><strong>协作体验</strong><td style=text-align:left><strong>支持桌面可见窗口</strong>：人与 AI 可同屏接力（人操作一步、AI 接着操作）<td style=text-align:left><strong>无桌面窗口</strong>：纯后台黑盒运行，无法直接接管操作<tr><td style=text-align:left><strong>内存开销</strong><td style=text-align:left>极重（空闲约 1450 MB，容易影响本地编译并发）<td style=text-align:left><strong>极轻（空闲仅 23 MB）</strong><tr><td style=text-align:left><strong>反爬特征</strong><td style=text-align:left>原生 headless 漏洞明显（<code>webdriver=true</code>，UA 带 <code>HeadlessChrome</code>）<td style=text-align:left><strong>自带伪装（隐藏 webdriver，模拟自洽假身份）</strong><tr><td style=text-align:left><strong>表单与交互</strong><td style=text-align:left>完整支持表单录入、点击、导航、账号登录<td style=text-align:left>完整支持表单录入、点击、导航、账号登录<tr><td style=text-align:left><strong>会话继承</strong><td style=text-align:left>支持直接挂载本地日常 Chrome Profile（直接复用已有 Cookie）<td style=text-align:left>纯沙箱环境，无法继承本地日常登录态<tr><td style=text-align:left><strong>使用建议</strong><td style=text-align:left>需要同屏接力、复用日常登录态、做前端深度性能诊断时选用<td style=text-align:left>后台批量查文档、抓取网页、自动化填表、多 Agent 并发时首选</table><h2 id=guan-jian-shi-ce-shu-ju>关键实测数据</h2><p>测试环境：WSL2 / Ubuntu 24.04，测试目标为 <code>example.com</code>。<h3 id=1-nei-cun-shi-ce>1. 内存实测</h3><table><thead><tr><th style=text-align:center>运行状态<th style=text-align:center>Obscura <code>serve</code><th style=text-align:center>Chrome headless<tbody><tr><td style=text-align:center>空闲状态<td style=text-align:center><strong>23 MB</strong>（1 进程）<td style=text-align:center>1452 MB（14 进程）<tr><td style=text-align:center>页面加载后<td style=text-align:center><strong>26 MB</strong><td style=text-align:center>1561 MB（15 进程）</table><p>两者有约 50~60 倍的量级差异。在机器跑大型编译任务或多 Agent 并发访问时，Chrome 对系统资源的抢占非常明显。<h3 id=2-fan-pa-zhi-wen-shi-ce>2. 反爬指纹实测</h3><p>Chrome 原生 headless 有两个最经典的特征暴露点：<ul><li><code>navigator.webdriver === true</code>；<li>User-Agent 明晃晃带着 <code>HeadlessChrome</code>。</ul><p>很多站点以此直接拦截流量。Obscura 开启 <code>--stealth</code> 后，将 <code>webdriver</code> 抹平为 <code>false</code>，并输出了一套自洽的 Windows / Chrome 145 身份配置。但需注意其实测 <code>getContext('webgl')</code> 返回 <code>null</code>，面对高阶硬件级 WAF 仍有暴露可能。<h2 id=kuai-su-pei-zhi>快速配置</h2><h3 id=1-chrome-devtools-mcp>1. chrome-devtools-mcp</h3><pre><code data-lang=jsonc>"chrome-devtools": {
+  "command": "npx",
+  "args": ["-y", "chrome-devtools-mcp@latest"],
+  "description": "Chrome DevTools MCP"
+}
+</code></pre><blockquote><p>默认即为有头模式（可见窗口）；若希望纯后台静默，可追加 <code>--headless</code>。要求本机已安装桌面 Chrome。</blockquote><h3 id=2-obscura-an-zhuang-yu-pei-zhi>2. Obscura（安装与配置）</h3><pre><code data-lang=bash># 下载 stealth 预编译包解压至 ~/.local/bin
+curl -L -o obscura.tar.gz "https://github.com/h4ckf0r0day/obscura/releases/download/v0.2.2/obscura-x86_64-linux-stealth.tar.gz"
+tar -xzf obscura.tar.gz
+mkdir -p ~/.local/bin && mv obscura obscura-worker ~/.local/bin/
+chmod +x ~/.local/bin/obscura ~/.local/bin/obscura-worker
+</code></pre><p>MCP 配置：<pre><code data-lang=jsonc>"obscura": {
+  "command": "obscura",
+  "args": ["mcp", "--stealth", "--allow-private-network"],
+  "description": "Obscura lightweight headless browser MCP"
+}
+</code></pre><blockquote><p><strong>避坑提示（Clash TUN 模式）</strong>：<br> 若本机开启了 Clash TUN 模式，fake-ip 机制会将域名解析到 <code>198.18.x.x</code>，会撞上 Obscura 内置的 SSRF 防护而断网。配置中必须传入 <code>--allow-private-network</code> 才能正常联网。</blockquote></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#xuan-xing-jie-lun>选型结论</a> <ul><li><a href=#he-xin-dui-bi-yi-lan>核心对比一览</a></ul><li><a href=#guan-jian-shi-ce-shu-ju>关键实测数据</a> <ul><li><a href=#1-nei-cun-shi-ce>1. 内存实测</a><li><a href=#2-fan-pa-zhi-wen-shi-ce>2. 反爬指纹实测</a></ul><li><a href=#kuai-su-pei-zhi>快速配置</a> <ul><li><a href=#1-chrome-devtools-mcp>1. chrome-devtools-mcp</a><li><a href=#2-obscura-an-zhuang-yu-pei-zhi>2. Obscura（安装与配置）</a></ul></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>版权声明：</strong> 本文采用 <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh rel=noopener target=_blank>CC BY-NC-SA 4.0</a> 协议进行许可。转载请注明出处！</div></footer><section class=comments id=comments><h2>评论</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=zh-CN data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=prev href=https://cncsmonster.github.io/posts/wsl2-low-latency-tuning-guide/>← WSL2 低延迟调优指南</a><a class=next href=https://cncsmonster.github.io/posts/qwen-code-auto-mode-deep-dive/>Qwen Code Auto Mode 深度分析 →</a></nav></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">搜索加载中...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">未找到相关结果</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>

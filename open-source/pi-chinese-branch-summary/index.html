@@ -1,0 +1,168 @@
+<!doctype html><html lang=zh><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>Pi 会话摘要本地化设计与扩展实现 | CCM 的博客</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM 的博客" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM 的博客" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/en/ hreflang=en rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM 的博客</a><div class=nav-links><div class=search-container><input class=search-input id=search-input placeholder=搜索文章...><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>首页</a><a href=https://cncsmonster.github.io/posts/>博客</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> 电子书</a><a href=https://cncsmonster.github.io/open-source/>开源项目</a><a href=https://cncsmonster.github.io/about/>关于</a><a class=nav-subscribe href=https://cncsmonster.github.io/subscribe/ title=订阅博客更新> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a title="Read in English" class=lang-link href=https://cncsmonster.github.io/en/open-source/pi-chinese-branch-summary/>EN</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>Pi 会话摘要本地化设计与扩展实现</h1><div class=post-meta><time datetime=2026-10-12T02:22:55+08:00>2026-10-12</time><span class=meta-separator>·</span><time class=post-updated datetime=2026-10-17T00:00:00+08:00> 更新于: 2026-10-17 </time></div></header><div class=post-layout><div class=post-content><h2 id=1-zhe-pian-jiang-shen-me>1. 这篇讲什么</h2><p>Pi 会在会话里自动写入<strong>两类</strong>结构化摘要，且两类都写死英文模板：用 <code>/tree</code> 回溯分支时写入的<strong>分支回溯摘要</strong>，以及会话变长触发压缩时写入的<strong>上下文压缩摘要</strong>（compaction）。结果是中文会话里冒出英文小标题。<p>本文拆开两条链路的机制，给出各自的中文化方案：分支摘要走<strong>指令置换</strong>（只换提示词），压缩摘要走<strong>接管式交成品</strong>（内核没有换词档，扩展只能自己调模型再交回去）。<h2 id=2-wen-ti-bei-jing-yu-xian-xiang>2. 问题背景与现象</h2><p><strong>现象一：分支回溯。</strong> 在中文技术研发与文档撰写会话中，使用 <code>/tree</code> 切换并回溯分支时，Pi 会在会话历史中插入一段 <code>&lt;summary></code> 节点作为上下文记忆。虽然对话全程中文，摘要仍强制采用英文结构：<pre><code data-lang=markdown>&lt;summary>
+The user explored a different conversation branch before returning here.
+Summary of that exploration:
+
+## Goal
+[What was the user trying to accomplish in this branch?]
+
+## Constraints & Preferences
+- [Any constraints, preferences, or requirements mentioned]
+...
+</code></pre><p><strong>现象二：上下文压缩。</strong> 长会话里，上下文接近窗口上限（或手动 <code>/compact</code>）时，Pi 会把较早的历史折叠成一段检查点摘要，后续只带“系统提示 + 摘要 + 近期消息“。这段摘要同样是英文骨架：<pre><code data-lang=markdown>## Goal
+## Constraints & Preferences
+## Critical Context
+</code></pre><p>两类摘要出现在同一条中文会话里，读起来是连续的中英混排。原生英文摘要逻辑没问题，但中文语境下多了一层阅读门槛。<h2 id=3-yuan-ma-ji-zhi-tan-zhen>3. 源码机制探针</h2><p>Pi 为完全开源项目（官方仓库：<a rel="noopener nofollow noreferrer external" href=https://github.com/earendil-works/pi target=_blank>earendil-works/pi</a>）。以下行号对照本机安装的 v1.0.4 <code>dist/</code> 实测。<h3 id=3-1-fen-zhi-hui-su-mo-ren-ti-shi-ci-ying-bian-ma>3.1 分支回溯：默认提示词硬编码</h3><p>分支摘要模板是核心里的常量 <code>BRANCH_SUMMARY_PROMPT</code>（<code>dist/core/compaction/branch-summarization.js</code>）：<pre><code data-lang=typescript>const BRANCH_SUMMARY_PROMPT = `Create a structured summary of this conversation branch for context when returning later.
+
+Use this EXACT format:
+
+## Goal
+[What was the user trying to accomplish in this branch?]
+
+## Constraints & Preferences
+- [Any constraints, preferences, or requirements mentioned]
+- [Or "(none)" if none were mentioned]
+
+## Progress
+### Done
+- [x] [Completed tasks/changes]
+
+### In Progress
+- [ ] [Work that was started but not finished]
+
+### Blocked
+- [Issues preventing progress, if any]
+
+## Key Decisions
+- **[Decision]**: [Brief rationale]
+
+## Next Steps
+1. [What should happen next to continue this work]
+
+Keep each section concise. Preserve exact file paths, function names, and error messages.`;
+</code></pre><p>与系统环境语言、用户交互语言均无关，内核默认用这份英文模板组装提示词。<h3 id=3-2-fen-zhi-hui-su-de-jie-chi-lian-lu-yu-shi-xu>3.2 分支回溯的劫持链路与时序</h3><p>分支切换确认后、发起摘要模型调用前，内核通过事件总线向扩展层广播生命周期事件。整体时序如下：<div style="margin:20px 0" align=center><svg style="background:0 0;border:1px solid #80808040;border-radius:8px;max-width:800px;font-family:system-ui,-apple-system,sans-serif" viewbox="0 0 800 400" height=auto width=100% xmlns=http://www.w3.org/2000/svg><defs><marker viewbox="0 0 10 10" id=arrow markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#38bdf8 /></marker><marker viewbox="0 0 10 10" id=arrow-orange markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#fb923c /></marker><marker viewbox="0 0 10 10" id=arrow-purple markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#c084fc /></marker><marker viewbox="0 0 10 10" id=arrow-green markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#4ade80 /></marker></defs><text fill=currentColor font-size=14 font-weight=600 opacity=0.9 text-anchor=middle x=400 y=30>Pi 会话分支中文摘要拦截与生成时序</text><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=110 x2=110 y1=70 y2=365 /><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=300 x2=300 y1=70 y2=365 /><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=510 x2=510 y1=70 y2=365 /><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=700 x2=700 y1=70 y2=365 /><rect fill=rgba(56,189,248,0.15) height=30 rx=6 stroke=#38bdf8 stroke-width=1.5 width=110 x=55 y=45 /><text fill=#38bdf8 font-size=12 font-weight=600 text-anchor=middle x=110 y=65>用户 / TUI</text><rect fill=rgba(192,132,252,0.15) height=30 rx=6 stroke=#c084fc stroke-width=1.5 width=120 x=240 y=45 /><text fill=#c084fc font-size=12 font-weight=600 text-anchor=middle x=300 y=65>Pi 扩展层</text><rect fill=rgba(251,146,60,0.15) height=30 rx=6 stroke=#fb923c stroke-width=1.5 width=120 x=450 y=45 /><text fill=#fb923c font-size=12 font-weight=600 text-anchor=middle x=510 y=65>Pi 内核引擎</text><rect fill=rgba(74,222,128,0.15) height=30 rx=6 stroke=#4ade80 stroke-width=1.5 width=110 x=645 y=45 /><text fill=#4ade80 font-size=12 font-weight=600 text-anchor=middle x=700 y=65>摘要模型 LLM</text><line marker-end=url(#arrow) stroke=#38bdf8 stroke-width=1.5 x1=110 x2=500 y1=100 y2=100 /><text fill=#38bdf8 font-size=11 text-anchor=middle x=305 y=93>1. 触发 /tree 分支导航</text><line marker-end=url(#arrow-orange) stroke=#fb923c stroke-width=1.5 x1=510 x2=310 y1=140 y2=140 /><text fill=#fb923c font-size=11 text-anchor=middle x=410 y=133>2. 广播 session_before_tree</text><line marker-end=url(#arrow-purple) stroke=#c084fc stroke-width=1.5 x1=300 x2=500 y1=180 y2=180 /><text fill=#c084fc font-size=11 text-anchor=middle x=400 y=173>3. 返回 { replaceInstructions: true, customInstructions }</text><rect fill=rgba(234,179,8,0.12) height=32 rx=6 stroke=#eab308 stroke-width=1 width=235 x=425 y=205 /><text fill=#eab308 font-size=11 font-weight=600 text-anchor=middle x=542 y=220>4. 判定决策分支</text><text fill=currentColor font-size=9 opacity=0.75 text-anchor=middle x=542 y=232>彻底覆盖英文模板 · 保留内核预算与重试</text><line marker-end=url(#arrow-orange) stroke=#fb923c stroke-width=1.5 x1=510 x2=690 y1=260 y2=260 /><text fill=#fb923c font-size=11 text-anchor=middle x=600 y=253>5. 调度 LLM 发起摘要请求</text><line marker-end=url(#arrow-green) stroke=#4ade80 stroke-dasharray=4,3 stroke-width=1.5 x1=700 x2=520 y1=300 y2=300 /><text fill=#4ade80 font-size=11 text-anchor=middle x=610 y=293>6. 流式返回纯中文结构化摘要</text><line marker-end=url(#arrow) stroke=#38bdf8 stroke-dasharray=4,3 stroke-width=1.5 x1=510 x2=120 y1=340 y2=340 /><text fill=#38bdf8 font-size=11 text-anchor=middle x=310 y=333>7. 写入 &lt;summary> 节点完成分支回溯</text></svg></div><h3 id=3-3-shang-xia-wen-ya-suo-san-ge-hong-fa-kou-yi-fen-xie-si-de-ying-wen-mo-ban>3.3 上下文压缩：三个触发口、一份写死的英文模板</h3><ul><li><strong>触发口</strong>（<code>dist/core/agent-session.js</code>）：手动 <code>/compact</code>（<code>reason="manual"</code>，:2221）、上下文达阈值（<code>"threshold"</code>，:2512）等自动档。<li><strong>模板</strong>（<code>dist/core/compaction/compaction.js</code>）：主提示 <code>SUMMARIZATION_PROMPT</code>（:379）写明 “Use this EXACT format”；另有迭代更新用的 <code>UPDATE_SUMMARIZATION_PROMPT</code>（:447）与 split 前缀用的 <code>TURN_PREFIX_SUMMARIZATION_PROMPT</code>（:663）。</ul><p>即：压缩摘要用英文还是中文，跟会话语言无关，只跟核心模板有关。<h3 id=3-4-guan-jian-chai-yi-yi-tiao-you-huan-ci-dang-yi-tiao-mei-you>3.4 关键差异：一条有「换词档」，一条没有</h3><table><thead><tr><th>维度<th>分支回溯（<code>session_before_tree</code>）<th>上下文压缩（<code>session_before_compact</code>）<tbody><tr><td>结果契约<td><code>SessionBeforeTreeResult</code>：可传 <code>customInstructions</code> + <code>replaceInstructions</code><td><code>SessionBeforeCompactResult</code>：只有 <code>cancel</code> 与 <code>compaction</code><tr><td>语义<td><strong>换词档</strong>：内核照跑自己的管线，只把提示词换掉<td><strong>交成品档</strong>：要么掐断，要么把整份摘要交给内核<tr><td>扩展的最小职责<td>递一份中文提示词<td>自己调模型生成摘要，并回填契约字段</table><p>（行号：<code>dist/core/extensions/types.d.ts:1102</code>（compact 结果）/ <code>:1106-1116</code>（tree 结果））<p>一句话：<strong>分支摘要可以“只换词“，压缩摘要只能“自己算完交卷“。</strong><h3 id=3-5-shi-bai-ji-hui-tui-jiang-ji-er-bu-shi-sun-pi>3.5 失败即回退：降级，而不是损坏</h3><p>内核消费的是 <code>result?.compaction</code>（<code>agent-session.js:2201</code>），为空就走 <code>_runDefaultCompaction</code>（:2140）跑英文默认；扩展 handler 抛错由事件总线捕获后仅上报、不中断流程，结果保持 undefined → 同样回退。<p>也就是说：<strong>拿不准就让内核用英文跑完</strong>——会话不会坏、不会卡，代价只是那一次不是中文。<h2 id=4-fang-an-she-ji-yu-xuan-xing>4. 方案设计与选型</h2><h3 id=4-1-fen-zhi-hui-su-zhai-yao-san-tiao-lu-xian>4.1 分支回溯摘要：三条路线</h3><table><thead><tr><th>方案<th>原理<th>优点<th>缺点<th style=text-align:center>结论<tbody><tr><td><strong>A. 源码补丁</strong><td>直接 patch npm 安装包代码<td>最彻底，不依赖插件系统<td>改写内核源码，宿主升级后即失效<td style=text-align:center>❌ 废弃<tr><td><strong>B. 扩展提供 summary</strong><td>扩展拦截后自行调用模型完成摘要<td>自由度最高<td>额外模型配置负担，绕过内核 token 预算与流式控制<td style=text-align:center>❌ 废弃<tr><td><strong>C. 指令完全置换（本方案）</strong><td>用 <code>session_before_tree</code> 注入 <code>replaceInstructions: true</code>，内核据此用中文 Prompt 彻底覆盖英文模板<td>复用内核的重试、预算截断与已鉴权模型调用<td>仅在支持该事件的 Pi 版本生效<td style=text-align:center>✅ 采用</table><h3 id=4-2-shang-xia-wen-ya-suo-mei-you-huan-ci-dang-zhi-sheng-jie-guan>4.2 上下文压缩：没有换词档，只剩接管</h3><p>同样的三分法在压缩上塌缩成一条：<ul><li>源码补丁：否决，理由同上；<li><strong>接管式</strong>：形式上等价于方案的 B，但这次不是“最自由所以最好“，而是<strong>唯一不 patch 内核的路径</strong>——官方 <code>docs/compaction.md</code> 明列 <code>return { compaction: {...} }</code> 用法，<code>examples/extensions/custom-compaction.ts</code> 就是完整参考实现。</ul><p>代价随职责转移：内核不再兜底，契约字段（<code>firstKeptEntryId</code>、<code>tokensBefore</code>、<code>usage</code>、文件清单）与失败降级都要自己扛。§5.3–5.6 讲的就是这些代价。<h2 id=5-he-xin-ji-zhi-qi-yue-yu-gong-cheng-hua-jiao-fu>5. 核心机制契约与工程化交付</h2><h3 id=5-1-fen-zhi-hui-su-zui-xiao-kuo-zhan-qi-yue>5.1 分支回溯：最小扩展契约</h3><p>扩展的职责仅限于<strong>在事件触发时完成指令拦截与替换</strong>，不介入模型推理与网络通信：<pre><code data-lang=typescript>pi.on("session_before_tree", async () => {
+    return {
+        replaceInstructions: true,                     // 必填：声明彻底覆盖默认英文模板
+        customInstructions: CHINESE_BRANCH_SUMMARY_PROMPT // 注入等价中译模板
+    };
+});
+</code></pre><blockquote><p><strong>注意</strong>：必须显式设置 <code>replaceInstructions: true</code>，否则内核会把中文 Prompt 追加在英文模板之后，输出中英混杂。</blockquote><h3 id=5-2-ti-shi-ci-jie-gou-she-ji>5.2 提示词结构设计</h3><p>中文 Prompt 与内核模板<strong>1:1 同构</strong>，只换语言不换骨架：保留 <code>## 目标</code>、<code>## 约束与偏好</code>、<code>## 进展</code>、<code>## 关键决策</code>、<code>## 下一步</code> 五个板块与二级标题结构。消费者是 LLM，结构保真才是恢复质量的来源；观感上则全中文。<h3 id=5-3-shang-xia-wen-ya-suo-jie-guan-shi-si-bu>5.3 上下文压缩：接管式四步</h3><pre><code data-lang=typescript>pi.on("session_before_compact", async (event, ctx) => {
+  // 1) 守卫：preparation 契约字段缺失 → 通知 + 交还英文默认
+  // 2) 取料：messagesToSummarize + turnPrefixMessages（split）一次全覆盖
+  // 3) 生成：convertToLlm + serializeConversation 序列化 → 中文模板 → 模型
+  // 4) 交卷：{ compaction: { summary, firstKeptEntryId, tokensBefore, usage, details } }
+});
+</code></pre><p>两处<strong>必须复用内核、不要自造</strong>：<ul><li>序列化用包导出的 <code>convertToLlm</code> + <code>serializeConversation</code>，与内核保持同样的截断口径；<li><code>firstKeptEntryId</code>、<code>tokensBefore</code> 直接取自 <code>preparation</code>，禁止自算。</ul><h3 id=5-4-split-turn-jie-guan-bi-xu-fu-gai-liang-kuai-yuan-liao>5.4 split-turn：接管必须覆盖两块原料</h3><p><code>findCutPoint</code> 由 <code>keepRecentTokens</code>（默认 20k）从新到旧定切点，且绝不切在工具结果中间。当切点落在 turn 内部时，被丢弃的内容分两块：<code>messagesToSummarize</code>（更早历史）+ <code>turnPrefixMessages</code>（切点之前的半截 turn）。内核的处理是把两块拼成一份摘要。<p>如果扩展只摘要前者，后者就<strong>既被丢弃又不在摘要里——半截 turn 的现场静默消失</strong>。所以接管式实现必须 <code>[...messagesToSummarize, ...turnPrefixMessages]</code> 一次性覆盖（官方示例同款）。取舍是：单次调用的输出预算要同时盖住两块，超长 span 时摘要颗粒度略粗。<h3 id=5-5-zhang-mu-yu-qing-dan-lou-liao-bu-bao-cuo-zhi-hui-jing-mo-diu>5.5 账目与清单：漏了不报错，只会静默丢</h3><ul><li><strong><code>usage</code> 必回填</strong>：会话总账只认条目字段（<code>dist/core/usage-totals.js:58</code> 对 <code>compaction</code> 条目读 <code>entry.usage</code>），没有旁路记账。漏回填 = 这笔消耗凭空消失，且不报错。<li><strong>文件清单要自维护</strong>：<code>fromHook</code> 生成的摘要，内核不自动附带 <code>&lt;read-files>/&lt;modified-files></code> 块，不补就断了跨轮累积链。实现里按内核 <code>FileOperations{read,written,edited}</code> 的口径复刻了 <code>computeFileLists</code> / <code>formatFileOperations</code>。</ul><h3 id=5-6-shi-bai-zhe-xue-yu-hui-tui-ju-zhen>5.6 失败哲学与回退矩阵</h3><p>原则：<strong>一切拿不准 → 通知 + 交还内核英文默认</strong>。<table><thead><tr><th>条件<th>处置<tbody><tr><td>split turn<td>不再回退（§5.4 单次全覆盖）<tr><td>空摘要 / 模型调用异常 / 信号中止<td>通知 + 回退<tr><td>契约字段漂移（Pi 升级）<td>守卫探针 + 通知 + 回退<tr><td>handler 抛未知错误<td>事件总线兜底 → 回退<tr><td>正常接管<td>通知一行（条数 / tokensBefore / 是否 split）</table><p>每次回退都落一条 warning 通知，不留静默回退——否则“你以为在中文、其实一直在英文“。<h3 id=5-7-shi-xian-yu-ce-shi>5.7 实现与测试</h3><ul><li>分支回溯：<code>extensions/chinese-branch-summary.ts</code><li>上下文压缩：<code>extensions/chinese-compaction.ts</code><li>测试：<code>node --test --experimental-strip-types tests/*.test.ts</code>，10 项全绿（含 split 全覆盖、<code>/compact</code> 自带指令并入、异常回退族）<li>仓库：<a rel="noopener nofollow noreferrer external" href=https://github.com/CNCSMonster/pi-chinese-branch-summary target=_blank>CNCSMonster/pi-chinese-branch-summary</a></ul><h2 id=6-jia-gou-qi-shi>6. 架构启示</h2><p><strong>一、两种模式由宿主契约的“档位“决定。</strong> 不是哪种模式更好，而是宿主给了哪一档：有换词档就只换词——省事、向前兼容、内核继续兜底；只给交成品档就只能接管——自由，但契约保真与失败降级全归扩展。<p><strong>二、判据只有一条：只依赖公开事件契约，不碰内核实现。</strong> 契约不变，内核怎么重构都不用改扩展；契约变了，守卫探针显性回退，而不是静默出错。<p><strong>三、接管式最容易犯的错，是把内核的活顺手重写一遍。</strong> 序列化、token 预算、文件清单、usage 口径，内核都已有既成标准，复用它比自造保真。<h2 id=7-zheng-ju-shuo-ming>7. 证据说明</h2><p>本轮对照 v1.0.4 实测确认：<code>compaction.js:379/447/663</code>、<code>types.d.ts:1102/1106-1116</code>、<code>agent-session.js:2140/2201/2221/2512</code>、<code>usage-totals.js:58</code>，以及测试 10/10 通过。<p>未逐行复验、沿用既有记录的项：分支摘要模板行号（旧记录基于 v0.48.x 的 <code>branch-summarization.ts:258</code>，1.0.4 未复验）、第三个触发档 <code>overflow</code>、事件总线对 handler 抛错的 try/catch 细节。</div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#1-zhe-pian-jiang-shen-me>1. 这篇讲什么</a><li><a href=#2-wen-ti-bei-jing-yu-xian-xiang>2. 问题背景与现象</a><li><a href=#3-yuan-ma-ji-zhi-tan-zhen>3. 源码机制探针</a> <ul><li><a href=#3-1-fen-zhi-hui-su-mo-ren-ti-shi-ci-ying-bian-ma>3.1 分支回溯：默认提示词硬编码</a><li><a href=#3-2-fen-zhi-hui-su-de-jie-chi-lian-lu-yu-shi-xu>3.2 分支回溯的劫持链路与时序</a><li><a href=#3-3-shang-xia-wen-ya-suo-san-ge-hong-fa-kou-yi-fen-xie-si-de-ying-wen-mo-ban>3.3 上下文压缩：三个触发口、一份写死的英文模板</a><li><a href=#3-4-guan-jian-chai-yi-yi-tiao-you-huan-ci-dang-yi-tiao-mei-you>3.4 关键差异：一条有「换词档」，一条没有</a><li><a href=#3-5-shi-bai-ji-hui-tui-jiang-ji-er-bu-shi-sun-pi>3.5 失败即回退：降级，而不是损坏</a></ul><li><a href=#4-fang-an-she-ji-yu-xuan-xing>4. 方案设计与选型</a> <ul><li><a href=#4-1-fen-zhi-hui-su-zhai-yao-san-tiao-lu-xian>4.1 分支回溯摘要：三条路线</a><li><a href=#4-2-shang-xia-wen-ya-suo-mei-you-huan-ci-dang-zhi-sheng-jie-guan>4.2 上下文压缩：没有换词档，只剩接管</a></ul><li><a href=#5-he-xin-ji-zhi-qi-yue-yu-gong-cheng-hua-jiao-fu>5. 核心机制契约与工程化交付</a> <ul><li><a href=#5-1-fen-zhi-hui-su-zui-xiao-kuo-zhan-qi-yue>5.1 分支回溯：最小扩展契约</a><li><a href=#5-2-ti-shi-ci-jie-gou-she-ji>5.2 提示词结构设计</a><li><a href=#5-3-shang-xia-wen-ya-suo-jie-guan-shi-si-bu>5.3 上下文压缩：接管式四步</a><li><a href=#5-4-split-turn-jie-guan-bi-xu-fu-gai-liang-kuai-yuan-liao>5.4 split-turn：接管必须覆盖两块原料</a><li><a href=#5-5-zhang-mu-yu-qing-dan-lou-liao-bu-bao-cuo-zhi-hui-jing-mo-diu>5.5 账目与清单：漏了不报错，只会静默丢</a><li><a href=#5-6-shi-bai-zhe-xue-yu-hui-tui-ju-zhen>5.6 失败哲学与回退矩阵</a><li><a href=#5-7-shi-xian-yu-ce-shi>5.7 实现与测试</a></ul><li><a href=#6-jia-gou-qi-shi>6. 架构启示</a><li><a href=#7-zheng-ju-shuo-ming>7. 证据说明</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>版权声明：</strong> 本文采用 <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh rel=noopener target=_blank>CC BY-NC-SA 4.0</a> 协议进行许可。转载请注明出处！</div></footer><section class=comments id=comments><h2>评论</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=zh-CN data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=prev href=https://cncsmonster.github.io/open-source/qwen-code-clipboard-fix/>← Qwen Code PR #4647：修复 Linux/WSL2 剪贴板图片粘贴</a></nav></main><footer class=site-footer><p>© 2026 CCM。由 Zola 强力驱动。<div class=footer-links><a href=https://cncsmonster.github.io/>↑ 返回首页</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>归档</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>电子书</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.zh.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">搜索加载中...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">未找到相关结果</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>

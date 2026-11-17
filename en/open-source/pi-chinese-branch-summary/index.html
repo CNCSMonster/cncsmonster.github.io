@@ -1,0 +1,168 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>Pi Session Summary Localization: Design and Extension Implementation | CCM's Blog</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM's Blog" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM's Blog" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/ hreflang=zh rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM's Blog</a><div class=nav-links><div class=search-container><input placeholder="Search articles..." class=search-input id=search-input><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>Home</a><a href=https://cncsmonster.github.io/posts/>Blog</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> Ebooks</a><a href=https://cncsmonster.github.io/open-source/>Projects</a><a href=https://cncsmonster.github.io/about/>About</a><a title="Subscribe to blog updates" class=nav-subscribe href=https://cncsmonster.github.io/subscribe/> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a class=lang-link href=https://cncsmonster.github.io/open-source/pi-chinese-branch-summary/ title=切换到中文>中文</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>Pi Session Summary Localization: Design and Extension Implementation</h1><div class=post-meta><time datetime=2026-10-12T02:22:55+08:00>2026-10-12</time><span class=meta-separator>·</span><time class=post-updated datetime=2026-10-17T00:00:00+08:00> Updated: 2026-10-17 </time></div></header><div class=post-layout><div class=post-content><h2 id=1-what-this-article-covers>1. What This Article Covers</h2><p>Pi writes <strong>two kinds</strong> of structured summary into a session, and both templates are hard-coded in English in the core: the <strong>branch summary</strong> written when you backtrack with <code>/tree</code>, and the <strong>compaction summary</strong> written when a long session is compacted. The result is English headings showing up inside a Chinese conversation.<p>This article takes both paths apart and gives a localization approach for each: the branch summary goes through <strong>instruction replacement</strong> (swap the prompt, nothing else), while the compaction summary goes through <strong>takeover</strong> (the core offers no “swap the words” slot, so the extension must call the model itself and hand back a finished summary).<h2 id=2-background-and-observed-behavior>2. Background and Observed Behavior</h2><p><strong>Case one: branch backtracking.</strong> In Chinese-language technical research and documentation sessions, when the user switches and backtracks a branch with <code>/tree</code>, Pi inserts a <code>&lt;summary></code> node into the conversation history as context memory. Although the whole conversation is in Chinese, the summary is still forced into an English structure:<pre><code data-lang=markdown>&lt;summary>
+The user explored a different conversation branch before returning here.
+Summary of that exploration:
+
+## Goal
+[What was the user trying to accomplish in this branch?]
+
+## Constraints & Preferences
+- [Any constraints, preferences, or requirements mentioned]
+...
+</code></pre><p><strong>Case two: context compaction.</strong> In a long session, once the context approaches the window limit (or on a manual <code>/compact</code>), Pi folds the earlier history into a checkpoint summary, after which only “system prompt + summary + recent messages” are carried forward. That summary has an English skeleton too:<pre><code data-lang=markdown>## Goal
+## Constraints & Preferences
+## Critical Context
+</code></pre><p>Both kinds appear in the same Chinese conversation, reading as continuous mixed Chinese-English text. The native English summaries are logically sound; they simply add a reading barrier in a Chinese-language context.<h2 id=3-source-code-probing>3. Source-Code Probing</h2><p>Pi is a fully open-source project (official repo: <a rel="noopener nofollow noreferrer external" href=https://github.com/earendil-works/pi target=_blank>earendil-works/pi</a>). The line numbers below were measured against the locally installed v1.0.4 <code>dist/</code>.<h3 id=3-1-branch-backtracking-hard-coded-default-prompt>3.1 Branch Backtracking: Hard-Coded Default Prompt</h3><p>The branch summary template is the core constant <code>BRANCH_SUMMARY_PROMPT</code> (<code>dist/core/compaction/branch-summarization.js</code>):<pre><code data-lang=typescript>const BRANCH_SUMMARY_PROMPT = `Create a structured summary of this conversation branch for context when returning later.
+
+Use this EXACT format:
+
+## Goal
+[What was the user trying to accomplish in this branch?]
+
+## Constraints & Preferences
+- [Any constraints, preferences, or requirements mentioned]
+- [Or "(none)" if none were mentioned]
+
+## Progress
+### Done
+- [x] [Completed tasks/changes]
+
+### In Progress
+- [ ] [Work that was started but not finished]
+
+### Blocked
+- [Issues preventing progress, if any]
+
+## Key Decisions
+- **[Decision]**: [Brief rationale]
+
+## Next Steps
+1. [What should happen next to continue this work]
+
+Keep each section concise. Preserve exact file paths, function names, and error messages.`;
+</code></pre><p>Independent of the system locale and the user’s interaction language, the core assembles its prompt from this English template by default.<h3 id=3-2-branch-backtracking-interception-path-and-sequence>3.2 Branch Backtracking: Interception Path and Sequence</h3><p>After the branch switch is confirmed and before the summary-model call is dispatched, the core broadcasts a lifecycle event to the extension layer over its event bus:<div style="margin:20px 0" align=center><svg style="background:0 0;border:1px solid #80808040;border-radius:8px;max-width:800px;font-family:system-ui,-apple-system,sans-serif" viewbox="0 0 800 400" height=auto width=100% xmlns=http://www.w3.org/2000/svg><defs><marker viewbox="0 0 10 10" id=arrow markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#38bdf8 /></marker><marker viewbox="0 0 10 10" id=arrow-orange markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#fb923c /></marker><marker viewbox="0 0 10 10" id=arrow-purple markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#c084fc /></marker><marker viewbox="0 0 10 10" id=arrow-green markerheight=6 markerwidth=6 orient=auto-start-reverse refx=8 refy=5><path d="M 0 1.5 L 8 5 L 0 8.5 z" fill=#4ade80 /></marker></defs><text fill=currentColor font-size=14 font-weight=600 opacity=0.9 text-anchor=middle x=400 y=30>Pi 会话分支中文摘要拦截与生成时序</text><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=110 x2=110 y1=70 y2=365 /><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=300 x2=300 y1=70 y2=365 /><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=510 x2=510 y1=70 y2=365 /><line stroke=rgba(128,128,128,0.3) stroke-dasharray=4,4 stroke-width=1.5 x1=700 x2=700 y1=70 y2=365 /><rect fill=rgba(56,189,248,0.15) height=30 rx=6 stroke=#38bdf8 stroke-width=1.5 width=110 x=55 y=45 /><text fill=#38bdf8 font-size=12 font-weight=600 text-anchor=middle x=110 y=65>用户 / TUI</text><rect fill=rgba(192,132,252,0.15) height=30 rx=6 stroke=#c084fc stroke-width=1.5 width=120 x=240 y=45 /><text fill=#c084fc font-size=12 font-weight=600 text-anchor=middle x=300 y=65>Pi 扩展层</text><rect fill=rgba(251,146,60,0.15) height=30 rx=6 stroke=#fb923c stroke-width=1.5 width=120 x=450 y=45 /><text fill=#fb923c font-size=12 font-weight=600 text-anchor=middle x=510 y=65>Pi 内核引擎</text><rect fill=rgba(74,222,128,0.15) height=30 rx=6 stroke=#4ade80 stroke-width=1.5 width=110 x=645 y=45 /><text fill=#4ade80 font-size=12 font-weight=600 text-anchor=middle x=700 y=65>摘要模型 LLM</text><line marker-end=url(#arrow) stroke=#38bdf8 stroke-width=1.5 x1=110 x2=500 y1=100 y2=100 /><text fill=#38bdf8 font-size=11 text-anchor=middle x=305 y=93>1. 触发 /tree 分支导航</text><line marker-end=url(#arrow-orange) stroke=#fb923c stroke-width=1.5 x1=510 x2=310 y1=140 y2=140 /><text fill=#fb923c font-size=11 text-anchor=middle x=410 y=133>2. 广播 session_before_tree</text><line marker-end=url(#arrow-purple) stroke=#c084fc stroke-width=1.5 x1=300 x2=500 y1=180 y2=180 /><text fill=#c084fc font-size=11 text-anchor=middle x=400 y=173>3. 返回 { replaceInstructions: true, customInstructions }</text><rect fill=rgba(234,179,8,0.12) height=32 rx=6 stroke=#eab308 stroke-width=1 width=235 x=425 y=205 /><text fill=#eab308 font-size=11 font-weight=600 text-anchor=middle x=542 y=220>4. 判定决策分支</text><text fill=currentColor font-size=9 opacity=0.75 text-anchor=middle x=542 y=232>彻底覆盖英文模板 · 保留内核预算与重试</text><line marker-end=url(#arrow-orange) stroke=#fb923c stroke-width=1.5 x1=510 x2=690 y1=260 y2=260 /><text fill=#fb923c font-size=11 text-anchor=middle x=600 y=253>5. 调度 LLM 发起摘要请求</text><line marker-end=url(#arrow-green) stroke=#4ade80 stroke-dasharray=4,3 stroke-width=1.5 x1=700 x2=520 y1=300 y2=300 /><text fill=#4ade80 font-size=11 text-anchor=middle x=610 y=293>6. 流式返回纯中文结构化摘要</text><line marker-end=url(#arrow) stroke=#38bdf8 stroke-dasharray=4,3 stroke-width=1.5 x1=510 x2=120 y1=340 y2=340 /><text fill=#38bdf8 font-size=11 text-anchor=middle x=310 y=333>7. 写入 &lt;summary> 节点完成分支回溯</text></svg></div><h3 id=3-3-context-compaction-triggers-and-one-hard-coded-english-template>3.3 Context Compaction: Triggers and One Hard-Coded English Template</h3><ul><li><strong>Triggers</strong> (<code>dist/core/agent-session.js</code>): manual <code>/compact</code> (<code>reason="manual"</code>, :2221), context reaching the threshold (<code>"threshold"</code>, :2512), and other automatic paths.<li><strong>Templates</strong> (<code>dist/core/compaction/compaction.js</code>): the main <code>SUMMARIZATION_PROMPT</code> (:379) demanding “Use this EXACT format”; plus <code>UPDATE_SUMMARIZATION_PROMPT</code> (:447) for incremental updates and <code>TURN_PREFIX_SUMMARIZATION_PROMPT</code> (:663) for split prefixes.</ul><p>In other words, whether a compaction summary comes out in English or Chinese has nothing to do with the conversation language — only with the core template.<h3 id=3-4-the-key-difference-one-path-has-a-swap-the-words-slot-the-other-does-not>3.4 The Key Difference: One Path Has a “Swap the Words” Slot, the Other Does Not</h3><table><thead><tr><th>Dimension<th>Branch backtracking (<code>session_before_tree</code>)<th>Context compaction (<code>session_before_compact</code>)<tbody><tr><td>Result contract<td><code>SessionBeforeTreeResult</code>: accepts <code>customInstructions</code> + <code>replaceInstructions</code><td><code>SessionBeforeCompactResult</code>: only <code>cancel</code> and <code>compaction</code><tr><td>Semantics<td><strong>Swap-the-words slot</strong>: the core runs its own pipeline, you only replace the prompt<td><strong>Hand-in-a-finished-product slot</strong>: either abort, or hand the whole summary to the core<tr><td>Minimum extension duty<td>Supply a Chinese prompt<td>Call the model yourself and fill in the contract fields</table><p>(Line numbers: <code>dist/core/extensions/types.d.ts:1102</code> for the compact result, <code>:1106-1116</code> for the tree result.)<p>In one sentence: <strong>a branch summary can “just swap the words”; a compaction summary can only “compute it yourself and hand in the paper.”</strong><h3 id=3-5-failure-means-fallback-degrade-do-not-corrupt>3.5 Failure Means Fallback: Degrade, Do Not Corrupt</h3><p>The core consumes <code>result?.compaction</code> (<code>agent-session.js:2201</code>); when it is empty, <code>_runDefaultCompaction</code> (:2140) runs the English default. If an extension handler throws, the event bus catches it, reports it, and leaves the result undefined — the same fallback. In short: <strong>when in doubt, let the core finish in English.</strong> The session never breaks or stalls; the only cost is that this one summary is not Chinese.<h2 id=4-design-choices>4. Design Choices</h2><h3 id=4-1-branch-summary-three-routes>4.1 Branch Summary: Three Routes</h3><table><thead><tr><th>Approach<th>Mechanism<th>Pros<th>Cons<th style=text-align:center>Verdict<tbody><tr><td><strong>A. Source patch</strong><td>Patch the installed npm package directly<td>Most thorough; no dependency on the plugin system<td>Rewrites core source; breaks on host upgrade<td style=text-align:center>❌ Rejected<tr><td><strong>B. Extension-provided summary</strong><td>Extension intercepts and calls a model itself<td>Maximum flexibility<td>Extra model configuration burden; bypasses the core’s token budget and streaming control<td style=text-align:center>❌ Rejected<tr><td><strong>C. Full instruction replacement (this approach)</strong><td>Inject <code>replaceInstructions: true</code> via <code>session_before_tree</code>, so the core fully replaces the English template with a Chinese prompt<td>Reuses the core’s retry, budget truncation, and authenticated model calls<td>Only works on Pi versions supporting that event<td style=text-align:center>✅ Adopted</table><h3 id=4-2-compaction-no-swap-slot-only-takeover>4.2 Compaction: No Swap Slot, Only Takeover</h3><p>The same three-route analysis collapses into one for compaction:<ul><li>Source patch: rejected, same reason as above;<li><strong>Takeover</strong>: formally the same as route B, but this time it is not “most flexible, therefore best” — it is the <strong>only path that does not patch the core</strong>. The official <code>docs/compaction.md</code> documents the <code>return { compaction: {...} }</code> usage, and <code>examples/extensions/custom-compaction.ts</code> is a complete reference implementation.</ul><p>The cost moves with the responsibility: the core no longer covers for you, so the contract fields (<code>firstKeptEntryId</code>, <code>tokensBefore</code>, <code>usage</code>, file lists) and failure degradation are all yours. Sections 5.3–5.6 exist because of that cost.<h2 id=5-core-contract-and-engineering-delivery>5. Core Contract and Engineering Delivery</h2><h3 id=5-1-branch-summary-minimal-extension-contract>5.1 Branch Summary: Minimal Extension Contract</h3><p>The extension’s only job is to <strong>intercept and replace the instructions when the event fires</strong>; it never touches model inference or networking:<pre><code data-lang=typescript>pi.on("session_before_tree", async () => {
+    return {
+        replaceInstructions: true,                     // required: declare a full override of the default English template
+        customInstructions: CHINESE_BRANCH_SUMMARY_PROMPT // inject the equivalent Chinese template
+    };
+});
+</code></pre><blockquote><p><strong>Note</strong>: <code>replaceInstructions: true</code> must be set explicitly; otherwise the core appends the Chinese prompt after the English template and produces mixed-language output.</blockquote><h3 id=5-2-prompt-structure-design>5.2 Prompt Structure Design</h3><p>The Chinese prompt is <strong>1:1 isomorphic</strong> with the core template — same skeleton, different language: it keeps the five sections (<code>## 目标</code>, <code>## 约束与偏好</code>, <code>## 进展</code>, <code>## 关键决策</code>, <code>## 下一步</code>) and the second-level heading structure. The consumer is an LLM, so structural fidelity is what preserves recovery quality; the visible result is all-Chinese.<h3 id=5-3-compaction-the-four-steps-of-takeover>5.3 Compaction: The Four Steps of Takeover</h3><pre><code data-lang=typescript>pi.on("session_before_compact", async (event, ctx) => {
+  // 1) Guard: missing preparation contract fields → notify + hand back to the English default
+  // 2) Gather: messagesToSummarize + turnPrefixMessages (split) covered in one pass
+  // 3) Generate: serialize with convertToLlm + serializeConversation → Chinese template → model
+  // 4) Submit: { compaction: { summary, firstKeptEntryId, tokensBefore, usage, details } }
+});
+</code></pre><p>Two things <strong>must reuse the core rather than be reinvented</strong>:<ul><li>Serialization goes through the package exports <code>convertToLlm</code> + <code>serializeConversation</code>, keeping the same truncation behavior as the core;<li><code>firstKeptEntryId</code> and <code>tokensBefore</code> come straight from <code>preparation</code> — never compute them yourself.</ul><h3 id=5-4-split-turn-takeover-must-cover-both-input-blocks>5.4 Split Turn: Takeover Must Cover Both Input Blocks</h3><p><code>findCutPoint</code> picks the cut point by accumulating <code>keepRecentTokens</code> (20k by default) from newest to oldest, and never cuts inside a tool result. When the cut lands inside a turn, the discarded content comes in two blocks: <code>messagesToSummarize</code> (earlier history) and <code>turnPrefixMessages</code> (the partial turn before the cut). The core merges both into a single summary.<p>If an extension summarizes only the first block, the second is <strong>discarded and absent from the summary — the half-turn’s scene silently disappears</strong>. A takeover implementation must therefore cover <code>[...messagesToSummarize, ...turnPrefixMessages]</code> in one call (exactly what the official example does). The trade-off: a single call must budget output for both blocks, so on very long spans the summary granularity is slightly coarser.<h3 id=5-5-accounting-and-file-lists-omissions-fail-silently>5.5 Accounting and File Lists: Omissions Fail Silently</h3><ul><li><strong><code>usage</code> must be filled in</strong>: the session totals only read the entry field (<code>dist/core/usage-totals.js:58</code> reads <code>entry.usage</code> for <code>compaction</code> entries); there is no side channel for accounting. Omitting it makes that spend vanish — with no error.<li><strong>File lists must be maintained by the extension</strong>: for <code>fromHook</code> summaries, the core does not automatically attach the <code>&lt;read-files>/&lt;modified-files></code> block, so skipping it breaks the cumulative chain across compactions. The implementation therefore replicates <code>computeFileLists</code> / <code>formatFileOperations</code> against the core’s <code>FileOperations{read,written,edited}</code> semantics.</ul><h3 id=5-6-failure-philosophy-and-the-fallback-matrix>5.6 Failure Philosophy and the Fallback Matrix</h3><p>The rule: <strong>when anything is uncertain → notify + hand back to the core’s English default</strong>.<table><thead><tr><th>Condition<th>Handling<tbody><tr><td>Split turn<td>No longer falls back (§5.4 single-pass coverage)<tr><td>Empty summary / model call error / aborted signal<td>Notify + fall back<tr><td>Contract field drift (Pi upgrade)<td>Guard probe + notify + fall back<tr><td>Handler throws an unknown error<td>Event bus catches → falls back<tr><td>Normal takeover<td>One info notification (message count / tokensBefore / split or not)</table><p>Every fallback emits a warning notification; there is no silent fallback — otherwise you would believe you are reading Chinese while it has been English all along.<h3 id=5-7-implementation-and-tests>5.7 Implementation and Tests</h3><ul><li>Branch backtracking: <code>extensions/chinese-branch-summary.ts</code><li>Context compaction: <code>extensions/chinese-compaction.ts</code><li>Tests: <code>node --test --experimental-strip-types tests/*.test.ts</code>, 10/10 green (covering full split coverage, merging <code>/compact</code> instructions, and the failure/fallback family)<li>Repository: <a rel="noopener nofollow noreferrer external" href=https://github.com/CNCSMonster/pi-chinese-branch-summary target=_blank>CNCSMonster/pi-chinese-branch-summary</a></ul><h2 id=6-architectural-takeaways>6. Architectural Takeaways</h2><p><strong>One — the two modes are decided by the host contract’s “slot type.”</strong> It is not a question of which mode is better, but of which slot the host offers: with a swap slot you only swap the words — less work, forward-compatible, the core keeps covering for you; with only a finished-product slot you must take over — more freedom, but contract fidelity and failure degradation are entirely yours.<p><strong>Two — there is only one criterion: depend on public event contracts, never on core internals.</strong> As long as the contract holds, the core can be refactored freely; when the contract changes, the guard probe falls back visibly instead of failing silently.<p><strong>Three — the classic takeover mistake is to rewrite the core’s work on the side.</strong> Serialization, token budgets, file lists, usage semantics — the core already defines each of them; reusing them is more faithful than reinventing them.<h2 id=7-evidence-notes>7. Evidence Notes</h2><p>Verified against v1.0.4 in this round: <code>compaction.js:379/447/663</code>, <code>types.d.ts:1102/1106-1116</code>, <code>agent-session.js:2140/2201/2221/2512</code>, <code>usage-totals.js:58</code>, plus 10/10 tests passing.<p>Not re-verified line by line; carried over from earlier records: the branch-summary template line number (recorded as <code>branch-summarization.ts:258</code> back on v0.48.x, not re-verified on 1.0.4), the third trigger path <code>overflow</code>, and the event bus’s try/catch details for handler errors.</div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#1-what-this-article-covers>1. What This Article Covers</a><li><a href=#2-background-and-observed-behavior>2. Background and Observed Behavior</a><li><a href=#3-source-code-probing>3. Source-Code Probing</a> <ul><li><a href=#3-1-branch-backtracking-hard-coded-default-prompt>3.1 Branch Backtracking: Hard-Coded Default Prompt</a><li><a href=#3-2-branch-backtracking-interception-path-and-sequence>3.2 Branch Backtracking: Interception Path and Sequence</a><li><a href=#3-3-context-compaction-triggers-and-one-hard-coded-english-template>3.3 Context Compaction: Triggers and One Hard-Coded English Template</a><li><a href=#3-4-the-key-difference-one-path-has-a-swap-the-words-slot-the-other-does-not>3.4 The Key Difference: One Path Has a “Swap the Words” Slot, the Other Does Not</a><li><a href=#3-5-failure-means-fallback-degrade-do-not-corrupt>3.5 Failure Means Fallback: Degrade, Do Not Corrupt</a></ul><li><a href=#4-design-choices>4. Design Choices</a> <ul><li><a href=#4-1-branch-summary-three-routes>4.1 Branch Summary: Three Routes</a><li><a href=#4-2-compaction-no-swap-slot-only-takeover>4.2 Compaction: No Swap Slot, Only Takeover</a></ul><li><a href=#5-core-contract-and-engineering-delivery>5. Core Contract and Engineering Delivery</a> <ul><li><a href=#5-1-branch-summary-minimal-extension-contract>5.1 Branch Summary: Minimal Extension Contract</a><li><a href=#5-2-prompt-structure-design>5.2 Prompt Structure Design</a><li><a href=#5-3-compaction-the-four-steps-of-takeover>5.3 Compaction: The Four Steps of Takeover</a><li><a href=#5-4-split-turn-takeover-must-cover-both-input-blocks>5.4 Split Turn: Takeover Must Cover Both Input Blocks</a><li><a href=#5-5-accounting-and-file-lists-omissions-fail-silently>5.5 Accounting and File Lists: Omissions Fail Silently</a><li><a href=#5-6-failure-philosophy-and-the-fallback-matrix>5.6 Failure Philosophy and the Fallback Matrix</a><li><a href=#5-7-implementation-and-tests>5.7 Implementation and Tests</a></ul><li><a href=#6-architectural-takeaways>6. Architectural Takeaways</a><li><a href=#7-evidence-notes>7. Evidence Notes</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>Copyright：</strong> This work is licensed under <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en rel=noopener target=_blank>CC BY-NC-SA 4.0</a>. Please provide attribution and share alike.</div></footer><section class=comments id=comments><h2>Comments</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=en data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation><a class=prev href=https://cncsmonster.github.io/en/open-source/qwen-code-clipboard-fix/>← Qwen Code PR #4647: Fix Linux/WSL2 Clipboard Image Paste</a></nav></main><footer class=site-footer><p>© 2026 CCM. Powered by Zola.<div class=footer-links><a href=https://cncsmonster.github.io/>↑ Back to Home</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>Archive</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>Ebooks</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.en.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">Loading search...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">No results found</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>

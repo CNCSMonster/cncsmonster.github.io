@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Research</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/research/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-10-14T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/research/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Dify Status Check: Where Is It Now?</title>
+        <published>2026-10-14T00:00:00+08:00</published>
+        <updated>2026-10-14T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/dify-recent-status-and-technical-evolution/"/>
+        <id>https://cncsmonster.github.io/en/posts/dify-recent-status-and-technical-evolution/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/dify-recent-status-and-technical-evolution/">&lt;blockquote&gt;
+&lt;p&gt;Baseline version: GitHub &lt;code&gt;langgenius&#x2F;dify&lt;&#x2F;code&gt; v1.17.1&lt;br &#x2F;&gt;
+Estimated half-life: Quarterly (AI app orchestration and protocol evolution moves fast — keep an eye on plugin and MCP developments)&lt;br &#x2F;&gt;
+Nature: Personal research notes, sharing what I found&lt;br &#x2F;&gt;
+Motivation: I hadn’t heard much about Dify recently and wondered — did it fall behind, or is it quietly growing somewhere else? So I spent some time digging through public sources and wrote down what I found.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-a-feeling-why-does-it-seem-like-no-one-s-talking-about-it&quot;&gt;1. A Feeling: Why Does It Seem Like “No One’s Talking About It”?&lt;&#x2F;h2&gt;
+&lt;p&gt;At least in my own circles, between late 2024 and 2026, I rarely saw anyone discussing Dify. My first reaction was: is it dead?&lt;&#x2F;p&gt;
+&lt;p&gt;But after going through the materials, I think this “disappearance” likely comes more from &lt;strong&gt;our own shifting attention&lt;&#x2F;strong&gt; and &lt;strong&gt;Dify’s own strategic pivot&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;2023 ~ Mid-2024 (Geek Carnival)                    2025 ~ 2026 (Divergence)
+[Individual devs &#x2F; Prompt engineers]             [Code-first camp (geeks&#x2F;backend)]
+      │                                                │
+      ▼                                                ▼
+Loved GUI drag-and-drop bots &#x2F; simple KBs    Shifted to Coding Agents (Cursor&#x2F;Claude Code)
+Dify, FastGPT dominating social media         Shifted to code-native state machines (LangGraph&#x2F;PydanticAI)
+                                               
+                                               [Dify&amp;#39;s actual pivot]
+                                                       │
+                                                       ▼
+                                           International expansion (Japan &#x2F; North America &#x2F; Europe)
+                                           Deep enterprise (compliance &#x2F; private deployment &#x2F; global giants)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;1-1-the-geek-world-s-attention-shifted&quot;&gt;1.1 The Geek World’s Attention Shifted&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;In 2023 to early 2024, the LLM ecosystem was still figuring out “how to connect models to knowledge bases and prompts.” Visual DAG drag-and-drop was the lowest-barrier, most demo-friendly approach;&lt;&#x2F;li&gt;
+&lt;li&gt;Later, the tech community’s attention clearly shifted toward &lt;strong&gt;Coding Agents&lt;&#x2F;strong&gt; (Cursor, Claude Code, etc.) and &lt;strong&gt;code-first state machine frameworks&lt;&#x2F;strong&gt; (LangGraph, PydanticAI, etc.). With code, Git management and unit testing feel more native. People on social media stopped posting “wiring diagrams.”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;1-2-dify-s-ownzhong-xin-shifted&quot;&gt;1.2 Dify’s Own重心 Shifted&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;From public information, the LangGenius team deliberately reduced their domestic geek marketing volume and poured energy into overseas markets and large enterprise customers;&lt;&#x2F;li&gt;
+&lt;li&gt;The fastest-growing market is &lt;strong&gt;overseas (especially Japan and North America)&lt;&#x2F;strong&gt;. While domestic social media discussion cooled, Dify was holding hundreds-person summits in Japan, joining AWS official channels, and completing private deployments inside multinational enterprise networks.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-publicly-available-business-data&quot;&gt;2. Publicly Available Business Data&lt;&#x2F;h2&gt;
+&lt;p&gt;Here are the numbers I found from public sources, for reference:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-1-funding&quot;&gt;2.1 Funding&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;$30M Series Pre-A (March 2026)&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Lead&lt;&#x2F;strong&gt;: HSG (HongShan);&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Followers&lt;&#x2F;strong&gt;: GL Ventures, 5Y Capital (returning investor), Mizuho Leaguer Investment, Alt-Alpha Capital, and NYX Ventures;&lt;&#x2F;li&gt;
+&lt;li&gt;Valuation approximately $180M.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-2-open-source-community&quot;&gt;2.2 Open Source &amp;amp; Community&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Stars&lt;&#x2F;strong&gt;: ~&lt;strong&gt;158K&lt;&#x2F;strong&gt; (global Top 60), 1000+ contributors, 861 recent commits, 168 releases;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Global self-hosted installations&lt;&#x2F;strong&gt;: Over &lt;strong&gt;1.4 million&lt;&#x2F;strong&gt; machines;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise customers&lt;&#x2F;strong&gt;: Publicly disclosed &lt;strong&gt;280+&lt;&#x2F;strong&gt;, including &lt;strong&gt;Maersk, Volvo, Novartis, ThermoFisher&lt;&#x2F;strong&gt;;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Global presence&lt;&#x2F;strong&gt;: Offices in San Francisco Bay Area, Tokyo, Shanghai, and Suzhou;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Japan market&lt;&#x2F;strong&gt;: Established the “Japan Association for Dify” (一般社团法人 Dify 协会, founded September 2025 with NTT Data and others), and became an AWS Global Partner (awarded 2025 AWS Social Impact Partner of the Year).&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-product-technical-evolution-v0-x-to-v1-17&quot;&gt;3. Product &amp;amp; Technical Evolution (v0.x to v1.17+)&lt;&#x2F;h2&gt;
+&lt;p&gt;From the version history, Dify’s product form has clearly moved well beyond the early “visual prompt tuner” stage. The underlying tech stack has gone through multiple deep refactors:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;                    ┌─────────────────────────────────┐
+                    │       Dify Marketplace          │ (Plugin ecosystem &#x2F; Community assets)
+                    └────────────────┬────────────────┘
+                                     │
+┌───────────────────────────────┐    │    ┌───────────────────────────────┐
+│        New Agent App          │    │    │       Workflow Studio         │
+│ (Autonomous reasoning &#x2F;      │◄───┴───►│ (Visual orchestration &#x2F;       │
+│  Skills &#x2F; Code sandbox)      │         │  Branching &#x2F; Dynamic routing) │
+└───────────────┬───────────────┘         └───────────────┬───────────────┘
+                │                                         │
+                └───────────────────┬─────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │   MCP Gateway (Workflow-as-MCP-Server &#x2F; ClientPassthru)│
+       └────────────────────────────┬───────────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │     Core Engine (Async non-blocking &#x2F; Sandbox &#x2F; RBAC)   │
+       └────────────────────────────────────────────────────────┘
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;3-1-full-mcp-model-context-protocol-support&quot;&gt;3.1 Full MCP (Model Context Protocol) Support&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Workflow-as-MCP-Server&lt;&#x2F;strong&gt;: Complex business workflows orchestrated inside Dify can be exposed as standard MCP Servers with one click. Whether it’s Claude Desktop, an IDE, or an external Coding Agent, they can all call Dify workflows as standard MCP tools;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Runtime dynamic header pass-through&lt;&#x2F;strong&gt;: Supports injecting placeholder authentication at request time (e.g., &lt;code&gt;{{request.headers.X-Custom-Auth}}&lt;&#x2F;code&gt;), solving the security isolation and identity authentication challenge for multi-tenant enterprises calling third-party tools.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-2-plugin-system-marketplace-fully-decoupled&quot;&gt;3.2 Plugin System &amp;amp; Marketplace — Fully Decoupled&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;No more forking source code&lt;&#x2F;strong&gt;: In the early v0.x days, community developers wanting to integrate a new model or private internal system often had to fork the repo, modify core code, or even maintain their own version. v1.0 (early 2025) restructured the plugin architecture — tools and models are fully decoupled as independent plugins;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Marketplace &amp;amp; plugin security governance&lt;&#x2F;strong&gt;: Introduced plugin security levels, signature verification, and sandbox isolation. Enterprise users can deploy private plugin sources on internal networks, balancing extensibility with compliance.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-3-agent-architecture-rebuild-new-agent-app-sandbox-execution&quot;&gt;3.3 Agent Architecture Rebuild: New Agent App &amp;amp; Sandbox Execution&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Chat-driven Agent building&lt;&#x2F;strong&gt;: Supports generating and debugging agents through natural language conversation, automatically extracting and distilling structured, reusable Skills;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Built-in secure sandbox (DifySandbox)&lt;&#x2F;strong&gt;: Provides isolated Python&#x2F;Shell execution sandboxes for Code nodes and Tool nodes, supporting secure data transformation, logic decisions, and local script execution;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bidirectional workflow nesting&lt;&#x2F;strong&gt;: You can embed Agent nodes inside Workflows (letting the agent make local autonomous decisions), or have Agents trigger specific Workflows.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-4-enterprise-core-compliance&quot;&gt;3.4 Enterprise Core &amp;amp; Compliance&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Async non-blocking execution engine&lt;&#x2F;strong&gt;: Database writes and long-chain calls are async-ified. Multi-branch parallel execution time is optimized from “simple sum of all branches” to “depends on the longest branch,” significantly reducing timeout interruption rates;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise governance certifications&lt;&#x2F;strong&gt;: Two consecutive years of SOC 2 Type II, ISO 27001:2022, and GDPR compliance certifications, with full audit log tracking and fine-grained RBAC permission controls.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-my-attempt-to-understand-its-positioning&quot;&gt;4. My Attempt to Understand Its Positioning&lt;&#x2F;h2&gt;
+&lt;p&gt;Here’s my personal understanding from research — may not be fully accurate, just for reference:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Dimension&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Dify (v1.17+)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Code-First Frameworks (LangGraph etc.)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Pure SaaS Competitors (Coze)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Audience I observe&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Cross-functional teams (Business + IT)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Senior backend, AI full-stack engineers&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Individual content creators, non-technical ops&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Deployment flexibility&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Open-source community &#x2F; Container private &#x2F; Multi-cloud&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure code library, deploy as you wish&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Deeply tied to platform ecosystem&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Debugging experience&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Good node-level historical I&#x2F;O inspection UI&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Relies on code breakpoints, LangSmith, etc.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Relies on platform logs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Extension approach&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Plugin marketplace + MCP + Custom code nodes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure code, unlimited extension&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Limited to platform’s integration library&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Engineering collaboration&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Workflow DSL import&#x2F;export, weaker Git diffing&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Native Git + unit tests&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;In-platform version management&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;my-personal-scenario-understanding&quot;&gt;My Personal Scenario Understanding&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;                    Where does your scenario lean?
+                              │
+         ┌────────────────────┴────────────────────┐
+         ▼                                         ▼
+【Business-IT collaboration needed】        【Hardcore geek &#x2F; Algorithm experiments】
+• Need to visually present flows to biz    • Logic heavily depends on complex recursion, dynamic backtracking
+• Need out-of-box RAG, permissions &amp;amp; audit • Heavily dependent on Git branching &amp;amp; automated testing
+• Need multi-model aggregation &amp;amp; MCP GW    • More comfortable with pure code, averse to UI wiring
+         │                                         │
+         ▼                                         ▼
+   Dify might be a good fit             LangGraph &#x2F; custom code might be handier
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is just my rough personal understanding. Real-world selection is far more complex. Many teams probably use a mix.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;5-monetization-team-status&quot;&gt;5. Monetization &amp;amp; Team Status&lt;&#x2F;h2&gt;
+&lt;p&gt;This is what I was curious about: Is it making money? Is the team still alive?&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-1-pricing-publicly-available&quot;&gt;5.1 Pricing (Publicly Available)&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Plan&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Price&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Sandbox&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Free&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;200 message credits&#x2F;month, 1 person, 5 Apps&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Professional&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;$59&#x2F;mo ($590&#x2F;yr)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;5,000 credits&#x2F;month, 3 people, 50 Apps&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Team&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;$159&#x2F;mo ($1,590&#x2F;yr)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;10,000 credits&#x2F;month, 50 people, 200 Apps&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Enterprise&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Custom quote&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;SSO&#x2F;SCIM, private deployment, SLA&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;AWS Marketplace Enterprise&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;From $150,000&#x2F;yr&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Listed on AWS Marketplace at this price&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Self-hosted community&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Free (open-source)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Users pay for infra + LLM API costs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;5-2-revenue-not-disclosed-but-profitable&quot;&gt;5.2 Revenue: Not Disclosed, but Profitable&lt;&#x2F;h3&gt;
+&lt;p&gt;Dify is a pre-Series-A company and hasn’t publicly disclosed specific revenue figures. But from a Forbes interview (2026-02-24), one key data point is confirmed:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“The company built around it employs 100 people, &lt;strong&gt;is profitable&lt;&#x2F;strong&gt; and serves more than 280 enterprise customers.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;— &lt;strong&gt;Profitable&lt;&#x2F;strong&gt;, 100-person team. Specific revenue unknown.&lt;&#x2F;p&gt;
+&lt;p&gt;Rough estimate (purely personal speculation, no public basis):&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Of 280+ enterprise customers, assuming some go through Enterprise (AWS lists at $150K+&#x2F;yr), plus Cloud subscription revenue&lt;&#x2F;li&gt;
+&lt;li&gt;100-person team + four offices, and already profitable — means revenue covers costs&lt;&#x2F;li&gt;
+&lt;li&gt;Notably, Dify’s official careers page states “Over 60% of our codebase is built by LLMs” — R&amp;amp;D efficiency is likely far higher than traditional teams&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;5-3-layoffs-none-found&quot;&gt;5.3 Layoffs: None Found&lt;&#x2F;h3&gt;
+&lt;p&gt;In Layoffs.fyi and various tech layoff trackers, &lt;strong&gt;no Dify&#x2F;LangGenius layoff records were found&lt;&#x2F;strong&gt;. Against the backdrop of massive tech industry layoffs in 2025-2026, this is a positive signal.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-4-hiring-still-recruiting&quot;&gt;5.4 Hiring: Still Recruiting&lt;&#x2F;h3&gt;
+&lt;p&gt;Dify’s official careers page (join.dify.ai) as of 2026-09-18 still had &lt;strong&gt;4 open positions&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;LTS Backend Software Engineer (China)&lt;&#x2F;li&gt;
+&lt;li&gt;Backend Development Intern (China)&lt;&#x2F;li&gt;
+&lt;li&gt;UI&#x2F;UX Designer (China)&lt;&#x2F;li&gt;
+&lt;li&gt;Developer Relations Intern (Community Operations)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Not a large hiring scale, but shows the team is actively running, not frozen.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-5-development-activity-very-active&quot;&gt;5.5 Development Activity: Very Active&lt;&#x2F;h3&gt;
+&lt;p&gt;From GitHub data:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Recent versions&lt;&#x2F;strong&gt;: v1.17.1 (2026-09-10), v1.15.0 (2026-06-25), v1.14.2 (2026-05-19) — maintaining at least one release per month&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Weekly activity&lt;&#x2F;strong&gt;: ~615 new Stars, 132 Pushes&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Issue activity&lt;&#x2F;strong&gt;: New Issues still being filed as recently as 2026-10-13, with active Maintainer responses&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Contributors&lt;&#x2F;strong&gt;: 1000+, 23.9K Forks&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;6-personal-takeaways&quot;&gt;6. Personal Takeaways&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Dify didn’t disappear — it just went somewhere I can’t easily see&lt;&#x2F;strong&gt;: From the domestic geek community’s perspective, it’s certainly gone “quiet.” But from the overseas enterprise market, Japan ecosystem, and AWS channels, it seems to be running fast on a different track;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Low-code orchestration probably still has its place in enterprise scenarios&lt;&#x2F;strong&gt;: While Code-First is the geek aesthetic mainstream, many real business scenarios need cross-department collaboration, visual auditing, and permission controls — these may not be what pure code frameworks do best;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;100 people, profitable, 60%+ code built by LLMs&lt;&#x2F;strong&gt; — this combination is interesting in itself. It might be an early example of AI-native development: using AI to build AI tools, a small team leveraging massive scale;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Missing specific revenue numbers&lt;&#x2F;strong&gt; is the biggest gap in this research. Understandable for a pre-Series-A company. But from “profitable” and the $150K&#x2F;yr AWS Enterprise price tag, the business model seems to be working at least.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;All of the above is my personal understanding from research — inevitably with some bias. If you see different information, I’d welcome the correction.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Does StepFun Train on API Data? A Policy Investigation</title>
+        <published>2026-06-13T00:00:00+08:00</published>
+        <updated>2026-06-13T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/stepfun-step-plan-data-training-policy/">&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I use Step Plan or StepFun API. Will my code&#x2F;conversation data be used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;It doesn’t explicitly exclude training, nor does it explicitly commit to it.&lt;&#x2F;strong&gt; None of the three core documents (Privacy Policy, User Agreement, Paid Service Agreement) contain phrases like “will not use for training” or “training exclusion”. The English TOS retains the broad authorization of “improve the Services”.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;I use&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Will it train?&lt;&#x2F;th&gt;&lt;th&gt;Clause basis&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Step Plan (subscription)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ No commitment to exclude&lt;&#x2F;td&gt;&lt;td&gt;Paid agreement has no training clause, refers to platform privacy policy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;API pay-as-you-go&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❓ No commitment to exclude&lt;&#x2F;td&gt;&lt;td&gt;User Agreement §6.5: “provide, diagnose, improve, optimize, upgrade” purposes&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Enterprise&#x2F;private deployment&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;Not disclosed&lt;&#x2F;td&gt;&lt;td&gt;Requires business negotiation&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;evidence-1-privacy-policy-has-no-training-related-statements&quot;&gt;Evidence 1: Privacy Policy has no training-related statements&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun Open Platform Privacy Policy&lt;&#x2F;a&gt; (2026-04-23)&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 review: The policy still &lt;strong&gt;does not contain any statements about “model training” or “will not use for training”&lt;&#x2F;strong&gt;. Data usage purposes are limited to “providing intelligent conversation and content generation services” and “anonymized operational statistics”.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Key clause&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We will collect information you actively input… as well as service output information. We will analyze and calculate the above information in order to better understand your needs and context…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;“Analysis and calculation” can be understood as context processing required for real-time inference, but may also include offline analysis.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-2-english-tos-retains-improve-the-services&quot;&gt;Evidence 2: English TOS retains “improve the Services”&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;StepFun Terms of Service&lt;&#x2F;a&gt; (Section 4.1.4)&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We may use Content to provide, maintain, develop, and &lt;strong&gt;improve the Services&lt;&#x2F;strong&gt;…”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;Among them, “develop, and improve the Services” can cover model training, fine-tuning, evaluation and other purposes.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Comparison&lt;&#x2F;strong&gt;: OpenAI and Anthropic’s API terms explicitly exclude training purposes. StepFun lags significantly in this regard.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-3-step-plan-paid-agreement-has-no-training-clause&quot;&gt;Evidence 3: Step Plan Paid Agreement has no training clause&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan Paid Service Agreement&lt;&#x2F;a&gt; (2026-05-25)&lt;&#x2F;p&gt;
+&lt;p&gt;2026-06-13 review: The agreement &lt;strong&gt;does not contain clauses specifically targeting data usage, model training, or data retention&lt;&#x2F;strong&gt;, nor does it make any new commitments excluding data training or data retention. Clauses involving data liability are limited to users bearing responsibility for data breaches caused by third-party tools.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h3 id=&quot;evidence-4-data-retention-period-preliminary-but-insufficient&quot;&gt;Evidence 4: Data retention period — preliminary but insufficient&lt;&#x2F;h3&gt;
+&lt;p&gt;New explanation in privacy policy (first explicitly extracted in this review):&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“We will only retain your personal information for the period necessary for the purpose of providing the platform’s related services… After you cancel your account, actively delete personal information, or exceed the necessary period, we will delete or anonymize your personal information.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Exceptions&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Compliance with legal requirements for information retention&lt;&#x2F;li&gt;
+&lt;li&gt;Reasonable extension for financial, audit, dispute resolution purposes&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Gap&lt;&#x2F;strong&gt;: How long is the “necessary period”, what are the criteria for “exceeding the necessary period”, and whether there is an audit mechanism are not explained.&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;industry-comparison&quot;&gt;Industry Comparison&lt;&#x2F;h2&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th&gt;Service&lt;&#x2F;th&gt;&lt;th&gt;Data training policy&lt;&#x2F;th&gt;&lt;th&gt;Transparency&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;OpenAI&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly does not train&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Anthropic&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly does not train&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Xiaomi MiMo&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Token Plan&lt;&#x2F;td&gt;&lt;td&gt;✅ Privacy policy literally promises “will not use for training”&lt;&#x2F;td&gt;&lt;td&gt;High&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Alibaba Cloud Bailian&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;✅ Does not train (general clause)&lt;&#x2F;td&gt;&lt;td&gt;Medium&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;Alibaba Cloud Coding Plan&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;Subscription&lt;&#x2F;td&gt;&lt;td&gt;⚠️ General clause says no training, but subscription clause 5.2.2 specifically authorizes training&lt;&#x2F;td&gt;&lt;td&gt;Low&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API&lt;&#x2F;td&gt;&lt;td&gt;❌ Silent, no commitment&lt;&#x2F;td&gt;&lt;td&gt;Low&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;StepFun&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;API &#x2F; Step Plan&lt;&#x2F;td&gt;&lt;td&gt;❌ &lt;strong&gt;No commitment, retains “improve the Services”&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;Low&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ StepFun is in the same tier as DeepSeek, significantly behind OpenAI, Anthropic, and Xiaomi MiMo.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What Should I Do&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;normal-use&quot;&gt;Normal Use&lt;&#x2F;h3&gt;
+&lt;p&gt;The agreement does not confirm no training, but StepFun has not explicitly stated that it will train. If you can accept this ambiguous state, you can continue to use it, but you need to follow these habits:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Desensitize submissions&lt;&#x2F;strong&gt;: Avoid including company names, personal names, specific numbers, and internal project code names in prompts&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Segmented processing&lt;&#x2F;strong&gt;: Core algorithms&#x2F;sensitive logic are processed locally, only generic&#x2F;abstract parts are submitted to the API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Balance monitoring&lt;&#x2F;strong&gt;: Pay-as-you-go users set balance alerts to avoid data deletion clauses triggered by arrears&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h3 id=&quot;sensitive-data-scenarios&quot;&gt;Sensitive Data Scenarios&lt;&#x2F;h3&gt;
+&lt;p&gt;If the following data is involved, &lt;strong&gt;public APIs are not recommended&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;User personal information (PII)&lt;&#x2F;li&gt;
+&lt;li&gt;Financial, medical, and government data&lt;&#x2F;li&gt;
+&lt;li&gt;Undisclosed core intellectual property (technical solutions before patent application)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;&lt;strong&gt;Alternatives&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Switch to vendors that explicitly commit to no training&lt;&#x2F;strong&gt;: Such as Xiaomi MiMo (privacy policy literal commitment), Alibaba Cloud Bailian API&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Local deployment&lt;&#x2F;strong&gt;: StepFun partially open-sources models (Step-3.5-Flash, etc.), can run locally, data does not leave the machine at all&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise isolation&lt;&#x2F;strong&gt;: Contact &lt;code&gt;platform@stepfun.com&lt;&#x2F;code&gt; to confirm private deployment or exclusive instance options&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;questions-to-ask-before-enterprise-contracting&quot;&gt;Questions to Ask Before Enterprise Contracting&lt;&#x2F;h3&gt;
+&lt;ol&gt;
+&lt;li&gt;Can we explicitly agree in the contract that “enterprise data will not be used for any model training”&lt;&#x2F;li&gt;
+&lt;li&gt;Data retention period and deletion timeline after contract termination&lt;&#x2F;li&gt;
+&lt;li&gt;Whether VPC&#x2F;exclusive instance&#x2F;private deployment is provided&lt;&#x2F;li&gt;
+&lt;li&gt;SLA commitments and compensation for data breaches&lt;&#x2F;li&gt;
+&lt;li&gt;What constraints are there on data flow through third-party tools&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;references&quot;&gt;References&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;privacy-policy.html&quot;&gt;StepFun Open Platform Privacy Policy&lt;&#x2F;a&gt; (2026-04-23, reviewed 2026-06-13)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;legal&#x2F;user-agreement.html&quot;&gt;StepFun Open Platform User Agreement&lt;&#x2F;a&gt; (2026-04-08)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.com&#x2F;docs&#x2F;zh&#x2F;step-plan&#x2F;paid-service-agreement&quot;&gt;Step Plan Paid Service Agreement&lt;&#x2F;a&gt; (2026-05-25, reviewed 2026-06-13)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;platform.stepfun.ai&#x2F;docs&#x2F;en&#x2F;agreement&#x2F;userservice&quot;&gt;English Terms of Service&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="en">
+        <title>Does DeepSeek Train on API Data? A Policy Investigation</title>
+        <published>2026-05-19T00:00:00+08:00</published>
+        <updated>2026-05-19T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/"/>
+        <id>https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/deepseek-api-data-training-policy/">&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Updated 2026-09-22&lt;&#x2F;strong&gt;: rewritten. The original conclusion (keep sensitive data off the API) held up, but the reasoning had a gap — it read only the Open Platform Service Agreement and missed the training grant in the parent agreement. The three policy versions are byte-for-byte the same versions I checked in May, so the terms didn’t change; the reading did. Quotes below are translated from the zh-CN originals (the controlling text for mainland accounts); all re-fetched on 2026-09-22.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;the-question&quot;&gt;The Question&lt;&#x2F;h2&gt;
+&lt;p&gt;I call the DeepSeek API. Do my prompts and completions get used to train their models?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-answer&quot;&gt;The Answer&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;“The Open Platform agreement says nothing about training” is true — but “won’t train” does not follow from it.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;DeepSeek’s data rules are &lt;strong&gt;three agreements stacked on top of each other&lt;&#x2F;strong&gt;. The training grant sits in clause 4.3 of the parent User Agreement, and clause 1.1 of that same agreement explicitly counts the API as a “Service”. The real state of affairs for API traffic is &lt;strong&gt;undisclosed&lt;&#x2F;strong&gt;: DeepSeek neither commits to not training on API inputs&#x2F;outputs, nor states whether it collects or retains them at all.&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;What I use&lt;&#x2F;th&gt;&lt;th&gt;What the terms say&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Can I opt out?&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;Web&#x2F;App chat&lt;&#x2F;td&gt;&lt;td&gt;✅ Explicitly says inputs&#x2F;outputs may be used for training (de-identified)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅ Turn off “数据用于优化体验” (Data used to optimize experience)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Open Platform API&lt;&#x2F;td&gt;&lt;td&gt;⚠️ Child agreement has no training clause, but parent clause 4.3 is not displaced; Privacy Policy never lists prompt content as collected&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No toggle in the Open Platform console&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;the-key-point-the-three-agreements-stack-they-don-t-replace-each-other&quot;&gt;The key point: the three agreements stack, they don’t replace each other&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;strong&gt;Open Platform Service Agreement&lt;&#x2F;strong&gt; (updated 2026-04-22, effective 2026-04-29), opening paragraph:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“[It], &lt;strong&gt;as a specific agreement referred to under, and a constituent part of, the DeepSeek User Agreement&lt;&#x2F;strong&gt;, applies in particular to you, as an individual or enterprise developer, using the &lt;strong&gt;application programming interface (API)&lt;&#x2F;strong&gt; or other developer tools provided by this platform…”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;DeepSeek User Agreement&lt;&#x2F;strong&gt; (updated&#x2F;effective 2025-09-05), preamble:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;em&gt;“When you use a particular feature of the Service, there may be a separate agreement for that feature… &lt;strong&gt;Where this Agreement conflicts with a specific agreement, the specific agreement prevails. All of the foregoing terms and rules form an inseparable part of this Agreement.&lt;&#x2F;strong&gt;”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ A child agreement overrides the parent only where they conflict on the same point. Silence is not a conflict, so clause 4.3’s training grant is not carved out for API traffic.&lt;&#x2F;strong&gt; Judging what happens to API data from one document is not enough.&lt;&#x2F;p&gt;
+&lt;p&gt;Division of labour across the three:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Document&lt;&#x2F;th&gt;&lt;th&gt;Version&lt;&#x2F;th&gt;&lt;th&gt;What it says about training&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;User Agreement 1.1 + 4.3&lt;&#x2F;td&gt;&lt;td&gt;2025-09-05&lt;&#x2F;td&gt;&lt;td&gt;1.1 defines “Service” to include the API; 4.3 &lt;strong&gt;grants&lt;&#x2F;strong&gt; use of “inputs and corresponding outputs collected by the Service” for model training and service optimisation, plus a free non-exclusive licence&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Open Platform Service Agreement&lt;&#x2F;td&gt;&lt;td&gt;effective 2026-04-29&lt;&#x2F;td&gt;&lt;td&gt;&lt;strong&gt;No&lt;&#x2F;strong&gt; training grant; 4.2 keeps input rights with you and assigns outputs to you; 5.5 &lt;strong&gt;routes&lt;&#x2F;strong&gt; personal-information processing to the Privacy Policy&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Privacy Policy&lt;&#x2F;td&gt;&lt;td&gt;2026-02-10&lt;&#x2F;td&gt;&lt;td&gt;Preamble scope &lt;strong&gt;expressly includes the API&lt;&#x2F;strong&gt;; §I.2 (chat) carries the training clause; §I.3 (Open Platform) lists only real-name identity, e-mail and payment records — &lt;strong&gt;no prompt content&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;evidence&quot;&gt;Evidence&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-the-parent-agreement-says-training-happens-and-its-service-definition-includes-the-api&quot;&gt;1: The parent agreement says training happens, and its service definition includes the API&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-terms-of-use.html&quot;&gt;DeepSeek User Agreement&lt;&#x2F;a&gt;, clauses 1.1 and 4.3 (fetched 2026-09-22, version 2025-09-05)&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;1.1 &lt;em&gt;“Our products and services include … software development kits (SDKs) and &lt;strong&gt;application programming interfaces (APIs)&lt;&#x2F;strong&gt; for use by third-party websites and applications…”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;4.3 &lt;em&gt;“To provide you with a continuous, high-quality service, &lt;strong&gt;on the premise of secure encryption processing and strict de-identification that cannot re-identify a specific individual, we may use the inputs and corresponding outputs collected by the Service for model training and service optimisation. On that premise, you grant DeepSeek a royalty-free, non-exclusive licence&lt;&#x2F;strong&gt;… If you refuse to have your data used for model training, you may opt out in-product by turning off ‘Data used to optimize experience’.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;2-the-child-agreement-has-no-training-grant-but-it-points-personal-data-handling-at-the-privacy-policy&quot;&gt;2: The child agreement has no training grant — but it points personal-data handling at the Privacy Policy&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;Open Platform Service Agreement&lt;&#x2F;a&gt; (fetched 2026-09-22, effective 2026-04-29)&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;No training authorisation anywhere in the text (the “training other models, e.g. distillation” wording in 4.2 is a right &lt;strong&gt;granted to you&lt;&#x2F;strong&gt;, not to DeepSeek)&lt;&#x2F;li&gt;
+&lt;li&gt;4.2 &lt;em&gt;“You retain any rights, title and interest you hold in the inputs you submit… We assign to you any rights, title and interest in the content of the outputs of this Service.”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;5.5 &lt;em&gt;“We will collect and process personal information generated and provided by you, as a personal-information subject, when using the Open Platform services &lt;strong&gt;in accordance with the DeepSeek Privacy Policy&lt;&#x2F;strong&gt;.”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;No&lt;&#x2F;strong&gt; data-retention period, deletion mechanism, or logging terms&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-the-privacy-policy-covers-the-api-but-never-mentions-api-prompt-content&quot;&gt;3: The Privacy Policy covers the API, but never mentions API prompt content&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;strong&gt;Source:&lt;&#x2F;strong&gt; &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-privacy-policy.html&quot;&gt;DeepSeek Privacy Policy&lt;&#x2F;a&gt; (fetched 2026-09-22, version 2026-02-10)&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Preamble &lt;em&gt;“Unless otherwise stated, this Privacy Policy applies to the DeepSeek web pages, applications, mini-programs, software development kits (SDKs) and &lt;strong&gt;application programming interfaces (APIs)&lt;&#x2F;strong&gt; for use by third-party websites and applications…”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;§I.2 Chat &lt;em&gt;“On the premise of secure encryption processing and de-identification, we may use the inputs and corresponding outputs collected by the service for training the DeepSeek model and optimising the service.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;§I.3 Open Platform: the collection list is only real-name identity data, bound e-mail address, and payment order&#x2F;transaction records — closing with &lt;em&gt;“The collection and processing of the above personal information applies only to the DeepSeek Open Platform.”&lt;&#x2F;em&gt;&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;→ This is where the actual gap is.&lt;&#x2F;strong&gt; DeepSeek neither discloses that it collects API prompt&#x2F;completion content, nor that it doesn’t. Inference requires the full prompt to reach the server; receiving is not the same as retaining, and the terms never say how long anything is retained. &lt;strong&gt;“Not listed in the collection inventory” is a disclosure gap, not a guarantee that the data goes unused.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-retention-has-only-a-statutory-floor-the-api-docs-site-carries-no-privacy-statement-at-all&quot;&gt;4: Retention has only a statutory floor; the API docs site carries no privacy statement at all&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Privacy Policy §V.2: &lt;em&gt;“Comply with laws and regulations on information retention (e.g. the Cybersecurity Law requires… &lt;strong&gt;network logs retained for no less than six months&lt;&#x2F;strong&gt;)”&lt;&#x2F;em&gt;; after account deletion or data removal, &lt;em&gt;“we will delete or anonymise your personal information”&lt;&#x2F;em&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;api-docs.deepseek.com&#x2F;zh-cn&#x2F;&quot;&gt;api-docs.deepseek.com&lt;&#x2F;a&gt;: checked 2026-09-22 — the site contains &lt;strong&gt;no&lt;&#x2F;strong&gt; statement about data retention, logging, whether prompts&#x2F;completions are stored, or training use&lt;&#x2F;li&gt;
+&lt;li&gt;The opt-out toggle “Data used to optimize experience” is documented (Privacy Policy §VI.2.1) at an App&#x2F;Web path: avatar → Settings → Data management. There is no equivalent in the Open Platform console, and it is not stated whether an API-only account can exercise it&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;5-cross-vendor-comparison-an-affirmative-commitment-is-achievable-and-deepseek-hasn-t-made-one&quot;&gt;5: Cross-vendor comparison — an affirmative commitment is achievable, and DeepSeek hasn’t made one&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Provider&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Does the paid API &lt;strong&gt;affirmatively commit&lt;&#x2F;strong&gt; to no training?&lt;&#x2F;th&gt;&lt;th&gt;Wording&lt;&#x2F;th&gt;&lt;th&gt;Source&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td&gt;OpenAI&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;&lt;em&gt;“As of March 1, 2023, data sent to the OpenAI API is not used to train or improve OpenAI models (unless you explicitly opt in).”&lt;&#x2F;em&gt; Abuse-monitoring logs default to 30 days&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;your-data&quot;&gt;your-data&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Anthropic&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;&lt;em&gt;“By default, we will not use your inputs or outputs from our commercial products (e.g. Claude for Work, &lt;strong&gt;Anthropic API&lt;&#x2F;strong&gt; …) to train our models.”&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;privacy.claude.com&#x2F;en&#x2F;articles&#x2F;7996868-is-my-data-used-for-model-training&quot;&gt;privacy.claude.com&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;Google Cloud Gemini&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;✅&lt;&#x2F;td&gt;&lt;td&gt;&lt;em&gt;“Gemini doesn’t use your prompts or its responses as data to train its models.”&lt;&#x2F;em&gt;&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;docs.cloud.google.com&#x2F;gemini&#x2F;docs&#x2F;discover&#x2F;data-governance&quot;&gt;data-governance&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td&gt;&lt;strong&gt;DeepSeek&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;❌ No commitment, and the parent agreement keeps the grant&lt;&#x2F;td&gt;&lt;td&gt;See evidence 1–3&lt;&#x2F;td&gt;&lt;td&gt;&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;cdn.deepseek.com&#x2F;policies&#x2F;zh-CN&#x2F;deepseek-open-platform-terms-of-service.html&quot;&gt;Open Platform Service Agreement&lt;&#x2F;a&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;&lt;strong&gt;→ The difference isn’t just “DeepSeek wrote nothing while others wrote something”: others wrote “we won’t”, DeepSeek’s parent agreement wrote “we may”.&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-should-i-do&quot;&gt;What should I do&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Keep sensitive data off the DeepSeek API&lt;&#x2F;strong&gt; — personal data of your users, trade secrets, plaintext proprietary code. Not because it certainly trains on you, but because it never promised it wouldn’t and the parent agreement reserves the right&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Don’t treat “the terms don’t say so” as a green light&lt;&#x2F;strong&gt; — that mistakes textual silence for a behavioural guarantee, and it only holds after you have checked whether a higher-level agreement does say so&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Switch providers if you need an affirmative commitment&lt;&#x2F;strong&gt; — the three above give quotable, auditable text&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Local deployment is the only certainty&lt;&#x2F;strong&gt; — DeepSeek releases model weights under the MIT License; local inference removes this entire chain of questions&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Re-check periodically&lt;&#x2F;strong&gt; — reread all three agreements quarterly, watching for a new data clause in the Open Platform agreement or prompt content finally appearing in Privacy Policy §I.3. Contacts: &lt;a href=&quot;mailto:privacy@deepseek.com&quot;&gt;privacy@deepseek.com&lt;&#x2F;a&gt; &#x2F; &lt;a href=&quot;mailto:api-service@deepseek.com&quot;&gt;api-service@deepseek.com&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;h2 id=&quot;currency&quot;&gt;Currency&lt;&#x2F;h2&gt;
+&lt;p&gt;On 2026-09-22 I re-fetched all three agreements: the version numbers are &lt;strong&gt;identical&lt;&#x2F;strong&gt; to the original survey point (2026-05-19) — User Agreement 2025-09-05, Privacy Policy 2026-02-10, Open Platform Service Agreement effective 2026-04-29. Terms change without notice; these conclusions reflect the text as of that date.&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+</feed>

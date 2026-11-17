@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - 经验教训</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/jing-yan-jiao-xun/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-05-05T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/jing-yan-jiao-xun/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>AI Code CLI 能力增强应基于 MCP 协议，而非内置工具源码</title>
+        <published>2026-05-05T00:00:00+08:00</published>
+        <updated>2026-05-05T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/"/>
+        <id>https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/">&lt;p&gt;&lt;strong&gt;不要在会被删除的代码上盖房子。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ju-ti-jing-li&quot;&gt;具体经历&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 旧版内置了 &lt;code&gt;web_search&lt;&#x2F;code&gt; 工具，支持 Tavily、Google、DashScope 三个搜索后端（DashScope 可走 Qwen OAuth 认证）。但它的 provider 选择是静态的——用户在配置中指定一个 default，工具一次搜索只调一个 provider，失败就直接报错，不会尝试下一个。&lt;&#x2F;p&gt;
+&lt;p&gt;笔者的目标是在工具内部实现运行时 provider fallback：按 Tavily → Google → DashScope 的顺序依次尝试，前一个失败自动切换到下一个，避免单后端不可用时搜索能力彻底瘫痪。&lt;&#x2F;p&gt;
+&lt;p&gt;2026-04-24，方案还在本地，Qwen Code PR #3502 合并——&lt;strong&gt;把整个 &lt;code&gt;web_search&lt;&#x2F;code&gt; 内置工具删了&lt;&#x2F;strong&gt;，替换成 MCP 架构。旧版的所有配置键（&lt;code&gt;webSearch&lt;&#x2F;code&gt; 块、&lt;code&gt;advanced.tavilyApiKey&lt;&#x2F;code&gt;、&lt;code&gt;--tavily-api-key&lt;&#x2F;code&gt; 等 CLI 参数）全部作废。笔者针对的是一个已经不存在的目标。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wei-shen-me-zhe-ge-fang-xiang-zhan-bu-zhu-jiao&quot;&gt;为什么这个方向站不住脚&lt;&#x2F;h2&gt;
+&lt;p&gt;不是方案本身有问题——旧版确实缺少运行时 fallback，这是一个合理的改进方向。问题是地基：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;web_search&lt;&#x2F;code&gt; 从存在到消失只隔了一个 PR。AI Code CLI 品类发展不到两年，内置工具随时可能被重构、合并或删除。&lt;&#x2F;li&gt;
+&lt;li&gt;MCP 是跨 CLI 的通用协议，Qwen Code、Claude Code、Gemini CLI 都支持。工具本身独立于任何 CLI 的实现——不存在“改了半天源码，工具一删全白干“的风险。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;fan-si-zheng-que-de-zuo-fa&quot;&gt;反思：正确的做法&lt;&#x2F;h2&gt;
+&lt;p&gt;fallback 本身的方向没问题——旧版确实需要，MCP 层也同样需要。错的是实现位置：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;❌ 修改 CLI 内置工具的源码来实现 fallback&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 写一个独立的 MCP server，内部封装多 provider fallback 逻辑&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;同样的功能，放在内部工具源码里随时可能被删；放在 MCP server 里，和 CLI 版本解耦，自己控制生命周期。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jing-yan&quot;&gt;经验&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;在 AI Code CLI 上做能力增强，优先在 MCP 层——工具独立于 CLI 实现，不会因为上游重构而作废。&lt;&#x2F;li&gt;
+&lt;li&gt;动手前确认目标模块的生命周期：是稳定核心能力，还是随时可能被替代的实验性功能？&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+</feed>

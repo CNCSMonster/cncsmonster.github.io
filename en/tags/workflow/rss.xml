@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>CCM&#x27;s Blog - Workflow</title>
+      <link>https://cncsmonster.github.io</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://cncsmonster.github.io/en/tags/workflow/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Wed, 14 Oct 2026 00:00:00 +0800</lastBuildDate>
+      <item>
+          <title>Dify Status Check: Where Is It Now?</title>
+          <pubDate>Wed, 14 Oct 2026 00:00:00 +0800</pubDate>
+          <author>Unknown</author>
+          <link>https://cncsmonster.github.io/en/posts/dify-recent-status-and-technical-evolution/</link>
+          <guid>https://cncsmonster.github.io/en/posts/dify-recent-status-and-technical-evolution/</guid>
+          <description xml:base="https://cncsmonster.github.io/en/posts/dify-recent-status-and-technical-evolution/">&lt;blockquote&gt;
+&lt;p&gt;Baseline version: GitHub &lt;code&gt;langgenius&#x2F;dify&lt;&#x2F;code&gt; v1.17.1&lt;br &#x2F;&gt;
+Estimated half-life: Quarterly (AI app orchestration and protocol evolution moves fast — keep an eye on plugin and MCP developments)&lt;br &#x2F;&gt;
+Nature: Personal research notes, sharing what I found&lt;br &#x2F;&gt;
+Motivation: I hadn’t heard much about Dify recently and wondered — did it fall behind, or is it quietly growing somewhere else? So I spent some time digging through public sources and wrote down what I found.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;1-a-feeling-why-does-it-seem-like-no-one-s-talking-about-it&quot;&gt;1. A Feeling: Why Does It Seem Like “No One’s Talking About It”?&lt;&#x2F;h2&gt;
+&lt;p&gt;At least in my own circles, between late 2024 and 2026, I rarely saw anyone discussing Dify. My first reaction was: is it dead?&lt;&#x2F;p&gt;
+&lt;p&gt;But after going through the materials, I think this “disappearance” likely comes more from &lt;strong&gt;our own shifting attention&lt;&#x2F;strong&gt; and &lt;strong&gt;Dify’s own strategic pivot&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;2023 ~ Mid-2024 (Geek Carnival)                    2025 ~ 2026 (Divergence)
+[Individual devs &#x2F; Prompt engineers]             [Code-first camp (geeks&#x2F;backend)]
+      │                                                │
+      ▼                                                ▼
+Loved GUI drag-and-drop bots &#x2F; simple KBs    Shifted to Coding Agents (Cursor&#x2F;Claude Code)
+Dify, FastGPT dominating social media         Shifted to code-native state machines (LangGraph&#x2F;PydanticAI)
+                                               
+                                               [Dify&amp;#39;s actual pivot]
+                                                       │
+                                                       ▼
+                                           International expansion (Japan &#x2F; North America &#x2F; Europe)
+                                           Deep enterprise (compliance &#x2F; private deployment &#x2F; global giants)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;1-1-the-geek-world-s-attention-shifted&quot;&gt;1.1 The Geek World’s Attention Shifted&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;In 2023 to early 2024, the LLM ecosystem was still figuring out “how to connect models to knowledge bases and prompts.” Visual DAG drag-and-drop was the lowest-barrier, most demo-friendly approach;&lt;&#x2F;li&gt;
+&lt;li&gt;Later, the tech community’s attention clearly shifted toward &lt;strong&gt;Coding Agents&lt;&#x2F;strong&gt; (Cursor, Claude Code, etc.) and &lt;strong&gt;code-first state machine frameworks&lt;&#x2F;strong&gt; (LangGraph, PydanticAI, etc.). With code, Git management and unit testing feel more native. People on social media stopped posting “wiring diagrams.”&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;1-2-dify-s-ownzhong-xin-shifted&quot;&gt;1.2 Dify’s Own重心 Shifted&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;From public information, the LangGenius team deliberately reduced their domestic geek marketing volume and poured energy into overseas markets and large enterprise customers;&lt;&#x2F;li&gt;
+&lt;li&gt;The fastest-growing market is &lt;strong&gt;overseas (especially Japan and North America)&lt;&#x2F;strong&gt;. While domestic social media discussion cooled, Dify was holding hundreds-person summits in Japan, joining AWS official channels, and completing private deployments inside multinational enterprise networks.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;2-publicly-available-business-data&quot;&gt;2. Publicly Available Business Data&lt;&#x2F;h2&gt;
+&lt;p&gt;Here are the numbers I found from public sources, for reference:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-1-funding&quot;&gt;2.1 Funding&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;$30M Series Pre-A (March 2026)&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Lead&lt;&#x2F;strong&gt;: HSG (HongShan);&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Followers&lt;&#x2F;strong&gt;: GL Ventures, 5Y Capital (returning investor), Mizuho Leaguer Investment, Alt-Alpha Capital, and NYX Ventures;&lt;&#x2F;li&gt;
+&lt;li&gt;Valuation approximately $180M.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-2-open-source-community&quot;&gt;2.2 Open Source &amp;amp; Community&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Stars&lt;&#x2F;strong&gt;: ~&lt;strong&gt;158K&lt;&#x2F;strong&gt; (global Top 60), 1000+ contributors, 861 recent commits, 168 releases;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Global self-hosted installations&lt;&#x2F;strong&gt;: Over &lt;strong&gt;1.4 million&lt;&#x2F;strong&gt; machines;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise customers&lt;&#x2F;strong&gt;: Publicly disclosed &lt;strong&gt;280+&lt;&#x2F;strong&gt;, including &lt;strong&gt;Maersk, Volvo, Novartis, ThermoFisher&lt;&#x2F;strong&gt;;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Global presence&lt;&#x2F;strong&gt;: Offices in San Francisco Bay Area, Tokyo, Shanghai, and Suzhou;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Japan market&lt;&#x2F;strong&gt;: Established the “Japan Association for Dify” (一般社团法人 Dify 协会, founded September 2025 with NTT Data and others), and became an AWS Global Partner (awarded 2025 AWS Social Impact Partner of the Year).&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;3-product-technical-evolution-v0-x-to-v1-17&quot;&gt;3. Product &amp;amp; Technical Evolution (v0.x to v1.17+)&lt;&#x2F;h2&gt;
+&lt;p&gt;From the version history, Dify’s product form has clearly moved well beyond the early “visual prompt tuner” stage. The underlying tech stack has gone through multiple deep refactors:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;                    ┌─────────────────────────────────┐
+                    │       Dify Marketplace          │ (Plugin ecosystem &#x2F; Community assets)
+                    └────────────────┬────────────────┘
+                                     │
+┌───────────────────────────────┐    │    ┌───────────────────────────────┐
+│        New Agent App          │    │    │       Workflow Studio         │
+│ (Autonomous reasoning &#x2F;      │◄───┴───►│ (Visual orchestration &#x2F;       │
+│  Skills &#x2F; Code sandbox)      │         │  Branching &#x2F; Dynamic routing) │
+└───────────────┬───────────────┘         └───────────────┬───────────────┘
+                │                                         │
+                └───────────────────┬─────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │   MCP Gateway (Workflow-as-MCP-Server &#x2F; ClientPassthru)│
+       └────────────────────────────┬───────────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │     Core Engine (Async non-blocking &#x2F; Sandbox &#x2F; RBAC)   │
+       └────────────────────────────────────────────────────────┘
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;3-1-full-mcp-model-context-protocol-support&quot;&gt;3.1 Full MCP (Model Context Protocol) Support&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Workflow-as-MCP-Server&lt;&#x2F;strong&gt;: Complex business workflows orchestrated inside Dify can be exposed as standard MCP Servers with one click. Whether it’s Claude Desktop, an IDE, or an external Coding Agent, they can all call Dify workflows as standard MCP tools;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Runtime dynamic header pass-through&lt;&#x2F;strong&gt;: Supports injecting placeholder authentication at request time (e.g., &lt;code&gt;{{request.headers.X-Custom-Auth}}&lt;&#x2F;code&gt;), solving the security isolation and identity authentication challenge for multi-tenant enterprises calling third-party tools.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-2-plugin-system-marketplace-fully-decoupled&quot;&gt;3.2 Plugin System &amp;amp; Marketplace — Fully Decoupled&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;No more forking source code&lt;&#x2F;strong&gt;: In the early v0.x days, community developers wanting to integrate a new model or private internal system often had to fork the repo, modify core code, or even maintain their own version. v1.0 (early 2025) restructured the plugin architecture — tools and models are fully decoupled as independent plugins;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Marketplace &amp;amp; plugin security governance&lt;&#x2F;strong&gt;: Introduced plugin security levels, signature verification, and sandbox isolation. Enterprise users can deploy private plugin sources on internal networks, balancing extensibility with compliance.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-3-agent-architecture-rebuild-new-agent-app-sandbox-execution&quot;&gt;3.3 Agent Architecture Rebuild: New Agent App &amp;amp; Sandbox Execution&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Chat-driven Agent building&lt;&#x2F;strong&gt;: Supports generating and debugging agents through natural language conversation, automatically extracting and distilling structured, reusable Skills;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Built-in secure sandbox (DifySandbox)&lt;&#x2F;strong&gt;: Provides isolated Python&#x2F;Shell execution sandboxes for Code nodes and Tool nodes, supporting secure data transformation, logic decisions, and local script execution;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Bidirectional workflow nesting&lt;&#x2F;strong&gt;: You can embed Agent nodes inside Workflows (letting the agent make local autonomous decisions), or have Agents trigger specific Workflows.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-4-enterprise-core-compliance&quot;&gt;3.4 Enterprise Core &amp;amp; Compliance&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Async non-blocking execution engine&lt;&#x2F;strong&gt;: Database writes and long-chain calls are async-ified. Multi-branch parallel execution time is optimized from “simple sum of all branches” to “depends on the longest branch,” significantly reducing timeout interruption rates;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Enterprise governance certifications&lt;&#x2F;strong&gt;: Two consecutive years of SOC 2 Type II, ISO 27001:2022, and GDPR compliance certifications, with full audit log tracking and fine-grained RBAC permission controls.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;4-my-attempt-to-understand-its-positioning&quot;&gt;4. My Attempt to Understand Its Positioning&lt;&#x2F;h2&gt;
+&lt;p&gt;Here’s my personal understanding from research — may not be fully accurate, just for reference:&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Dimension&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Dify (v1.17+)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Code-First Frameworks (LangGraph etc.)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Pure SaaS Competitors (Coze)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Audience I observe&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Cross-functional teams (Business + IT)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Senior backend, AI full-stack engineers&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Individual content creators, non-technical ops&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Deployment flexibility&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Open-source community &#x2F; Container private &#x2F; Multi-cloud&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure code library, deploy as you wish&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Deeply tied to platform ecosystem&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Debugging experience&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Good node-level historical I&#x2F;O inspection UI&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Relies on code breakpoints, LangSmith, etc.&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Relies on platform logs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Extension approach&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Plugin marketplace + MCP + Custom code nodes&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Pure code, unlimited extension&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Limited to platform’s integration library&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Engineering collaboration&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Workflow DSL import&#x2F;export, weaker Git diffing&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Native Git + unit tests&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;In-platform version management&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;my-personal-scenario-understanding&quot;&gt;My Personal Scenario Understanding&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;                    Where does your scenario lean?
+                              │
+         ┌────────────────────┴────────────────────┐
+         ▼                                         ▼
+【Business-IT collaboration needed】        【Hardcore geek &#x2F; Algorithm experiments】
+• Need to visually present flows to biz    • Logic heavily depends on complex recursion, dynamic backtracking
+• Need out-of-box RAG, permissions &amp;amp; audit • Heavily dependent on Git branching &amp;amp; automated testing
+• Need multi-model aggregation &amp;amp; MCP GW    • More comfortable with pure code, averse to UI wiring
+         │                                         │
+         ▼                                         ▼
+   Dify might be a good fit             LangGraph &#x2F; custom code might be handier
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;This is just my rough personal understanding. Real-world selection is far more complex. Many teams probably use a mix.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;5-monetization-team-status&quot;&gt;5. Monetization &amp;amp; Team Status&lt;&#x2F;h2&gt;
+&lt;p&gt;This is what I was curious about: Is it making money? Is the team still alive?&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-1-pricing-publicly-available&quot;&gt;5.1 Pricing (Publicly Available)&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Plan&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Price&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Notes&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Sandbox&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Free&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;200 message credits&#x2F;month, 1 person, 5 Apps&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Professional&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;$59&#x2F;mo ($590&#x2F;yr)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;5,000 credits&#x2F;month, 3 people, 50 Apps&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Team&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;$159&#x2F;mo ($1,590&#x2F;yr)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;10,000 credits&#x2F;month, 50 people, 200 Apps&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Enterprise&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Custom quote&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;SSO&#x2F;SCIM, private deployment, SLA&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;AWS Marketplace Enterprise&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;From $150,000&#x2F;yr&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Listed on AWS Marketplace at this price&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Self-hosted community&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Free (open-source)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Users pay for infra + LLM API costs&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;5-2-revenue-not-disclosed-but-profitable&quot;&gt;5.2 Revenue: Not Disclosed, but Profitable&lt;&#x2F;h3&gt;
+&lt;p&gt;Dify is a pre-Series-A company and hasn’t publicly disclosed specific revenue figures. But from a Forbes interview (2026-02-24), one key data point is confirmed:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“The company built around it employs 100 people, &lt;strong&gt;is profitable&lt;&#x2F;strong&gt; and serves more than 280 enterprise customers.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;— &lt;strong&gt;Profitable&lt;&#x2F;strong&gt;, 100-person team. Specific revenue unknown.&lt;&#x2F;p&gt;
+&lt;p&gt;Rough estimate (purely personal speculation, no public basis):&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Of 280+ enterprise customers, assuming some go through Enterprise (AWS lists at $150K+&#x2F;yr), plus Cloud subscription revenue&lt;&#x2F;li&gt;
+&lt;li&gt;100-person team + four offices, and already profitable — means revenue covers costs&lt;&#x2F;li&gt;
+&lt;li&gt;Notably, Dify’s official careers page states “Over 60% of our codebase is built by LLMs” — R&amp;amp;D efficiency is likely far higher than traditional teams&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;5-3-layoffs-none-found&quot;&gt;5.3 Layoffs: None Found&lt;&#x2F;h3&gt;
+&lt;p&gt;In Layoffs.fyi and various tech layoff trackers, &lt;strong&gt;no Dify&#x2F;LangGenius layoff records were found&lt;&#x2F;strong&gt;. Against the backdrop of massive tech industry layoffs in 2025-2026, this is a positive signal.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-4-hiring-still-recruiting&quot;&gt;5.4 Hiring: Still Recruiting&lt;&#x2F;h3&gt;
+&lt;p&gt;Dify’s official careers page (join.dify.ai) as of 2026-09-18 still had &lt;strong&gt;4 open positions&lt;&#x2F;strong&gt;:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;LTS Backend Software Engineer (China)&lt;&#x2F;li&gt;
+&lt;li&gt;Backend Development Intern (China)&lt;&#x2F;li&gt;
+&lt;li&gt;UI&#x2F;UX Designer (China)&lt;&#x2F;li&gt;
+&lt;li&gt;Developer Relations Intern (Community Operations)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Not a large hiring scale, but shows the team is actively running, not frozen.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-5-development-activity-very-active&quot;&gt;5.5 Development Activity: Very Active&lt;&#x2F;h3&gt;
+&lt;p&gt;From GitHub data:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Recent versions&lt;&#x2F;strong&gt;: v1.17.1 (2026-09-10), v1.15.0 (2026-06-25), v1.14.2 (2026-05-19) — maintaining at least one release per month&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Weekly activity&lt;&#x2F;strong&gt;: ~615 new Stars, 132 Pushes&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Issue activity&lt;&#x2F;strong&gt;: New Issues still being filed as recently as 2026-10-13, with active Maintainer responses&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Contributors&lt;&#x2F;strong&gt;: 1000+, 23.9K Forks&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;6-personal-takeaways&quot;&gt;6. Personal Takeaways&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Dify didn’t disappear — it just went somewhere I can’t easily see&lt;&#x2F;strong&gt;: From the domestic geek community’s perspective, it’s certainly gone “quiet.” But from the overseas enterprise market, Japan ecosystem, and AWS channels, it seems to be running fast on a different track;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Low-code orchestration probably still has its place in enterprise scenarios&lt;&#x2F;strong&gt;: While Code-First is the geek aesthetic mainstream, many real business scenarios need cross-department collaboration, visual auditing, and permission controls — these may not be what pure code frameworks do best;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;100 people, profitable, 60%+ code built by LLMs&lt;&#x2F;strong&gt; — this combination is interesting in itself. It might be an early example of AI-native development: using AI to build AI tools, a small team leveraging massive scale;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Missing specific revenue numbers&lt;&#x2F;strong&gt; is the biggest gap in this research. Understandable for a pre-Series-A company. But from “profitable” and the $150K&#x2F;yr AWS Enterprise price tag, the business model seems to be working at least.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;All of the above is my personal understanding from research — inevitably with some bias. If you see different information, I’d welcome the correction.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</description>
+      </item>
+    </channel>
+</rss>

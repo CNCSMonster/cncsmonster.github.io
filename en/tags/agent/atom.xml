@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+    <title>CCM&#x27;s Blog - Agent</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/en/tags/agent/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-09-17T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/en/tags/agent/atom.xml</id>
+    <entry xml:lang="en">
+        <title>Browser Automation MCP Decision: chrome-devtools-mcp vs. Obscura</title>
+        <published>2026-09-17T00:00:00+08:00</published>
+        <updated>2026-09-17T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/en/posts/browser-automation-mcp-chrome-devtools-vs-obscura/"/>
+        <id>https://cncsmonster.github.io/en/posts/browser-automation-mcp-chrome-devtools-vs-obscura/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/en/posts/browser-automation-mcp-chrome-devtools-vs-obscura/">&lt;p&gt;When equipping an AI coding agent with browser automation capabilities, developers must balance &lt;strong&gt;human-agent collaboration&lt;&#x2F;strong&gt;, &lt;strong&gt;memory overhead&lt;&#x2F;strong&gt;, and &lt;strong&gt;bot-detection resilience&lt;&#x2F;strong&gt;. This post evaluates Google’s official &lt;code&gt;chrome-devtools-mcp&lt;&#x2F;code&gt; against &lt;code&gt;Obscura&lt;&#x2F;code&gt;, a lightweight headless browser built with Rust and V8.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-core-verdict&quot;&gt;The Core Verdict&lt;&#x2F;h2&gt;
+&lt;p&gt;These two tools serve fundamentally different workflows:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;chrome-devtools-mcp&lt;&#x2F;code&gt; is a visual collaborative workspace&lt;&#x2F;strong&gt;: It drives a real desktop Chrome instance. Because a visible desktop window is available, you can observe the agent’s actions in real time and &lt;strong&gt;take turns interacting with the browser&lt;&#x2F;strong&gt; (e.g., handling complex filtering, approving security dialogs, or passing CAPTCHAs by hand before letting the agent resume). It also reuses existing login sessions from your everyday Chrome profile. The tradeoff is &lt;strong&gt;heavy memory consumption (~1.5 GB per instance)&lt;&#x2F;strong&gt;.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;Obscura&lt;&#x2F;code&gt; is a silent background batch-runner&lt;&#x2F;strong&gt;: A headless runtime built on Rust + V8, stripped of any GUI frontend. &lt;strong&gt;It does not open desktop windows and cannot support live co-browsing&lt;&#x2F;strong&gt;; however, it has an &lt;strong&gt;exceptionally small memory footprint (idle at just 23 MB, 98% lower)&lt;&#x2F;strong&gt; and conceals obvious headless indicators like &lt;code&gt;navigator.webdriver&lt;&#x2F;code&gt;. It is ideal for quiet background documentation lookups, data scraping, and basic form automation.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;feature-comparison&quot;&gt;Feature Comparison&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;Dimension&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;chrome-devtools-mcp (Official)&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Obscura (Rust + V8)&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Collaboration&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Visible desktop window&lt;&#x2F;strong&gt;: Human and agent can share the browser session turn-by-turn&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Headless only&lt;&#x2F;strong&gt;: Runs silently in the background without UI handoff&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Memory Footprint&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Heavy (idle ~1450 MB, easily stresses concurrent compiler workloads)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Minimal (idle ~23 MB)&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Bot Detection&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Headless Chrome exposes obvious flags (&lt;code&gt;webdriver=true&lt;&#x2F;code&gt;, &lt;code&gt;HeadlessChrome&lt;&#x2F;code&gt; in UA)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Built-in stealth&lt;&#x2F;strong&gt; (masks &lt;code&gt;webdriver&lt;&#x2F;code&gt;, synthesizes consistent fake profile)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Form Interactions&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Full support for typing, clicking, navigating, and logging in&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Full support for typing, clicking, navigating, and logging in&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Session Inheritance&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Can attach to your existing local Chrome profile (reuses logged-in cookies)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Isolated sandbox; cannot directly inherit desktop profiles&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Recommendation&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Use when co-browsing, session reuse, or deep DevTools diagnostics are required&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;Best for concurrent agents, background docs fetching, and mass crawling&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;benchmark-data&quot;&gt;Benchmark Data&lt;&#x2F;h2&gt;
+&lt;p&gt;Environment: WSL2 &#x2F; Ubuntu 24.04, target URL: &lt;code&gt;example.com&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-memory-usage&quot;&gt;1. Memory Usage&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: center&quot;&gt;State&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Obscura &lt;code&gt;serve&lt;&#x2F;code&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Chrome headless&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: center&quot;&gt;Idle&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;23 MB&lt;&#x2F;strong&gt; (1 process)&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;1452 MB (14 processes)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: center&quot;&gt;Post Page Load&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;26 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;1561 MB (15 processes)&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;The 50x–60x gap in memory footprint is real. While running heavy compilation jobs or orchestrating multiple concurrent sub-agents, Chrome headless can quickly starve system RAM.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-fingerprinting-bot-detection&quot;&gt;2. Fingerprinting &amp;amp; Bot Detection&lt;&#x2F;h3&gt;
+&lt;p&gt;Default headless Chrome leaks two glaring signals:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;navigator.webdriver === true&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;User-Agent prominently displaying &lt;code&gt;HeadlessChrome&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Many websites block incoming traffic based on these two checks alone. When started with &lt;code&gt;--stealth&lt;&#x2F;code&gt;, Obscura resets &lt;code&gt;navigator.webdriver&lt;&#x2F;code&gt; to &lt;code&gt;false&lt;&#x2F;code&gt; and presents a consistent Windows &#x2F; Chrome 145 fingerprint. Note, however, that &lt;code&gt;getContext(&#x27;webgl&#x27;)&lt;&#x2F;code&gt; evaluates to &lt;code&gt;null&lt;&#x2F;code&gt;, which advanced anti-bot systems may still flag.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;setup-configuration&quot;&gt;Setup &amp;amp; Configuration&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-chrome-devtools-mcp&quot;&gt;1. chrome-devtools-mcp&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;jsonc&quot;&gt;&amp;quot;chrome-devtools&amp;quot;: {
+  &amp;quot;command&amp;quot;: &amp;quot;npx&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;-y&amp;quot;, &amp;quot;chrome-devtools-mcp@latest&amp;quot;],
+  &amp;quot;description&amp;quot;: &amp;quot;Chrome DevTools MCP&amp;quot;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Defaults to headed mode (visible window). Append &lt;code&gt;--headless&lt;&#x2F;code&gt; if you prefer silent execution. Requires local Chrome.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;2-obscura-setup&quot;&gt;2. Obscura Setup&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;bash&quot;&gt;# Download and unpack the prebuilt stealth binary into ~&#x2F;.local&#x2F;bin
+curl -L -o obscura.tar.gz &amp;quot;https:&#x2F;&#x2F;github.com&#x2F;h4ckf0r0day&#x2F;obscura&#x2F;releases&#x2F;download&#x2F;v0.2.2&#x2F;obscura-x86_64-linux-stealth.tar.gz&amp;quot;
+tar -xzf obscura.tar.gz
+mkdir -p ~&#x2F;.local&#x2F;bin &amp;amp;&amp;amp; mv obscura obscura-worker ~&#x2F;.local&#x2F;bin&#x2F;
+chmod +x ~&#x2F;.local&#x2F;bin&#x2F;obscura ~&#x2F;.local&#x2F;bin&#x2F;obscura-worker
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP server configuration:&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;jsonc&quot;&gt;&amp;quot;obscura&amp;quot;: {
+  &amp;quot;command&amp;quot;: &amp;quot;obscura&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;mcp&amp;quot;, &amp;quot;--stealth&amp;quot;, &amp;quot;--allow-private-network&amp;quot;],
+  &amp;quot;description&amp;quot;: &amp;quot;Obscura lightweight headless browser MCP&amp;quot;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Clash TUN Mode Gotcha&lt;&#x2F;strong&gt;:&lt;br &#x2F;&gt;
+In TUN mode, Clash’s fake-ip resolver maps all domains to &lt;code&gt;198.18.x.x&lt;&#x2F;code&gt;. This triggers Obscura’s internal SSRF guard and cuts off outbound requests. Passing &lt;code&gt;--allow-private-network&lt;&#x2F;code&gt; is mandatory in such environments to allow normal web access.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+</feed>

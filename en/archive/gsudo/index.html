@@ -1,0 +1,115 @@
+<!doctype html><html lang=en><head><meta charset=UTF-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>gsudo — A GUI Privilege-Escalation Frontend for AI Agents (Archived) | CCM's Blog</title><meta content="CCM's Personal Homepage - GitHub Notes, Blog Posts, and Open Source Activities" name=description><meta content=CCM name=author><link title="CCM's Blog" href=https://cncsmonster.github.io/atom.xml rel=alternate type=application/atom+xml><link title="CCM's Blog" href=https://cncsmonster.github.io/rss.xml rel=alternate type=application/rss+xml><link href=https://cncsmonster.github.io/ hreflang=zh rel=alternate><link href=https://cncsmonster.github.io/ hreflang=x-default rel=alternate><link href=https://cncsmonster.github.io/main.css rel=stylesheet><body><header class=site-header><nav class=site-nav><a class=site-title href=https://cncsmonster.github.io>CCM's Blog</a><div class=nav-links><div class=search-container><input placeholder="Search articles..." class=search-input id=search-input><ul class=search-results id=search-results></ul></div><a href=https://cncsmonster.github.io/>Home</a><a href=https://cncsmonster.github.io/posts/>Blog</a><a href=https://cncsmonster.github.io/ebooks/><span class=nav-icon>📚</span> Ebooks</a><a href=https://cncsmonster.github.io/open-source/>Projects</a><a href=https://cncsmonster.github.io/about/>About</a><a title="Subscribe to blog updates" class=nav-subscribe href=https://cncsmonster.github.io/subscribe/> 📡 </a><a href=https://github.com/cncsmonster rel=noopener target=_blank>GitHub</a><div class=lang-switcher><a class=lang-link href=https://cncsmonster.github.io/archive/gsudo/ title=切换到中文>中文</a></div></div></nav></header><main class=site-main><article class=post><header class=post-header><h1>gsudo — A GUI Privilege-Escalation Frontend for AI Agents (Archived)</h1><div class=post-meta><time datetime=2026-05-11T00:00:00+08:00>2026-05-11</time><span class=meta-separator>·</span><time class=post-updated datetime=2026-10-25T00:00:00+08:00> Updated: 2026-10-25 </time></div></header><div class=post-layout><div class=post-content><blockquote><p>⚠️ <strong>Note: This project has been archived</strong><p><code>gsudo</code> is no longer maintained. It solved a usability problem — an agent with no tty cannot answer a <code>sudo</code> prompt — not a security problem.<p>What I do now: privileged commands are run by the human in a real terminal, or delegated to a dedicated worker inside an isolated environment with Always-Ask approval. The tool is no longer installed on my daily machine.<p>If you bookmarked this article: the old link redirects here; the content is kept for historical reference.</blockquote><h2 id=in-one-sentence>In One Sentence</h2><p>gsudo solves the usability problem of “an agent has no TTY, so <code>sudo</code> cannot prompt”; it is usable on trusted single-user dev machines (where the agent handles no untrusted content, or is isolated from the human), but it is not a security boundary.<h2 id=decision-table>Decision Table</h2><table><thead><tr><th>Scenario<th>What to do<tbody><tr><td>Not applicable · agent runs as the same user and reads web pages / issues / third-party code<td>Do not give it a privilege channel; run the command in a human terminal, or delegate to an isolated worker<tr><td>Applicable · agent is isolated from the human account (separate user / container / VM)<td>gsudo is usable, but the real boundary is the isolation, not the dialog<tr><td>Applicable · one-off VM destroyed after the task<td>Cheapest safe form; throwaway beats any dialog<tr><td>Not applicable · multi-tenant / shared hosts, long-running untrusted code, root compromise unacceptable<td>root-owned allowlist, precise sudoers rules, isolated VM</table><p>“Isolated from the human” means a permission boundary, not a session boundary: a separate OS user, a container, or a VM. Different terminals or different agent instances under the same user do not count.<h2 id=why-it-is-not-a-security-boundary>Why It Is Not a Security Boundary</h2><ul><li><strong>Structural fact</strong>: the password passes through a component running as your user. Same-user processes can read pipes and environments, and can poison wrappers. Switching to Tkinter, zenity, or pkexec only changes the UI or the authentication entry point; it does not change who owns the password path.<li><strong>Threat model</strong>: the main risk is same-user code execution — a prompt-injected agent, a malicious dependency, an editor extension. It does not require full account takeover; conversely, once the account is compromised, gsudo’s marginal contribution is root persistence, not a new entry point.<li><strong>Approval layers</strong>: harness allow/deny and the sudo password prompt are two layers, and neither replaces the other. If a human can run <code>sudo</code> in a real terminal, gsudo adds nothing.<li><strong>Tk 9.0</strong>: broken rendering is a usability issue (observed under Tk 9.0 + WSLg, where <code>ttk.Button</code> text was invisible); it does not change the security conclusion. Switching to zenity/GTK fixes only the UI.</ul><h2 id=what-i-do-instead>What I Do Instead</h2><p>The reason for retiring it is not that the dialog was poorly built. It answered the wrong question: it treated “the agent has no tty” as the core problem and left “who may escalate, and under what constraints” untouched.<p>Same-user GUI dialogs have two more side effects:<ul><li>A dialog cannot tell “a human is reading” from “a human is clicking on reflex”; the more prompts you approve, the less each one means.<li>Every added confirmation makes people believe there is one more security boundary, which relaxes the pressure to isolate.</ul><p>Choose by environment, highest priority first:<table><thead><tr><th>Need<th>Approach<th>Source of the boundary (cost)<tbody><tr><td>Occasional package installs or config changes<td>Agent prints the command; the human runs <code>sudo</code> in a real terminal<td>Human tty + human judgement (lowest)<tr><td>Frequent escalation with automation<td>Dedicated privileged worker: separate user / container / VM, approval set to Always-Ask<td>Isolation + per-request approval (medium)<tr><td>One-off experimentation<td>Temporary VM / container, destroyed afterwards<td>Disposal, no need to trust individual behaviour (medium)<tr><td>Strong audit requirements<td>root-owned allowlist scripts, precise sudoers rules<td>Policy files the same user cannot rewrite (high)</table><p>One-line rule: <strong>first ask whether the privilege can be locked into a box you throw away, not whether a human can click one more confirmation.</strong><h2 id=key-evidence>Key Evidence</h2><ol><li><strong>No TTY</strong>: <code>tty</code> → <code>not a tty</code>; <code>sudo -n true</code> → <code>sudo: interactive authentication is required</code>. This is the only legitimate reason for gsudo to exist.<li><strong>Same-user readability of the password path</strong>: with <code>ptrace_scope=1</code>, <code>/proc/&lt;pid>/mem</code> was denied, but <code>/proc/&lt;pid>/fd/4</code> yielded the plaintext password (measured 2026-10-05; not re-run during later review — the original record stands). The mechanism holds, and it is the direct basis for “not a security boundary”.<li><strong>Fixed password path</strong>: the source passes the password via <code>subprocess.run(["sudo", "-S", ...], input=password + "\n")</code>; the sudo-timestamp probe added later only reduces repeated typing and does not change the path.</ol><p>The pkexec comparison and references remain in the pre-archive verification record and are not repeated here.<h2 id=original-design-archive-record>Original Design (Archive Record)</h2><p>The following records the trade-offs made before 2026-10-25. It is kept for traceability, not as a current recommendation.<h3 id=the-problem>The Problem</h3><p>When an AI runs in a terminal, the terminal itself is not launched as root. When the AI needs <code>sudo xxx</code>, <code>sudo</code> asks the terminal for a password — but the AI’s bash/subprocess environment has no interactive tty, so the password cannot be entered and the command simply fails.<p>That produced three failure modes:<ol><li><strong>Retry loops</strong> — the agent sees “permission denied” and retries forever<li><strong>Hallucination</strong> — the agent treats error output as command results and continues with fabricated data<li><strong>Giving up</strong> — the agent concludes it lacks permission and abandons the task</ol><p>gsudo’s answer at the time was to move the confirmation from the terminal into a GUI, sidestepping the missing tty. That fixed usability, not security.<h3 id=core-design>Core Design</h3><p><strong>stdout/stderr separation</strong>: stdout carries raw command output (directly parseable by the agent), stderr carries the gsudo banner and status (for humans). <code>gsudo whoami</code> with <code>capture_output=True</code> yields <code>root</code> on stdout — no regex-parsing of wrapper text.<p><strong>GUI instead of terminal interaction</strong>: <code>sudo</code>’s prompt goes to stderr, and the agent’s bash environment has no tty; even with a <code>sudo -S</code> pipe, stdin is awkward to control. So gsudo drew its own Tkinter window that does one thing: show the command and the reason, then take the password.<p><strong>Cross-platform, but platform-adaptive</strong>:<table><thead><tr><th><th>Linux<th>macOS<th>Windows<tbody><tr><td>Mechanism<td><code>sudo -S</code><td><code>sudo -S</code><td><code>Start-Process -Verb RunAs</code><tr><td>Interaction<td>Password prompt<td>Password prompt<td>Confirm button<tr><td>System dialog<td>None<td>None<td>UAC<tr><td>Password<td>✅<td>✅<td>❌ (UAC only needs a click)</table><p>Windows needs no password field — UAC is designed for intent confirmation, not identity verification.<p><strong>No queueing, no lock</strong>: an early version used a global file lock to stop windows from stealing focus. The later judgement was that several agents needing privilege at once should all pop up, and the human decides the order; the lock only left later instances stuck in their terminals.<h3 id=key-decisions>Key Decisions</h3><p><strong>Why not pkexec</strong>: the dialog is not customizable, so the command preview and the agent-generated reason cannot be shown; it is not cross-platform; environment variables are stripped. <code>sudo -S</code> passes the password over stdin and keeps the environment intact.<p><strong>Why Tkinter</strong>: it ships with Python, so installing Python is enough; PyQt/wxPython need compilation or pip, and added dependencies raise the barrier. The goal was “copy the script and run it”.<p><strong>Two windows on Windows</strong>: after gsudo’s confirmation, its window closes and the UAC dialog appears. UAC runs on the secure desktop (Winlogon Desktop), which ordinary programs cannot inject into or bypass. Accept the limit: keep the gsudo window light (command preview only) and let the system own the final confirmation.<p><strong>Why v1.0 did not cache the password</strong>: v1.0 judged that <code>sudo</code>’s own timestamp mechanism (<code>timestamp_timeout</code>) was enough, so gsudo added no extra cache and re-prompted on every call. A later implementation probed the sudo timestamp first: when the cache is valid it shows a simplified confirmation (one click, no password), and a full password dialog only when it has expired. An intermediate “trust window” (five minutes of auto-approval after a checkbox) was withdrawn for trading intent for a countdown; see <a href=/en/archive/gsudo-trust-window-lesson/>the trust-window retrospective</a>.<h3 id=implementation-notes>Implementation Notes</h3><ul><li><strong>PowerShell injection defence</strong>: commands are never assembled by string concatenation (a quote in the command would break the syntax); they are passed via <code>EncodedCommand</code> with base64 (UTF-16LE).<li><strong>Enter / Esc</strong>: supported in both the password and result windows; Tkinter binds on a widget take precedence over root binds, so <code>&lt;Return></code> is bound on the password field to avoid clashing with the global binding.<li><strong>Red flash</strong>: the status label started out red, so “running…” flashed red too; it was changed to grey while running and red only on error.</ul><h3 id=verification-status>Verification Status</h3><p>Last verified 2026-10-05 on Linux.<p><strong>Passed</strong>: Linux GUI password dialog, Enter trigger, result window persistence; stdout/stderr separation; wrong-password detection and retry; syntax compilation.<p><strong>Not verified</strong>: macOS (no device); Windows UAC (no desktop environment); <code>alwaysOnTop</code> compatibility across window managers; non-GUI fallback; concurrent multi-instance dialogs.<h2 id=project-link>Project Link</h2><ul><li>GitHub: <a rel="noopener nofollow noreferrer external" href=https://github.com/CNCSMonster/gsudo target=_blank>CNCSMonster/gsudo</a> (archived repository, read-only)<li>Archived: 2026-10-25</ul></div><aside class=post-toc><nav><div class=toc-title>目录</div><ul><li><a href=#in-one-sentence>In One Sentence</a><li><a href=#decision-table>Decision Table</a><li><a href=#why-it-is-not-a-security-boundary>Why It Is Not a Security Boundary</a><li><a href=#what-i-do-instead>What I Do Instead</a><li><a href=#key-evidence>Key Evidence</a><li><a href=#original-design-archive-record>Original Design (Archive Record)</a> <ul><li><a href=#the-problem>The Problem</a><li><a href=#core-design>Core Design</a><li><a href=#key-decisions>Key Decisions</a><li><a href=#implementation-notes>Implementation Notes</a><li><a href=#verification-status>Verification Status</a></ul><li><a href=#project-link>Project Link</a></ul></nav></aside></div><footer class=post-footer><div class=post-license><p><strong>Copyright：</strong> This work is licensed under <a href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en rel=noopener target=_blank>CC BY-NC-SA 4.0</a>. Please provide attribution and share alike.</div></footer><section class=comments id=comments><h2>Comments</h2><div id=giscus-container><script async crossorigin data-category=General data-category-id=DIC_kwDOJcCqHs4C6Jj6 data-emit-metadata=0 data-input-position=bottom data-lang=en data-mapping=pathname data-reactions-enabled=1 data-repo=CNCSMonster/cncsmonster.github.io data-repo-id=R_kgDOJcCqHg data-strict=0 data-theme=light src=https://giscus.app/client.js></script></div></section></article><nav class=post-navigation></nav></main><footer class=site-footer><p>© 2026 CCM. Powered by Zola.<div class=footer-links><a href=https://cncsmonster.github.io/>↑ Back to Home</a><span class=separator>|</span><a href=https://cncsmonster.github.io/archive/>Archive</a><span class=separator>|</span><a href=https://cncsmonster.github.io/ebooks/>Ebooks</a><span class=separator>|</span><a href=https://cncsmonster.github.io/atom.xml rel=noopener target=_blank>Atom</a><span class=separator>|</span><a href=https://cncsmonster.github.io/rss.xml rel=noopener target=_blank>RSS</a></div></footer><script defer src=https://cncsmonster.github.io/js/mermaid.js></script><script src=https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js></script><script src=https://cncsmonster.github.io/search_index.en.js></script><script>(function() {
+        let fuse = null;
+        const searchIndex = window.searchIndex || [];
+        
+        // 初始化 Fuse.js
+        function initFuse() {
+            if (fuse) return true;
+            
+            if (!searchIndex || searchIndex.length === 0) {
+                console.warn('搜索索引为空');
+                return false;
+            }
+            
+            try {
+                // Fuse.js 配置
+                const options = {
+                    includeScore: false,
+                    includeMatches: true,
+                    ignoreLocation: true,
+                    threshold: 0.15,
+                    minMatchCharLength: 1,
+                    keys: [
+                        { name: 'title', weight: 3 },
+                        { name: 'description', weight: 2 },
+                        { name: 'body', weight: 1 },
+                        { name: 'path', weight: 0.5 }
+                    ]
+                };
+                
+                fuse = new Fuse(searchIndex, options);
+                console.log('搜索初始化成功，条目数:', searchIndex.length);
+                return true;
+                
+            } catch (error) {
+                console.error('Fuse 初始化失败:', error);
+                return false;
+            }
+        }
+        
+        // 绑定搜索事件
+        function bindSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) return;
+            
+            let debounceTimer = null;
+            
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length === 0) {
+                    searchResults.innerHTML = '';
+                    searchResults.style.display = 'none';
+                    return;
+                }
+                
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // 确保 Fuse 已初始化
+                    if (!fuse && !initFuse()) {
+                        searchResults.innerHTML = '<li class="no-results">Loading search...</li>';
+                        searchResults.style.display = 'block';
+                        return;
+                    }
+                    
+                    const results = fuse.search(query);
+                    const MAX_RESULTS = 10;
+                    
+                    if (results.length === 0) {
+                        searchResults.innerHTML = '<li class="no-results">No results found</li>';
+                    } else {
+                        searchResults.innerHTML = results.slice(0, MAX_RESULTS).map(result => {
+                            const doc = result.item;
+                            const title = highlightMatch(doc.title, query);
+                            const description = doc.description ? highlightMatch(doc.description, query) : '';
+                            return '<li class="search-result"><a href="' + doc.path + '"><h4>' + title + '</h4>' + (description ? '<p>' + description + '</p>' : '') + '</a></li>';
+                        }).join('');
+                    }
+                    
+                    searchResults.style.display = 'block';
+                }, 150);
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+        }
+        
+        // 高亮匹配文本
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + escapeRegExp(query) + ')', 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // 转义正则特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        function init() {
+            initFuse();
+            bindSearch();
+        }
+    })();</script>

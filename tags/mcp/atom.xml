@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh">
+    <title>CCM 的博客 - MCP</title>
+    <link rel="self" type="application/atom+xml" href="https://cncsmonster.github.io/tags/mcp/atom.xml"/>
+    <link rel="alternate" type="text/html" href="https://cncsmonster.github.io"/>
+    <generator uri="https://www.getzola.org/">Zola</generator>
+    <updated>2026-10-14T00:00:00+08:00</updated>
+    <id>https://cncsmonster.github.io/tags/mcp/atom.xml</id>
+    <entry xml:lang="zh">
+        <title>Dify 近况调研笔记：它现在走到哪一步了？</title>
+        <published>2026-10-14T00:00:00+08:00</published>
+        <updated>2026-10-14T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/dify-recent-status-and-technical-evolution/"/>
+        <id>https://cncsmonster.github.io/posts/dify-recent-status-and-technical-evolution/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/dify-recent-status-and-technical-evolution/">&lt;blockquote&gt;
+&lt;p&gt;基准版本：GitHub &lt;code&gt;langgenius&#x2F;dify&lt;&#x2F;code&gt; v1.17.1&lt;br &#x2F;&gt;
+预估半衰期：季度级（AI 应用编排与协议演进极快，需关注插件与 MCP 演进）&lt;br &#x2F;&gt;
+性质：个人调研笔记，抛砖引玉&lt;br &#x2F;&gt;
+起因：很长时间没有听到 Dify 的动静，好奇它是“掉队变凉了“，还是在别处闷声做大？于是花了一些时间翻公开资料，把看到的整理在这里。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;yi-yi-ge-ti-gan-wei-shen-me-wo-jue-de-ta-hen-jiu-mei-xiao-xi-liao&quot;&gt;一、 一个体感：为什么我觉得它“很久没消息了“？&lt;&#x2F;h2&gt;
+&lt;p&gt;至少在我自己的圈子里，2024 年下半年到 2026 年间，确实很少再看到有人讨论 Dify 了。第一反应是：是不是被淘汰了？&lt;&#x2F;p&gt;
+&lt;p&gt;但翻了一圈资料之后，我发现这种“失踪感“可能更多来自&lt;strong&gt;我们自己的注意力转移&lt;&#x2F;strong&gt;，以及 &lt;strong&gt;Dify 自身的战略位移&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;2023 ~ 2024 上半年 (极客狂欢期)                 2025 ~ 2026 (分化期)
+[个人开发者 &#x2F; 提示词工程师]                    [代码优先派 (极客&#x2F;后端)]
+      │                                                │
+      ▼                                                ▼
+热衷 GUI 拖拽搭 Bot &#x2F; 简单知识库           转向 Coding Agent (Cursor&#x2F;Claude Code)
+Dify、FastGPT 社媒刷屏                     转向代码级状态机 (LangGraph&#x2F;PydanticAI)
+                                               
+                                               [Dify 真实位移路径]
+                                                       │
+                                                       ▼
+                                           出海国际化 (日本&#x2F;北美&#x2F;欧洲)
+                                           深水区 ToB (企业合规&#x2F;私有部署&#x2F;跨国巨头)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;1-ji-ke-quan-de-zhu-yi-li-zhuan-xiang&quot;&gt;1. 极客圈的注意力转向&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;2023 到 2024 年初，大模型生态还在摸索“怎么把模型连上知识库和提示词“，可视化 DAG 拖拽是当时门槛最低、演示最直观的形式；&lt;&#x2F;li&gt;
+&lt;li&gt;后来技术圈的注意力明显转向了 &lt;strong&gt;Coding Agent&lt;&#x2F;strong&gt;（Cursor、Claude Code 等）和&lt;strong&gt;代码优先的状态机框架&lt;&#x2F;strong&gt;（LangGraph、PydanticAI 等）。代码形态下 Git 管理、单元测试更原生，社媒上晒“连线图“的人自然就少了。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-dify-zi-ji-de-zhong-xin-zhuan-yi&quot;&gt;2. Dify 自己的重心转移&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;从公开信息来看，LangGenius 团队主动降低了国内极客营销的声量，把精力投向了海外市场与大型企业客户；&lt;&#x2F;li&gt;
+&lt;li&gt;增长最快的市场在&lt;strong&gt;海外（尤其是日本与北美）&lt;&#x2F;strong&gt;。国内社媒讨论降温的同时，Dify 在日本办了数百人线下峰会、进驻了 AWS 官方渠道，并在跨国企业内网完成了私有化落地。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;er-gong-kai-ke-cha-de-shang-ye-shu-ju&quot;&gt;二、 公开可查的商业数据&lt;&#x2F;h2&gt;
+&lt;p&gt;以下是我从公开资料中翻到的数字，供参考：&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-rong-zi&quot;&gt;1. 融资&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Pre-A 轮 3,000 万美元（2026 年 3 月）&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;领投方&lt;&#x2F;strong&gt;：HSG（红杉中国 &#x2F; HongShan）；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;跟投方&lt;&#x2F;strong&gt;：高瓴创投（GL Ventures）、五源资本（5Y Capital，老股东追加）、瑞穗力合（Mizuho Leaguer Investment）、Alt-Alpha Capital 与 NYX Ventures；&lt;&#x2F;li&gt;
+&lt;li&gt;估值约 1.8 亿美元。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-kai-yuan-yu-she-qu&quot;&gt;2. 开源与社区&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Stars&lt;&#x2F;strong&gt;：约 &lt;strong&gt;15.8 万&lt;&#x2F;strong&gt;（全球排名 Top 60 左右），1000+ 贡献者，861 次近期提交，168 个 Release；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;全球自建安装量&lt;&#x2F;strong&gt;：超过 &lt;strong&gt;140 万&lt;&#x2F;strong&gt; 台设备；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业客户&lt;&#x2F;strong&gt;：公开披露超过 &lt;strong&gt;280 家&lt;&#x2F;strong&gt;，标杆客户包括 &lt;strong&gt;马士基（Maersk）、沃尔沃（Volvo）、诺华制药（Novartis）、赛默飞世尔（ThermoFisher）&lt;&#x2F;strong&gt; 等；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;全球化布局&lt;&#x2F;strong&gt;：旧金山湾区、东京、上海、苏州四地办公室；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;日本市场&lt;&#x2F;strong&gt;：成立了“一般社团法人 Dify 协会“（Japan Association for Dify，2025 年 9 月设立，NTT Data 等共同发起），并成为 AWS 全球 Partner（获 2025 AWS Social Impact Partner of the Year 奖）。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;san-chan-pin-yu-ji-shu-yan-jin-v0-x-dao-v1-17&quot;&gt;三、 产品与技术演进（v0.x 到 v1.17+）&lt;&#x2F;h2&gt;
+&lt;p&gt;从版本迭代来看，Dify 的产品形态已经明显超出了早期“可视化调 Prompt“的阶段，底层技术栈经历了多次重构：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;                    ┌─────────────────────────────────┐
+                    │       Dify Marketplace          │ (插件生态&#x2F;社区资产)
+                    └────────────────┬────────────────┘
+                                     │
+┌───────────────────────────────┐    │    ┌───────────────────────────────┐
+│        New Agent App          │    │    │       Workflow Studio         │
+│ (自主推理&#x2F;Skills&#x2F;代码沙箱)   │◄───┴───►│ (可视化编排&#x2F;分支合并&#x2F;动态路由)│
+└───────────────┬───────────────┘         └───────────────┬───────────────┘
+                │                                         │
+                └───────────────────┬─────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │   MCP Gateway (Workflow-as-MCP-Server &#x2F; ClientPassthru)│
+       └────────────────────────────┬───────────────────────────┘
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │     Core Engine (异步非阻塞引擎 &#x2F; 沙箱隔离 &#x2F; RBAC)      │
+       └────────────────────────────────────────────────────────┘
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;1-quan-mian-jie-ru-mcp-model-context-protocol-xie-yi&quot;&gt;1. 全面接入 MCP（Model Context Protocol）协议&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Workflow-as-MCP-Server&lt;&#x2F;strong&gt;：用户在 Dify 内部编排的复杂业务工作流，可以直接一键作为标准的 MCP Server 对外暴露。无论是 Claude Desktop、IDE 还是外部 Coding Agent，都可以把 Dify 工作流当作标准 MCP 工具直接调用；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;运行时动态 Header 透传&lt;&#x2F;strong&gt;：支持在请求阶段动态注入占位符鉴权（如 &lt;code&gt;{{request.headers.X-Custom-Auth}}&lt;&#x2F;code&gt;），解决了企业多租户在调用第三方工具时的安全隔离与身份鉴权难题。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;2-cha-jian-ti-xi-plugin-system-yu-marketplace-che-di-jie-ou&quot;&gt;2. 插件体系（Plugin System）与 Marketplace 彻底解耦&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;告别源码魔改&lt;&#x2F;strong&gt;：在早期的 v0.x 时代，社区开发者想接入一个新的模型或私有内部系统，往往需要 fork 仓库、修改核心代码甚至自己维护版本。v1.0（2025 年初）重构了插件架构，工具、模型完全解耦为独立插件运行；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Marketplace 与插件安全治理&lt;&#x2F;strong&gt;：引入了插件安全级别（Security Level）、签名验证与沙箱隔离，企业用户可在内网部署私有插件源，兼顾扩展性与合规性。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-agent-jia-gou-zhong-gou-new-agent-app-yu-sha-xiang-zhi-xing&quot;&gt;3. Agent 架构重构：New Agent App 与沙箱执行&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Chat-driven Agent 构建&lt;&#x2F;strong&gt;：支持通过自然语言对谈生成与调试智能体，自动提取并沉淀为结构化、可复用的 Skills；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;内置安全沙箱（DifySandbox）&lt;&#x2F;strong&gt;：为 Code 节点、Tool 节点提供独立的 Python&#x2F;Shell 执行沙箱，支持安全的数据变形、逻辑判定与本地脚本执行；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;工作流双向嵌套&lt;&#x2F;strong&gt;：可以在 Workflow 中嵌入 Agent 节点（让智能体在局部自主决策），也可以由 Agent 触发特定 Workflow。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;4-qi-ye-ji-nei-he-yu-he-gui-ren-zheng&quot;&gt;4. 企业级内核与合规认证&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;异步非阻塞执行引擎&lt;&#x2F;strong&gt;：数据库写入与长链路调用实现异步化，多分支并行执行耗时由“各分支简单累加“优化为“取决于最长分支“，大幅降低了超时中断率；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;企业治理资质&lt;&#x2F;strong&gt;：连续两年获得 SOC 2 Type II、ISO 27001:2022 与 GDPR 合规认证，提供完整的审计日志追踪、RBAC 细粒度权限管控。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;si-wo-chang-shi-li-jie-ta-de-ding-wei&quot;&gt;四、 我尝试理解它的定位&lt;&#x2F;h2&gt;
+&lt;p&gt;以下是我个人调研后的一些理解，不一定准确，仅供参考：&lt;&#x2F;p&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;维度&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Dify（v1.17+）&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Code-First 框架（LangGraph 等）&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;纯 SaaS 竞品（Coze &#x2F; 扣子）&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;我观察到的受众&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;需要跨职能协作的团队（业务 + IT）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;资深后端、AI 全栈工程师&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;个人自媒体、非技术运营&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;部署灵活性&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;开源社区版 &#x2F; 容器私有化 &#x2F; 多云&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯代码库，随业务部署&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;深度绑定平台生态&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;调试体验&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;有不错的节点级历史 I&#x2F;O 检查 UI&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;依赖代码断点、LangSmith 等&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;依赖平台日志&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;扩展方式&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;插件市场 + MCP + 自定义代码节点&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯代码，扩展无上限&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;受限于平台集成库&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;工程化协作&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;工作流 DSL 导入导出，Git 差分能力偏弱&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;原生 Git + 单元测试&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;平台内版本管理&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;wo-ge-ren-de-chang-jing-li-jie&quot;&gt;我个人的场景理解&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code&gt;                    你的场景更偏向哪边？
+                              │
+         ┌────────────────────┴────────────────────┐
+         ▼                                         ▼
+【需要业务与 IT 协同】                      【重度极客 &#x2F; 算法实验】
+• 需要向业务人员可视化呈现流程            • 逻辑高度依赖复杂递归、动态回溯
+• 需要开箱即用的 RAG、权限与审计          • 极度依赖 Git 分支与自动化测试
+• 需要多模型聚合与 MCP 网关              • 更习惯纯代码，排斥 UI 连线
+         │                                         │
+         ▼                                         ▼
+   Dify 可能比较合适                     LangGraph &#x2F; 代码自研可能更顺手
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;这只是我个人的粗浅理解，实际选型远比这复杂。很多团队可能是混合使用的。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;wu-shang-ye-hua-yu-tuan-dui-xian-zhuang&quot;&gt;五、 商业化与团队现状&lt;&#x2F;h2&gt;
+&lt;p&gt;这部分是我比较好奇的：它到底赚不赚钱？团队还活着吗？&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-ding-jia-ti-xi-gong-kai-ke-cha&quot;&gt;1. 定价体系（公开可查）&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;方案&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;价格&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;说明&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Sandbox&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;免费&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;200 message credits&#x2F;月，1 人，5 个 App&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Professional&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;$59&#x2F;月（$590&#x2F;年）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;5,000 credits&#x2F;月，3 人，50 App&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Team&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;$159&#x2F;月（$1,590&#x2F;年）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;10,000 credits&#x2F;月，50 人，200 App&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;Enterprise&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;定制报价&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;SSO&#x2F;SCIM、私有部署、SLA&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;AWS Marketplace Enterprise&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;$150,000&#x2F;年起&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;AWS 上架的 Enterprise 版明码标价&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;自托管社区版&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;免费（开源）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;用户自付基础设施 + LLM API 费用&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h3 id=&quot;2-shou-ru-wei-gong-kai-dan-yi-ying-li&quot;&gt;2. 收入：未公开，但已盈利&lt;&#x2F;h3&gt;
+&lt;p&gt;Dify 是未上市公司（Pre-A 轮），没有公开披露过具体收入数字。但从 Forbes（2026-02-24）专访中可以确认一个关键信息：&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;“The company built around it employs 100 people, &lt;strong&gt;is profitable&lt;&#x2F;strong&gt; and serves more than 280 enterprise customers.”&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;——&lt;strong&gt;已盈利&lt;&#x2F;strong&gt;，100 人团队。具体营收数字未知。&lt;&#x2F;p&gt;
+&lt;p&gt;粗略估算（纯个人推测，无公开依据）：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;280+ 企业客户中，假设部分走 Enterprise（AWS 标价 $150K&#x2F;年起），加上 Cloud 订阅收入&lt;&#x2F;li&gt;
+&lt;li&gt;100 人团队 + 四地办公室，已盈利说明收入能覆盖成本&lt;&#x2F;li&gt;
+&lt;li&gt;值得注意的是，Dify 官方招聘页写“Over 60% of our codebase is built by LLMs“，研发效率可能远高于传统团队&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;3-cai-yuan-wei-fa-xian-ren-he-cai-yuan-xiao-xi&quot;&gt;3. 裁员：未发现任何裁员消息&lt;&#x2F;h3&gt;
+&lt;p&gt;在 Layoffs.fyi 和各类科技裁员追踪中，&lt;strong&gt;没有找到任何 Dify&#x2F;LangGenius 的裁员记录&lt;&#x2F;strong&gt;。在 2025-2026 年科技行业大规模裁员的背景下，这算是一个正面信号。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;4-zhao-pin-reng-zai-zhao-ren&quot;&gt;4. 招聘：仍在招人&lt;&#x2F;h3&gt;
+&lt;p&gt;Dify 官网（join.dify.ai）截至 2026-09-18 仍有 &lt;strong&gt;4 个开放职位&lt;&#x2F;strong&gt;：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;LTS 后端开发工程师（中国）&lt;&#x2F;li&gt;
+&lt;li&gt;后端开发实习生（中国）&lt;&#x2F;li&gt;
+&lt;li&gt;UI&#x2F;UX 设计师（中国）&lt;&#x2F;li&gt;
+&lt;li&gt;开发者关系实习生（Community Operations）&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;招聘规模不大，但说明团队在持续运转，没有冻结。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;5-kai-fa-huo-yue-du-fei-chang-huo-yue&quot;&gt;5. 开发活跃度：非常活跃&lt;&#x2F;h3&gt;
+&lt;p&gt;从 GitHub 数据来看：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;最近版本&lt;&#x2F;strong&gt;：v1.17.1（2026-09-10），v1.15.0（2026-06-25），v1.14.2（2026-05-19）——保持每月至少一个版本的节奏&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;每周活跃度&lt;&#x2F;strong&gt;：约 615 新 Star、132 次 Push&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Issue 活跃度&lt;&#x2F;strong&gt;：2026-10-13 仍有新 Issue 提交，Maintainer 活跃回复&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;贡献者&lt;&#x2F;strong&gt;：1000+ 人，23.9K Forks&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;hr &#x2F;&gt;
+&lt;h2 id=&quot;liu-diao-yan-hou-de-ge-ren-kan-fa&quot;&gt;六、 调研后的个人看法&lt;&#x2F;h2&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Dify 没有消失，只是去了我不太看得到的地方&lt;&#x2F;strong&gt;：从国内极客圈的视角看，它确实“安静“了。但从海外企业市场、日本生态、AWS 渠道来看，它似乎在另一条赛道上跑得挺快；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;低代码编排在企业场景里可能还是有它的位置&lt;&#x2F;strong&gt;：虽然 Code-First 是极客圈的审美主流，但现实中很多业务场景需要跨部门协作、可视化审计、权限管控——这些可能不是纯代码框架最擅长的；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;100 人团队、已盈利、60%+ 代码由 LLM 生成&lt;&#x2F;strong&gt;——这个组合本身挺有意思。它可能是 AI-native 开发模式的一个早期案例：用 AI 造 AI 工具，小团队撬动大规模；&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;具体收入数字缺失&lt;&#x2F;strong&gt;是这份调研最大的遗憾。作为未上市公司，这可以理解。但从“已盈利“和 AWS $150K&#x2F;年的 Enterprise 标价来看，商业模型至少是跑通了的。&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;以上都是个人调研后的理解，难免有偏差。如果你看到的信息与我不同，欢迎指正。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>浏览器自动化 MCP 选型：chrome-devtools-mcp 与 Obscura</title>
+        <published>2026-09-17T00:00:00+08:00</published>
+        <updated>2026-09-17T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/"/>
+        <id>https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/browser-automation-mcp-chrome-devtools-vs-obscura/">&lt;p&gt;给 AI coding agent 配置浏览器访问能力时，核心要在&lt;strong&gt;人机协作体验&lt;&#x2F;strong&gt;、&lt;strong&gt;内存占用&lt;&#x2F;strong&gt;与&lt;strong&gt;反爬表现&lt;&#x2F;strong&gt;之间做权衡。本文对比 Google 官方的 &lt;code&gt;chrome-devtools-mcp&lt;&#x2F;code&gt; 与轻量 Rust 实现的 &lt;code&gt;Obscura&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;xuan-xing-jie-lun&quot;&gt;选型结论&lt;&#x2F;h2&gt;
+&lt;p&gt;两者在使用体验和定位上是完全不同的两类工具：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;chrome-devtools-mcp 是“可视化协作工作台”&lt;&#x2F;strong&gt;：它直接运行桌面真实 Chrome。桌面上有可见窗口，你能实时看着 AI 点选，人和 AI 可以&lt;strong&gt;同屏接力操作&lt;&#x2F;strong&gt;（遇到复杂筛选、内部权限确认或验证时，你随手拿鼠标帮 AI 操作一步，AI 接着往下跑；也能直接复用你电脑日常已登录的 Cookie）。代价是&lt;strong&gt;极其吃内存（单实例约 1.5 GB）&lt;&#x2F;strong&gt;。&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Obscura 是“后台静默批处理工具”&lt;&#x2F;strong&gt;：它是纯 Rust + V8 的无头运行时，专为静默脚本设计。&lt;strong&gt;完全没有桌面窗口，无法直接人机同屏接力&lt;&#x2F;strong&gt;；但&lt;strong&gt;内存极其轻巧（仅 23 MB，降了 98%）&lt;&#x2F;strong&gt;，且自带伪装抹平了 &lt;code&gt;webdriver&lt;&#x2F;code&gt; 特征。适合跑在后台安安静静抓数据、查文档、填常规表单。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h3 id=&quot;he-xin-dui-bi-yi-lan&quot;&gt;核心对比一览&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: left&quot;&gt;维度&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;chrome-devtools-mcp（Google 官方）&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: left&quot;&gt;Obscura（Rust + V8）&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;协作体验&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;支持桌面可见窗口&lt;&#x2F;strong&gt;：人与 AI 可同屏接力（人操作一步、AI 接着操作）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;无桌面窗口&lt;&#x2F;strong&gt;：纯后台黑盒运行，无法直接接管操作&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;内存开销&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;极重（空闲约 1450 MB，容易影响本地编译并发）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;极轻（空闲仅 23 MB）&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;反爬特征&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;原生 headless 漏洞明显（&lt;code&gt;webdriver=true&lt;&#x2F;code&gt;，UA 带 &lt;code&gt;HeadlessChrome&lt;&#x2F;code&gt;）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;自带伪装（隐藏 webdriver，模拟自洽假身份）&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;表单与交互&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;完整支持表单录入、点击、导航、账号登录&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;完整支持表单录入、点击、导航、账号登录&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;会话继承&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;支持直接挂载本地日常 Chrome Profile（直接复用已有 Cookie）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;纯沙箱环境，无法继承本地日常登录态&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: left&quot;&gt;&lt;strong&gt;使用建议&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;需要同屏接力、复用日常登录态、做前端深度性能诊断时选用&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: left&quot;&gt;后台批量查文档、抓取网页、自动化填表、多 Agent 并发时首选&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;h2 id=&quot;guan-jian-shi-ce-shu-ju&quot;&gt;关键实测数据&lt;&#x2F;h2&gt;
+&lt;p&gt;测试环境：WSL2 &#x2F; Ubuntu 24.04，测试目标为 &lt;code&gt;example.com&lt;&#x2F;code&gt;。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;1-nei-cun-shi-ce&quot;&gt;1. 内存实测&lt;&#x2F;h3&gt;
+&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th style=&quot;text-align: center&quot;&gt;运行状态&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Obscura &lt;code&gt;serve&lt;&#x2F;code&gt;&lt;&#x2F;th&gt;&lt;th style=&quot;text-align: center&quot;&gt;Chrome headless&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: center&quot;&gt;空闲状态&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;23 MB&lt;&#x2F;strong&gt;（1 进程）&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;1452 MB（14 进程）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;tr&gt;&lt;td style=&quot;text-align: center&quot;&gt;页面加载后&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;&lt;strong&gt;26 MB&lt;&#x2F;strong&gt;&lt;&#x2F;td&gt;&lt;td style=&quot;text-align: center&quot;&gt;1561 MB（15 进程）&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
+&lt;&#x2F;tbody&gt;&lt;&#x2F;table&gt;
+&lt;p&gt;两者有约 50~60 倍的量级差异。在机器跑大型编译任务或多 Agent 并发访问时，Chrome 对系统资源的抢占非常明显。&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;2-fan-pa-zhi-wen-shi-ce&quot;&gt;2. 反爬指纹实测&lt;&#x2F;h3&gt;
+&lt;p&gt;Chrome 原生 headless 有两个最经典的特征暴露点：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;navigator.webdriver === true&lt;&#x2F;code&gt;；&lt;&#x2F;li&gt;
+&lt;li&gt;User-Agent 明晃晃带着 &lt;code&gt;HeadlessChrome&lt;&#x2F;code&gt;。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;很多站点以此直接拦截流量。Obscura 开启 &lt;code&gt;--stealth&lt;&#x2F;code&gt; 后，将 &lt;code&gt;webdriver&lt;&#x2F;code&gt; 抹平为 &lt;code&gt;false&lt;&#x2F;code&gt;，并输出了一套自洽的 Windows &#x2F; Chrome 145 身份配置。但需注意其实测 &lt;code&gt;getContext(&#x27;webgl&#x27;)&lt;&#x2F;code&gt; 返回 &lt;code&gt;null&lt;&#x2F;code&gt;，面对高阶硬件级 WAF 仍有暴露可能。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;kuai-su-pei-zhi&quot;&gt;快速配置&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;1-chrome-devtools-mcp&quot;&gt;1. chrome-devtools-mcp&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;jsonc&quot;&gt;&amp;quot;chrome-devtools&amp;quot;: {
+  &amp;quot;command&amp;quot;: &amp;quot;npx&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;-y&amp;quot;, &amp;quot;chrome-devtools-mcp@latest&amp;quot;],
+  &amp;quot;description&amp;quot;: &amp;quot;Chrome DevTools MCP&amp;quot;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;默认即为有头模式（可见窗口）；若希望纯后台静默，可追加 &lt;code&gt;--headless&lt;&#x2F;code&gt;。要求本机已安装桌面 Chrome。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h3 id=&quot;2-obscura-an-zhuang-yu-pei-zhi&quot;&gt;2. Obscura（安装与配置）&lt;&#x2F;h3&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;bash&quot;&gt;# 下载 stealth 预编译包解压至 ~&#x2F;.local&#x2F;bin
+curl -L -o obscura.tar.gz &amp;quot;https:&#x2F;&#x2F;github.com&#x2F;h4ckf0r0day&#x2F;obscura&#x2F;releases&#x2F;download&#x2F;v0.2.2&#x2F;obscura-x86_64-linux-stealth.tar.gz&amp;quot;
+tar -xzf obscura.tar.gz
+mkdir -p ~&#x2F;.local&#x2F;bin &amp;amp;&amp;amp; mv obscura obscura-worker ~&#x2F;.local&#x2F;bin&#x2F;
+chmod +x ~&#x2F;.local&#x2F;bin&#x2F;obscura ~&#x2F;.local&#x2F;bin&#x2F;obscura-worker
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;MCP 配置：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;jsonc&quot;&gt;&amp;quot;obscura&amp;quot;: {
+  &amp;quot;command&amp;quot;: &amp;quot;obscura&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;mcp&amp;quot;, &amp;quot;--stealth&amp;quot;, &amp;quot;--allow-private-network&amp;quot;],
+  &amp;quot;description&amp;quot;: &amp;quot;Obscura lightweight headless browser MCP&amp;quot;
+}
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;避坑提示（Clash TUN 模式）&lt;&#x2F;strong&gt;：&lt;br &#x2F;&gt;
+若本机开启了 Clash TUN 模式，fake-ip 机制会将域名解析到 &lt;code&gt;198.18.x.x&lt;&#x2F;code&gt;，会撞上 Obscura 内置的 SSRF 防护而断网。配置中必须传入 &lt;code&gt;--allow-private-network&lt;&#x2F;code&gt; 才能正常联网。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Big Model Radar：一个 AI 自动维护的 CLI 工具生态仪表盘</title>
+        <published>2026-07-13T00:00:00+08:00</published>
+        <updated>2026-07-13T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/"/>
+        <id>https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/big-model-radar-ai-cli-ecosystem/">&lt;p&gt;AI Coding Agent 领域变化极快——Claude Code、Codex、Gemini CLI、Qwen Code 等工具每天都在产生大量 Issues、PR 和讨论。一个人根本看不过来。&lt;&#x2F;p&gt;
+&lt;p&gt;最近发现了一个叫 &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&quot;&gt;Big Model Radar&lt;&#x2F;a&gt; 的项目，它用 GitHub Actions 每天自动抓取这些工具的开发动态，用 LLM 生成中英双语日报。从 2026 年 7 月 7 日至今，每天稳定产出，从未中断。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;注意&lt;&#x2F;strong&gt;：Web UI 是旧版快照（内容截至 2026-05），看最新内容建议看 Issues 或 Telegram。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ta-zhui-zong-shen-me&quot;&gt;它追踪什么&lt;&#x2F;h2&gt;
+&lt;p&gt;7 个主流 CLI 工具：Claude Code &#x2F; OpenAI Codex &#x2F; Gemini CLI &#x2F; GitHub Copilot CLI &#x2F; Kimi Code CLI &#x2F; OpenCode &#x2F; Qwen Code。&lt;&#x2F;p&gt;
+&lt;p&gt;每天生成 5 类报告：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;digest&lt;&#x2F;strong&gt;：CLI 工具社区动态横向对比&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;hn&lt;&#x2F;strong&gt;：Hacker News AI 热帖&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;trending&lt;&#x2F;strong&gt;：GitHub AI 趋势仓库&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;web&lt;&#x2F;strong&gt;：Anthropic&#x2F;OpenAI 官网更新&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;openclaw&lt;&#x2F;strong&gt;：OpenClaw 生态日报&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;ri-bao-bu-shi-chun-zhai-yao&quot;&gt;日报不是纯摘要&lt;&#x2F;h2&gt;
+&lt;p&gt;每个工具的日报包含 6 个板块：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;今日速览&lt;&#x2F;strong&gt;：一段话概括当天重点&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;版本发布&lt;&#x2F;strong&gt;：新版本列表&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;社区热点 Issues (Top 10)&lt;&#x2F;strong&gt;：每条含优先级 + 评论数 + &lt;strong&gt;重要性分析&lt;&#x2F;strong&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;重要 PR 进展 (Top 7-10)&lt;&#x2F;strong&gt;：每条含功能说明 + 影响评估&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;功能需求趋势&lt;&#x2F;strong&gt;：从 Issues&#x2F;PR 中提炼的方向性判断&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;开发者关注点&lt;&#x2F;strong&gt;：痛点聚类 + 高频需求归纳&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;不是简单的 Issue 搬运，而是 &lt;strong&gt;AI 生成的摘要 + 趋势分析&lt;&#x2F;strong&gt; 混合体。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;san-duan-lian-lu-sheng-chan-qiao-jie-xiao-fei&quot;&gt;三段链路：生产 → 桥接 → 消费&lt;&#x2F;h2&gt;
+&lt;p&gt;这个项目的架构很有意思：&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;生产&lt;&#x2F;strong&gt;：维护者付费 LLM token，GitHub Actions 每天 08:00 CST 自动生成日报，写入 GitHub Issues + Markdown 文件&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;桥接&lt;&#x2F;strong&gt;：项目提供 MCP Server 源码，用户自己部署到 Cloudflare Workers，暴露查询 API（&lt;code&gt;list_reports&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_latest&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;get_report&lt;&#x2F;code&gt; &#x2F; &lt;code&gt;search&lt;&#x2F;code&gt;）&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;消费&lt;&#x2F;strong&gt;：用户自己的 Claude Desktop 连接 MCP Server 查询，消耗用户自己的 LLM token&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;本质是：&lt;strong&gt;生产者付费生成内容，消费者自费查询&lt;&#x2F;strong&gt;。MCP Server 是数据桥，让 AI agent 能直接消费 Issue 数据，而不是人去翻页面。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;fang-wen-fang-shi&quot;&gt;访问方式&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Web UI&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&quot;&gt;gsscsd.github.io&#x2F;big_model_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;GitHub Issues&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;github.com&#x2F;loxehate&#x2F;loxehate.github.io&#x2F;issues&quot;&gt;loxehate.github.io&#x2F;issues&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;RSS&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;gsscsd.github.io&#x2F;big_model_radar&#x2F;feed.xml&quot;&gt;feed.xml&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Telegram&lt;&#x2F;strong&gt;：&lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;t.me&#x2F;agents_radar&quot;&gt;t.me&#x2F;agents_radar&lt;&#x2F;a&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;MCP Server&lt;&#x2F;strong&gt;：用户自部署到 Cloudflare Workers&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;yi-ge-you-qu-de-xian-shi&quot;&gt;一个有趣的现实&lt;&#x2F;h2&gt;
+&lt;p&gt;截至 2026-07-12，41 个 issue 中&lt;strong&gt;零条人类评论&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;p&gt;Issue 在这个项目里是 AI 生成内容的持久化存储，不是讨论区。所有通道都是单向的——AI 生成 → 人&#x2F;AI 消费。没有“人类反馈回 AI“的闭环。&lt;&#x2F;p&gt;
+&lt;p&gt;准确描述：&lt;strong&gt;AI 生成、AI 消费、人类旁观&lt;&#x2F;strong&gt;。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jia-zhi&quot;&gt;价值&lt;&#x2F;h2&gt;
+&lt;p&gt;降低信息获取成本——从“每天手动刷 7 个仓库“变成“看一眼日报“；跨工具横向对比；趋势感知；AI 分析提供方向性判断。&lt;&#x2F;p&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>AI Code CLI 能力增强应基于 MCP 协议，而非内置工具源码</title>
+        <published>2026-05-05T00:00:00+08:00</published>
+        <updated>2026-05-05T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/"/>
+        <id>https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/ai-code-cli-mcp-protocol-not-internal-tools/">&lt;p&gt;&lt;strong&gt;不要在会被删除的代码上盖房子。&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;ju-ti-jing-li&quot;&gt;具体经历&lt;&#x2F;h2&gt;
+&lt;p&gt;Qwen Code 旧版内置了 &lt;code&gt;web_search&lt;&#x2F;code&gt; 工具，支持 Tavily、Google、DashScope 三个搜索后端（DashScope 可走 Qwen OAuth 认证）。但它的 provider 选择是静态的——用户在配置中指定一个 default，工具一次搜索只调一个 provider，失败就直接报错，不会尝试下一个。&lt;&#x2F;p&gt;
+&lt;p&gt;笔者的目标是在工具内部实现运行时 provider fallback：按 Tavily → Google → DashScope 的顺序依次尝试，前一个失败自动切换到下一个，避免单后端不可用时搜索能力彻底瘫痪。&lt;&#x2F;p&gt;
+&lt;p&gt;2026-04-24，方案还在本地，Qwen Code PR #3502 合并——&lt;strong&gt;把整个 &lt;code&gt;web_search&lt;&#x2F;code&gt; 内置工具删了&lt;&#x2F;strong&gt;，替换成 MCP 架构。旧版的所有配置键（&lt;code&gt;webSearch&lt;&#x2F;code&gt; 块、&lt;code&gt;advanced.tavilyApiKey&lt;&#x2F;code&gt;、&lt;code&gt;--tavily-api-key&lt;&#x2F;code&gt; 等 CLI 参数）全部作废。笔者针对的是一个已经不存在的目标。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;wei-shen-me-zhe-ge-fang-xiang-zhan-bu-zhu-jiao&quot;&gt;为什么这个方向站不住脚&lt;&#x2F;h2&gt;
+&lt;p&gt;不是方案本身有问题——旧版确实缺少运行时 fallback，这是一个合理的改进方向。问题是地基：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;web_search&lt;&#x2F;code&gt; 从存在到消失只隔了一个 PR。AI Code CLI 品类发展不到两年，内置工具随时可能被重构、合并或删除。&lt;&#x2F;li&gt;
+&lt;li&gt;MCP 是跨 CLI 的通用协议，Qwen Code、Claude Code、Gemini CLI 都支持。工具本身独立于任何 CLI 的实现——不存在“改了半天源码，工具一删全白干“的风险。&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;h2 id=&quot;fan-si-zheng-que-de-zuo-fa&quot;&gt;反思：正确的做法&lt;&#x2F;h2&gt;
+&lt;p&gt;fallback 本身的方向没问题——旧版确实需要，MCP 层也同样需要。错的是实现位置：&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;❌ 修改 CLI 内置工具的源码来实现 fallback&lt;&#x2F;li&gt;
+&lt;li&gt;✅ 写一个独立的 MCP server，内部封装多 provider fallback 逻辑&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;同样的功能，放在内部工具源码里随时可能被删；放在 MCP server 里，和 CLI 版本解耦，自己控制生命周期。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;jing-yan&quot;&gt;经验&lt;&#x2F;h2&gt;
+&lt;ul&gt;
+&lt;li&gt;在 AI Code CLI 上做能力增强，优先在 MCP 层——工具独立于 CLI 实现，不会因为上游重构而作废。&lt;&#x2F;li&gt;
+&lt;li&gt;动手前确认目标模块的生命周期：是稳定核心能力，还是随时可能被替代的实验性功能？&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+</content>
+        
+    </entry>
+    <entry xml:lang="zh">
+        <title>Qwen Code 接入 Tavily 搜索</title>
+        <published>2026-05-05T00:00:00+08:00</published>
+        <updated>2026-05-05T00:00:00+08:00</updated>
+        
+        <author>
+          <name>
+            
+              Unknown
+            
+          </name>
+        </author>
+        
+        <link rel="alternate" type="text/html" href="https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/"/>
+        <id>https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/</id>
+        
+        <content type="html" xml:base="https://cncsmonster.github.io/posts/qwen-code-tavily-mcp-setup/">&lt;h2 id=&quot;1-huo-qu-api-key&quot;&gt;1. 获取 API Key&lt;&#x2F;h2&gt;
+&lt;p&gt;注册 &lt;a rel=&quot;noopener nofollow noreferrer external&quot; target=&quot;_blank&quot; href=&quot;https:&#x2F;&#x2F;tavily.com&#x2F;&quot;&gt;Tavily&lt;&#x2F;a&gt;，复制 API key。&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;2-she-zhi-huan-jing-bian-liang&quot;&gt;2. 设置环境变量&lt;&#x2F;h2&gt;
+&lt;p&gt;将 &lt;code&gt;TAVILY_API_KEY&lt;&#x2F;code&gt; 持久化到系统环境变量中（&lt;code&gt;tvly-xxxxxxxx&lt;&#x2F;code&gt; 替换为你的 key）。&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;strong&gt;Linux &#x2F; macOS：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;bash&quot;&gt;echo &amp;#39;export TAVILY_API_KEY=&amp;quot;tvly-xxxxxxxx&amp;quot;&amp;#39; &amp;gt;&amp;gt; ~&#x2F;.profile
+source ~&#x2F;.profile
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;如果之前已经设置过，用编辑器打开 &lt;code&gt;~&#x2F;.profile&lt;&#x2F;code&gt; 替换或删除旧值，避免重复行。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;Windows（PowerShell）：&lt;&#x2F;strong&gt;&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;powershell&quot;&gt;[Environment]::SetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;tvly-xxxxxxxx&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;无需管理员权限。这个命令会写入当前用户的持久化环境变量，但不会修改已经打开的 PowerShell 进程；关闭并重新打开终端后生效。&lt;&#x2F;p&gt;
+&lt;p&gt;重新打开 PowerShell 后可验证：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;如果想在当前这个 PowerShell 窗口里立刻继续测试，也可以临时同步一次：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code data-lang=&quot;powershell&quot;&gt;$env:TAVILY_API_KEY = [Environment]::GetEnvironmentVariable(&amp;quot;TAVILY_API_KEY&amp;quot;, &amp;quot;User&amp;quot;)
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;blockquote&gt;
+&lt;p&gt;API key 涉及付费额度，自己手动执行以上命令，不要让 AI 代劳。&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;h2 id=&quot;3-an-zhuang-tavily-mcp&quot;&gt;3. 安装 Tavily MCP&lt;&#x2F;h2&gt;
+&lt;p&gt;发给 Qwen Code：&lt;&#x2F;p&gt;
+&lt;pre&gt;&lt;code&gt;请帮我用 qwen mcp add 命令安装 Tavily MCP，然后搜索验证是否正常。
+&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;结束。&lt;&#x2F;p&gt;
+&lt;hr &#x2F;&gt;
+&lt;blockquote&gt;
+&lt;p&gt;验证时间：2026-05-05，Qwen Code 0.15.6 + tavily-mcp 0.2.19&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+</content>
+        
+    </entry>
+</feed>
